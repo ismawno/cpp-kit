@@ -1,4 +1,4 @@
-project "profiling"
+project "profile-tools"
    language "C++"
    cppdialect "C++20"
    staticruntime "on"
