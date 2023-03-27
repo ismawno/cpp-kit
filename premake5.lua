@@ -5,7 +5,7 @@ project "profile-tools"
    kind "StaticLib"
 
    targetdir("bin/" .. outputdir)
-   objdir("build/" .. outputdir .. "/%{prj.name}")
+   objdir("build/" .. outputdir)
 
    files {"src/**.cpp", "include/**.hpp"}
 
