@@ -25,7 +25,6 @@ namespace perf
             HIERARCHY = 0x02
         };
 
-        profiler(const profiler &) = delete;
         static profiler &get();
 
         void begin_session(std::uint8_t pexport, const std::string &name = "results");
@@ -67,6 +66,8 @@ namespace perf
 
         void write_header();
         void write_footer();
+
+        profiler(const profiler &) = delete;
     };
 
 }
