@@ -9,4 +9,4 @@ project "profile-tools"
 
    files {"src/**.cpp", "include/**.hpp"}
 
-   includedirs "../**/include"
+   includedirs "include"
