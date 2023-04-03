@@ -12,7 +12,7 @@ profile-tools is a performance profiling library for C++ projects, designed to a
 
 ## Dependencies
 
-profile-tools has no external dependencies.
+- [debug-tools](https://github.com/Ismael99Bueno/debug-tools): A set of tools for debugging the profiler
 
 ## Usage
 
