@@ -10,9 +10,9 @@ namespace perf
         return p;
     }
 
-    void profiler::begin_session(std::uint8_t pexport, const std::string &name)
+    void profiler::begin_session(std::uint8_t pexport, const char *name)
     {
-        m_name = name;
+        m_session = name;
         m_export = pexport;
         if (m_export & FILE)
             open_file();
@@ -77,8 +77,8 @@ namespace perf
     {
         head.compute_relative_durations();
         if (m_smoothness != 0.f)
-            head.smooth_stats(m_hierarchy.at(m_name), m_smoothness);
-        m_hierarchy[m_name] = head;
+            head.smooth_stats(m_hierarchy.at(m_session), m_smoothness);
+        m_hierarchy[m_session] = head;
     }
 
     void profiler::add_to_hierarchy(const profile_result &result)
@@ -115,7 +115,9 @@ namespace perf
 
     void profiler::open_file()
     {
-        m_output.open(m_path + m_name + "-" + std::to_string(++m_runs) + m_extension);
+        if (!std::filesystem::exists(m_path))
+            std::filesystem::create_directories(m_path);
+        m_output.open(m_path + std::string(m_session) + "-" + std::to_string(++m_runs) + m_extension);
         write_header();
     }
 
@@ -141,11 +143,11 @@ namespace perf
     std::uint32_t profiler::max_mb() const { return m_max_mb; }
     void profiler::max_mb(const std::uint32_t size) { m_max_mb = size; }
 
-    const std::string &profiler::extension() const { return m_extension; }
-    void profiler::extension(const std::string &extension) { m_extension = extension; }
+    const char *profiler::extension() const { return m_extension; }
+    void profiler::extension(const char *extension) { m_extension = extension; }
 
-    const std::string &profiler::path() const { return m_path; }
-    void profiler::path(const std::string &path) { m_path = path; }
+    const char *profiler::path() const { return m_path; }
+    void profiler::path(const char *path) { m_path = path; }
 
     float profiler::smoothness() const { return m_smoothness; }
     void profiler::smoothness(const float smoothness) { m_smoothness = smoothness; }

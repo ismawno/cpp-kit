@@ -27,7 +27,7 @@ namespace perf
 
         static profiler &get();
 
-        void begin_session(std::uint8_t pexport, const std::string &name = "results");
+        void begin_session(std::uint8_t pexport, const char *name = "results");
         void begin_timer();
         void end_timer(const profile_result &result);
         void end_session();
@@ -38,11 +38,11 @@ namespace perf
         std::uint32_t max_mb() const;
         void max_mb(std::uint32_t size);
 
-        const std::string &extension() const;
-        void extension(const std::string &extension);
+        const char *extension() const;
+        void extension(const char *extension);
 
-        const std::string &path() const;
-        void path(const std::string &path);
+        const char *path() const;
+        void path(const char *path);
 
         float smoothness() const;
         void smoothness(float smoothness);
@@ -52,7 +52,7 @@ namespace perf
 
         std::ofstream m_output;
         std::uint32_t m_count = 0, m_runs = 0, m_max_mb = 200;
-        std::string m_name, m_extension = ".json", m_path = "./";
+        const char *m_session, *m_extension = ".json", *m_path = "./";
         std::uint8_t m_export;
         std::unordered_map<std::string, profile_stats> m_hierarchy;
         std::stack<profile_stats> m_current_hierarchy;
