@@ -12,7 +12,7 @@ profile-tools is a performance profiling library for C++ projects, designed to a
 
 ## Dependencies
 
-- [debug-tools](https://github.com/Ismael99Bueno/debug-tools): A set of tools for debugging the profiler
+- [debug-tools](https://github.com/ismawno/debug-tools): A set of tools for debugging the profiler
 
 There is a Python script located in the `scripts` folder named `fetch_dependencies.py`. This script will automatically add all the dependencies as git submodules, provided that the user has already created their own repository and included the current project as a git submodule (or at least downloaded it into the repository). To ensure all runs smoothly once the script has been executed, do not rename the folders containing the various dependencies. All external dependencies, those not created by the same author, will be added as submodules within a folder called `vendor`.
 
