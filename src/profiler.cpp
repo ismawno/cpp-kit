@@ -1,6 +1,8 @@
 #include "profiler.hpp"
 #include "debug.hpp"
 #include <cmath>
+#include <algorithm>
+#include <filesystem>
 
 namespace perf
 {
