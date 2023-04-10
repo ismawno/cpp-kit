@@ -2,8 +2,8 @@ project "profile-tools"
    language "C++"
    cppdialect "C++17"
    
-   kind "StaticLib"
    staticruntime "off"
+   kind "StaticLib"
 
    targetdir("bin/" .. outputdir)
    objdir("build/" .. outputdir)
