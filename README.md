@@ -1,6 +1,6 @@
 # debug-tools
 
-debug-tools is a header-only C++ project containing a single file with useful debug macros. These macros are enabled when the user defines the DEBUG macro in their project. To use debug-tools, simply include the `debug.hpp` file.
+debug-tools is a header-only C++ project containing a single file with useful debug macros. These macros are enabled when the user defines the DEBUG macro in their project. To use debug-tools, simply include the [debug.hpp](https://github.com/ismawno/debug-tools/include/debug/debug.hpp) file.
 
 ## Features
 
@@ -14,7 +14,7 @@ debug-tools has no external dependencies.
 
 ## Usage
 
-To use debug-tools, include the `debug.hpp` header in your project. The debug macros will be enabled when the DEBUG macro is defined in your project.
+To use debug-tools, include the [debug.hpp](https://github.com/ismawno/debug-tools/include/debug/debug.hpp) header in your project. The debug macros will be enabled when the DEBUG macro is defined in your project.
 
 Since debug-tools is a header-only project, it does not require compilation or the use of any build system.
 
