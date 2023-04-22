@@ -15,7 +15,7 @@ vector-view has no external dependencies.
 
 ## Usage
 
-To use vector-view, simply include the [vector_view.hpp](https://github.com/ismawno/vector-view/include/vector-view.hpp) header in your project. The library is header-only, so it does not require any compilation or the use of any build system.
+To use vector-view, simply include the [vector_view.hpp](https://github.com/ismawno/vector-viewutils/vector-view.hpp) header in your project. The library is header-only, so it does not require any compilation or the use of any build system.
 
 For more information on how to use vector-view and the available functionality, please refer to the documentation.
 
