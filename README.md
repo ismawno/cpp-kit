@@ -24,7 +24,7 @@ The [fetch_dependencies.py](https://github.com/ismawno/profile-tools/scripts/fet
 4. Create an entry point project with a `premake5` file, where the `main.cpp` will be located. Link all libraries and specify the kind of the executable as `ConsoleApp`. Don't forget to specify the different configurations for the project.
 5. Create a `premake5` file at the root of the repository describing the `premake` workspace and including all dependency projects.
 6. Build the entire project by running the `make` command in your terminal. You can specify the configuration by using `make config=the_configuration`.
-7. To use profile-tools, include the [perf.hpp](https://github.com/ismawno/profile-tools/include/perf.hpp) header in your project. The profiler functionality can be easily enabled or disabled by defining (or not defining) the `PERF` macro.
+7. To use profile-tools, include the [perf.hpp](https://github.com/ismawno/profile-tools/include/perf/perf.hpp) header in your project. The profiler functionality can be easily enabled or disabled by defining (or not defining) the `PERF` macro.
 
 ## License
 
