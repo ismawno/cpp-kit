@@ -1,8 +1,8 @@
 #ifndef PERF_HPP
 #define PERF_HPP
 
-#include "timer.hpp"
-#include "profiler.hpp"
+#include "perf/timer.hpp"
+#include "perf/profiler.hpp"
 
 #ifdef PERF
 #define PERF_BEGIN_SESSION(name, pexport) perf::profiler::get().begin_session(pexport, name);

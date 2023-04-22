@@ -1,7 +1,7 @@
 #ifndef PROFILER_HPP
 #define PROFILER_HPP
 
-#include "profile_stats.hpp"
+#include "perf/profile_stats.hpp"
 #include <vector>
 #include <stack>
 #include <unordered_map>

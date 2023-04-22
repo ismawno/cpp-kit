@@ -1,5 +1,5 @@
-#include "timer.hpp"
-#include "profiler.hpp"
+#include "perf/timer.hpp"
+#include "perf/profiler.hpp"
 
 namespace perf
 {

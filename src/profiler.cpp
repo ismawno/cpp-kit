@@ -1,5 +1,5 @@
-#include "profiler.hpp"
-#include "debug.hpp"
+#include "perf/profiler.hpp"
+#include "debug/debug.hpp"
 #include <cmath>
 #include <algorithm>
 #include <filesystem>
