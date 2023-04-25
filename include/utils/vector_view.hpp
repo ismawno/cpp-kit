@@ -9,7 +9,7 @@ namespace utils
     class vector_view
     {
     public:
-        vector_view(std::vector<T> &vec) : m_vec(vec) {}
+        vector_view(T &vec) : m_vec(vec) {}
         auto begin() const { return m_vec.begin(); }
         auto begin() { return m_vec.begin(); }
         auto end() const { return m_vec.end(); }
@@ -17,10 +17,10 @@ namespace utils
 
         const T &operator[](const std::size_t index) const { return m_vec[index]; }
         T &operator[](const std::size_t index) { return m_vec[index]; }
-        const std::vector<T> &unwrap() const { return m_vec; }
+        const T &unwrap() const { return m_vec; }
 
     private:
-        std::vector<T> &m_vec;
+        T &m_vec;
     };
 }
 
