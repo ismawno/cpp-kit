@@ -15,8 +15,8 @@ namespace utils
         auto end() const { return m_vec.end(); }
         auto end() { return m_vec.end(); }
 
-        const T &operator[](const std::size_t index) const { return m_vec[index]; }
-        T &operator[](const std::size_t index) { return m_vec[index]; }
+        const auto &operator[](const std::size_t index) const { return m_vec[index]; }
+        auto &operator[](const std::size_t index) { return m_vec[index]; }
         const T &unwrap() const { return m_vec; }
 
     private:
