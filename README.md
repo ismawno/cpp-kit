@@ -1,6 +1,6 @@
-# vector-view
+# container-view
 
-vector-view is a simple, single-header C++ library that implements a templated class compatible with `std::vector`. It enables modification of the contents of a `std::vector` while preventing the user from altering its size or any other properties. This functionality is particularly useful when limiting the reach of a non-const getter of a `std::vector`.
+container-view is a simple, single-header C++ library that implements a templated class compatible with `std::vector`. It enables modification of the contents of a `std::vector` while preventing the user from altering its size or any other properties. This functionality is particularly useful when limiting the reach of a non-const getter of a `std::vector`.
 
 ## Features
 
@@ -11,14 +11,14 @@ vector-view is a simple, single-header C++ library that implements a templated c
 
 ## Dependencies
 
-vector-view has no external dependencies.
+container-view has no external dependencies.
 
 ## Usage
 
-To use vector-view, simply include the [vector_view.hpp](https://github.com/ismawno/vector-viewutils/vector-view.hpp) header in your project. The library is header-only, so it does not require any compilation or the use of any build system.
+To use container-view, simply include the [container_view.hpp](https://github.com/ismawno/container-viewutils/container-view.hpp) header in your project. The library is header-only, so it does not require any compilation or the use of any build system.
 
-For more information on how to use vector-view and the available functionality, please refer to the documentation.
+For more information on how to use container-view and the available functionality, please refer to the documentation.
 
 ## License
 
-vector-view is licensed under the MIT License. See LICENSE for more information.
+container-view is licensed under the MIT License. See LICENSE for more information.

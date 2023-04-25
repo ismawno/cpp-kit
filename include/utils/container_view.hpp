@@ -1,15 +1,15 @@
-#ifndef VECTOR_VIEW_HPP
-#define VECTOR_VIEW_HPP
+#ifndef CONTAINER_VIEW_HPP
+#define CONTAINER_VIEW_HPP
 
 #include <vector>
 
 namespace utils
 {
     template <typename T>
-    class vector_view
+    class container_view
     {
     public:
-        vector_view(T &vec) : m_vec(vec) {}
+        container_view(T &vec) : m_vec(vec) {}
         auto begin() const { return m_vec.begin(); }
         auto begin() { return m_vec.begin(); }
         auto end() const { return m_vec.end(); }
