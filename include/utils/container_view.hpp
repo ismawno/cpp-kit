@@ -30,11 +30,11 @@ namespace utils
     template <typename T>
     using vector_view = container_view<std::vector<T>>;
 
-    template <typename T>
-    using umap_view = container_view<std::unordered_map<T>>;
+    template <typename K, typename V>
+    using umap_view = container_view<std::unordered_map<K, V>>;
 
-    template <typename T>
-    using map_view = container_view<std::map<T>>;
+    template <typename K, typename V>
+    using map_view = container_view<std::map<K, V>>;
 
     template <typename T>
     using uset_view = container_view<std::unordered_set<T>>;
