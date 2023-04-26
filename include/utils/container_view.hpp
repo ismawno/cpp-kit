@@ -2,6 +2,10 @@
 #define CONTAINER_VIEW_HPP
 
 #include <vector>
+#include <unordered_map>
+#include <map>
+#include <unordered_set>
+#include <set>
 
 namespace utils
 {
@@ -22,6 +26,21 @@ namespace utils
     private:
         T &m_vec;
     };
+
+    template <typename T>
+    using vector_view = container_view<std::vector<T>>;
+
+    template <typename T>
+    using umap_view = container_view<std::unordered_map<T>>;
+
+    template <typename T>
+    using map_view = container_view<std::map<T>>;
+
+    template <typename T>
+    using uset_view = container_view<std::unordered_set<T>>;
+
+    template <typename T>
+    using set_view = container_view<std::set<T>>;
 }
 
 #endif
