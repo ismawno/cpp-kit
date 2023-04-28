@@ -5,7 +5,7 @@ project "profile-tools"
       buildoptions {"-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wno-unused-parameter"}
    filter{}
 
-   pchheader "include/perf/pch.hpp"
+   pchheader "perf/pch.hpp"
    pchsource "src/pch.cpp"
    
    staticruntime "off"
