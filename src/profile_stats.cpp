@@ -1,3 +1,4 @@
+#include "perf/pch.hpp"
 #include "perf/profile_stats.hpp"
 
 namespace perf

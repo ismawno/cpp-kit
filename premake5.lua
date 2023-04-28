@@ -4,6 +4,9 @@ project "profile-tools"
    filter "system:macosx"
       buildoptions {"-Wall", "-Wextra", "-Wpedantic", "-Wconversion", "-Wno-unused-parameter"}
    filter{}
+
+   pchheader "include/perf/pch.hpp"
+   pchsource "src/pch.cpp"
    
    staticruntime "off"
    kind "StaticLib"

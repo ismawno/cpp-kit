@@ -3,7 +3,6 @@
 
 #include "perf/profile_stats.hpp"
 #include <vector>
-#include <stack>
 #include <unordered_map>
 #include <string>
 #include <fstream>

@@ -1,3 +1,4 @@
+#include "perf/pch.hpp"
 #include "perf/timer.hpp"
 #include "perf/profiler.hpp"
 
