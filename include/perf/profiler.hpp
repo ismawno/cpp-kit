@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <fstream>
+#include <stack>
 
 namespace perf
 {

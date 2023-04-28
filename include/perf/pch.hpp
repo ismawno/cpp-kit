@@ -10,5 +10,6 @@
 #include <cmath>
 #include <algorithm>
 #include <filesystem>
+#include <stack>
 
 #endif
