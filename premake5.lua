@@ -1,14 +1,15 @@
 project "profile-tools"
 language "C++"
 cppdialect "C++17"
+
 filter "system:macosx"
-buildoptions {
-   "-Wall",
-   "-Wextra",
-   "-Wpedantic",
-   "-Wconversion",
-   "-Wno-unused-parameter"
-}
+   buildoptions {
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wno-unused-parameter"
+   }
 filter {}
 
 pchheader "perf/pch.hpp"
@@ -25,4 +26,7 @@ files {
    "include/**.hpp"
 }
 
-includedirs "../**/include"
+includedirs {
+   "include",
+   "%{wks.location}/debug-tools/include"
+}
