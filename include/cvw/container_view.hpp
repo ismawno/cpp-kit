@@ -7,13 +7,13 @@
 #include <unordered_set>
 #include <set>
 
-namespace utils
+namespace cvw
 {
     template <template <typename...> typename C, typename... Args>
-    class container_view
+    class container
     {
     public:
-        container_view(C<Args...> &vec) : m_vec(vec) {}
+        container(C<Args...> &vec) : m_vec(vec) {}
         auto begin() const { return m_vec.begin(); }
         auto begin() { return m_vec.begin(); }
         auto end() const { return m_vec.end(); }
@@ -28,19 +28,19 @@ namespace utils
     };
 
     template <typename T>
-    using vector_view = container_view<std::vector, T>;
+    using vector = container<std::vector, T>;
 
     template <typename K, typename V>
-    using umap_view = container_view<std::unordered_map, K, V>;
+    using unordered_map = container<std::unordered_map, K, V>;
 
     template <typename K, typename V>
-    using map_view = container_view<std::map, K, V>;
+    using map = container<std::map, K, V>;
 
     template <typename T>
-    using uset_view = container_view<std::unordered_set, T>;
+    using unordered_set = container<std::unordered_set, T>;
 
     template <typename T>
-    using set_view = container_view<std::set, T>;
+    using set = container<std::set, T>;
 }
 
 #endif
