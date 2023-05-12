@@ -1,18 +1,36 @@
 #ifndef DBG_LOG_HPP
 #define DBG_LOG_HPP
 
-#include <spdlog/spdlog.h>
-
 #ifdef DEBUG
+#include <spdlog/spdlog.h>
+#include <intrin.h>
+#include <signal.h>
+
+#ifdef __clang__
+#define DBG_BREAK() __builtin_debugtrap();
+#elif defined(SIGTRAP)
+#define DBG_BREAK() raise(SIGTRAP);
+#elif defined(SIGABRT)
+#define DBG_BRAK() raise(SIGABRT);
+#elif defined(_MSVC_VER)
+#define DBG_BREAK() __debugbreak();
+#endif
+
 #define DBG_SET_LEVEL(lvl) spdlog::set_level(lvl);
 #define DBG_SET_PATTERN(patt) spdlog::set_pattern(patt);
 
 #define DBG_TRACE(...) spdlog::trace(__VA_ARGS__);
 #define DBG_INFO(...) spdlog::info(__VA_ARGS__);
 #define DBG_WARN(...) spdlog::warn(__VA_ARGS__);
-#define DBG_ERROR(...) spdlog::error(__VA_ARGS__);
-#define DBG_CRITICAL(...) spdlog::critical(__VA_ARGS__);
-#define DBG_FATAL(...) spdlog::fatal(__VA_ARGS__);
+#define DBG_ERROR(...)          \
+    spdlog::error(__VA_ARGS__); \
+    DBG_BREAK()
+#define DBG_CRITICAL(...)          \
+    spdlog::critical(__VA_ARGS__); \
+    DBG_BREAK()
+#define DBG_FATAL(...)          \
+    spdlog::fatal(__VA_ARGS__); \
+    DBG_BREAK()
 
 #define DBG_ASSERT_TRACE(cond, ...) \
     if (!(cond))                    \
@@ -25,13 +43,22 @@
         spdlog::warn(__VA_ARGS__);
 #define DBG_ASSERT_ERROR(cond, ...) \
     if (!(cond))                    \
-        spdlog::error(__VA_ARGS__);
+    {                               \
+        spdlog::error(__VA_ARGS__); \
+        DBG_BREAK()                 \
+    }
 #define DBG_ASSERT_CRITICAL(cond, ...) \
     if (!(cond))                       \
-        spdlog::critical(__VA_ARGS__);
+    {                                  \
+        spdlog::critical(__VA_ARGS__); \
+        DBG_BREAK()                    \
+    }
 #define DBG_ASSERT_FATAL(cond, ...) \
     if (!(cond))                    \
-        spdlog::fatal(__VA_ARGS__);
+    {                               \
+        spdlog::fatal(__VA_ARGS__); \
+        DBG_BREAK()                 \
+    }
 #else
 #define DBG_SET_PATTERN(patt)
 
