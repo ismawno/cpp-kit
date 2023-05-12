@@ -28,5 +28,5 @@ files {
 
 includedirs {
    "include",
-   "%{wks.location}/debug-tools/include"
+   "%{wks.location}/debug-log-tools/include"
 }
