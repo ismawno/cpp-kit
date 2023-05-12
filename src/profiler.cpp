@@ -18,7 +18,7 @@ namespace perf
             open_file();
         if (m_export & HIERARCHY)
         {
-            DBG_ASSERT(m_current_hierarchy.empty(), "Starting a new profile session with an unfinished hierarchy from the last session. Number of pending parents: %zu.\n", m_current_hierarchy.size())
+            DBG_ASSERT_ERROR(m_current_hierarchy.empty(), "Starting a new profile session with an unfinished hierarchy from the last session. Number of pending parents: {0}.", m_current_hierarchy.size())
         }
     }
 
@@ -42,15 +42,12 @@ namespace perf
             close_file();
             m_runs = 0;
         }
-        DBG_ASSERT(m_current_hierarchy.empty(), "Ending profile session with pending records. Number of pending records: %zu.\n", m_current_hierarchy.size())
+        DBG_ASSERT_ERROR(m_current_hierarchy.empty(), "Ending profile session with pending records. Number of pending records: {0}.", m_current_hierarchy.size())
     }
 
     void profiler::write(const profile_result &result)
     {
-        DBG_LOG_IF(!m_output.is_open(), "Trying to profile with an unfinished hierarchy. Number of pending parents: %zu.\n", m_current_hierarchy.size())
-        if (!m_output.is_open())
-            return;
-
+        DBG_ASSERT_ERROR(m_output.is_open(), "Trying to profile with an unfinished hierarchy. Number of pending parents: {0}.", m_current_hierarchy.size())
         if (m_output.tellp() > m_max_mb * 1000000)
         {
             close_file();
