@@ -1,51 +1,52 @@
-#ifndef DEBUG_HPP
-#define DEBUG_HPP
+#ifndef DBG_LOG_HPP
+#define DBG_LOG_HPP
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <spdlog/spdlog.h>
 
 #ifdef DEBUG
-#define DBG_LOG(...)                                            \
-    printf("-DBG- LOG in %s at line %d: ", __FILE__, __LINE__); \
-    printf(__VA_ARGS__);
+#define DBG_SET_LEVEL(lvl) spdlog::set_level(lvl);
+#define DBG_SET_PATTERN(patt) spdlog::set_pattern(patt);
 
-#define DBG_LOG_IF(cond,                                                                                 \
-                   ...)                                                                                  \
-    if (cond)                                                                                            \
-    {                                                                                                    \
-        printf("-DBG- CONDITIONAL LOG in %s at line %d with condition %s: ", __FILE__, __LINE__, #cond); \
-        printf(__VA_ARGS__);                                                                             \
-    }
+#define DBG_TRACE(...) spdlog::trace(__VA_ARGS__);
+#define DBG_INFO(...) spdlog::info(__VA_ARGS__);
+#define DBG_WARN(...) spdlog::warn(__VA_ARGS__);
+#define DBG_ERROR(...) spdlog::error(__VA_ARGS__);
+#define DBG_CRITICAL(...) spdlog::critical(__VA_ARGS__);
+#define DBG_FATAL(...) spdlog::fatal(__VA_ARGS__);
 
-#define DBG_ASSERT(cond,                                                                                 \
-                   ...)                                                                                  \
-    if (!(cond))                                                                                         \
-    {                                                                                                    \
-        fprintf(stderr, "-DBG- ASSERT in %s at line %d with condition %s: ", __FILE__, __LINE__, #cond); \
-        fprintf(stderr, __VA_ARGS__);                                                                    \
-        exit(EXIT_FAILURE);                                                                              \
-    }
-
-#define DBG_LOG_ALLOCATOR()                                 \
-    void *operator new(std::size_t size)                    \
-    {                                                       \
-        void *ptr = std::malloc(size);                      \
-        printf("Allocating %zu bytes at %p.\n", size, ptr); \
-        return ptr;                                         \
-    }                                                       \
-                                                            \
-    void operator delete(void *ptr) noexcept                \
-    {                                                       \
-        printf("Deallocating %p.\n", ptr);                  \
-        std::free(ptr);                                     \
-    }
-
+#define DBG_ASSERT_TRACE(cond, ...) \
+    if (!(cond))                    \
+        spdlog::trace(__VA_ARGS__);
+#define DBG_ASSERT_INFO(cond, ...) \
+    if (!(cond))                   \
+        spdlog::info(__VA_ARGS__);
+#define DBG_ASSERT_WARN(cond, ...) \
+    if (!(cond))                   \
+        spdlog::warn(__VA_ARGS__);
+#define DBG_ASSERT_ERROR(cond, ...) \
+    if (!(cond))                    \
+        spdlog::error(__VA_ARGS__);
+#define DBG_ASSERT_CRITICAL(cond, ...) \
+    if (!(cond))                       \
+        spdlog::critical(__VA_ARGS__);
+#define DBG_ASSERT_FATAL(cond, ...) \
+    if (!(cond))                    \
+        spdlog::fatal(__VA_ARGS__);
 #else
-#define DBG_LOG(...)
-#define DBG_LOG_IF(cond, \
-                   ...)
-#define DBG_ASSERT(cond, \
-                   ...)
-#define DBG_LOG_ALLOCATOR()
+#define DBG_SET_PATTERN(patt)
+
+#define DBG_TRACE(...)
+#define DBG_INFO(...)
+#define DBG_WARN(...)
+#define DBG_ERROR(...)
+#define DBG_CRITICAL(...)
+#define DBG_FATAL(...)
+
+#define DBG_ASSERT_TRACE(cond, ...)
+#define DBG_ASSERT_INFO(cond, ...)
+#define DBG_ASSERT_WARN(cond, ...)
+#define DBG_ASSERT_ERROR(cond, ...)
+#define DBG_ASSERT_CRITICAL(cond, ...)
+#define DBG_ASSERT_FATAL(cond, ...)
 #endif
 #endif
