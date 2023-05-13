@@ -59,6 +59,7 @@
 #define DBG_SET_PATTERN(patt)
 
 #define DBG_TRACE(...)
+#define DBG_DEBUG(...)
 #define DBG_INFO(...)
 #define DBG_WARN(...)
 #define DBG_ERROR(...)
@@ -66,6 +67,7 @@
 #define DBG_FATAL(...)
 
 #define DBG_ASSERT_TRACE(cond, ...)
+#define DBG_ASSERT_DEBUG(cond, ...)
 #define DBG_ASSERT_INFO(cond, ...)
 #define DBG_ASSERT_WARN(cond, ...)
 #define DBG_ASSERT_ERROR(cond, ...)
