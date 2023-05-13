@@ -23,7 +23,7 @@ namespace mem
     inline std::size_t _stack_size = 0, _entry_index = 0; // Set this atomic??
     inline std::array<stack_entry, MAX_ENTRIES> _stack_entries;
     inline char *_stack_buffer = new char[STACK_CAPACITY];
-    void free_stack() { delete[] _stack_buffer; }
+    // void free_stack() { delete[] _stack_buffer; }
 
     template <typename T>
     class stack_allocator : public std::allocator<T>
@@ -39,7 +39,7 @@ namespace mem
             DBG_TRACE("Instantiated stack allocator.")
         }
         template <typename U>
-        stack_allocator(const stack_allocator<U> &other) : base(other) noexcept {}
+        stack_allocator(const stack_allocator<U> &other) noexcept : base(other) {}
 
         template <typename U>
         struct rebind
@@ -49,18 +49,18 @@ namespace mem
 
         ptr allocate(size n)
         {
-            DBG_ASSERT_CRITICAL(_entry_index < MAX_ENTRIES - 1, "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n, MAX_ENTRIES)
+            DBG_ASSERT_CRITICAL(_entry_index < MAX_ENTRIES - 1, "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n * sizeof(T), MAX_ENTRIES)
 
             const bool enough_space = _stack_size + n * sizeof(T) < STACK_CAPACITY;
             DBG_ASSERT_WARN(enough_space, "No more space available in stack allocator when trying to allocate {0} bytes! Maximum: {1} bytes", STACK_CAPACITY)
-            _stack_entries[_entry_index].data = enough_space ? (_stack_buffer + _stack_size) : base::allocate(n);
+            _stack_entries[_entry_index].data = enough_space ? (_stack_buffer + _stack_size) : (char *)base::allocate(n);
             _stack_entries[_entry_index].used_default = !enough_space;
             ptr p = (ptr)_stack_entries[_entry_index].data;
 
             _entry_index++;
             _stack_size += n * sizeof(T);
 
-            DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n, MAX_ENTRIES - _entry_index, STACK_CAPACITY - _stack_size)
+            DBG_DEBUG("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n * sizeof(T), MAX_ENTRIES - _entry_index, STACK_CAPACITY - _stack_size)
             return p;
         }
 
@@ -72,7 +72,7 @@ namespace mem
             else
                 _stack_size -= n * sizeof(T);
             _entry_index--;
-            DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n, MAX_ENTRIES - _entry_index, STACK_CAPACITY - _stack_size)
+            DBG_DEBUG("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n * sizeof(T), MAX_ENTRIES - _entry_index, STACK_CAPACITY - _stack_size)
         }
     };
 }
