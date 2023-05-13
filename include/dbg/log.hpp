@@ -55,6 +55,7 @@
         DBG_BREAK()                    \
     }
 #else
+#define DBG_SET_LEVEL(lvl)
 #define DBG_SET_PATTERN(patt)
 
 #define DBG_TRACE(...)
