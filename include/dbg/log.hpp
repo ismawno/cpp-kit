@@ -3,7 +3,6 @@
 
 #ifdef DEBUG
 #include <spdlog/spdlog.h>
-#include <intrin.h>
 #include <signal.h>
 
 #ifdef __clang__
@@ -13,51 +12,43 @@
 #elif defined(SIGABRT)
 #define DBG_BRAK() raise(SIGABRT);
 #elif defined(_MSVC_VER)
+#include <intrin.h>
 #define DBG_BREAK() __debugbreak();
 #endif
 
 #define DBG_SET_LEVEL(lvl) spdlog::set_level(lvl);
 #define DBG_SET_PATTERN(patt) spdlog::set_pattern(patt);
 
-#define DBG_TRACE(...) spdlog::trace(__VA_ARGS__);
-#define DBG_INFO(...) spdlog::info(__VA_ARGS__);
-#define DBG_WARN(...) spdlog::warn(__VA_ARGS__);
-#define DBG_ERROR(...)          \
-    spdlog::error(__VA_ARGS__); \
+#define DBG_TRACE(...) SPDLOG_TRACE(__VA_ARGS__);
+#define DBG_INFO(...) SPDLOG_INFO(__VA_ARGS__);
+#define DBG_WARN(...) SPDLOG_WARN(__VA_ARGS__);
+#define DBG_ERROR(...)         \
+    SPDLOG_ERROR(__VA_ARGS__); \
     DBG_BREAK()
-#define DBG_CRITICAL(...)          \
-    spdlog::critical(__VA_ARGS__); \
-    DBG_BREAK()
-#define DBG_FATAL(...)          \
-    spdlog::fatal(__VA_ARGS__); \
+#define DBG_CRITICAL(...)         \
+    SPDLOG_CRITICAL(__VA_ARGS__); \
     DBG_BREAK()
 
 #define DBG_ASSERT_TRACE(cond, ...) \
     if (!(cond))                    \
-        spdlog::trace(__VA_ARGS__);
+        SPDLOG_TRACE(__VA_ARGS__);
 #define DBG_ASSERT_INFO(cond, ...) \
     if (!(cond))                   \
-        spdlog::info(__VA_ARGS__);
+        SPDLOG_INFO(__VA_ARGS__);
 #define DBG_ASSERT_WARN(cond, ...) \
     if (!(cond))                   \
-        spdlog::warn(__VA_ARGS__);
+        SPDLOG_WARN(__VA_ARGS__);
 #define DBG_ASSERT_ERROR(cond, ...) \
     if (!(cond))                    \
     {                               \
-        spdlog::error(__VA_ARGS__); \
+        SPDLOG_ERROR(__VA_ARGS__);  \
         DBG_BREAK()                 \
     }
 #define DBG_ASSERT_CRITICAL(cond, ...) \
     if (!(cond))                       \
     {                                  \
-        spdlog::critical(__VA_ARGS__); \
+        SPDLOG_CRITICAL(__VA_ARGS__);  \
         DBG_BREAK()                    \
-    }
-#define DBG_ASSERT_FATAL(cond, ...) \
-    if (!(cond))                    \
-    {                               \
-        spdlog::fatal(__VA_ARGS__); \
-        DBG_BREAK()                 \
     }
 #else
 #define DBG_SET_PATTERN(patt)
