@@ -9,7 +9,7 @@
 #include "dbg/log.hpp"
 #endif
 
-#define MEM_STACK_CAPACITY 102400 // Change this so that it can be modified somehow
+#define MEM_STACK_CAPACITY (8 * 1024) // Change this so that it can be modified somehow
 #define MEM_MAX_ENTRIES 16
 
 namespace mem
@@ -22,10 +22,9 @@ namespace mem
 
     inline std::size_t _stack_size = 0, _entry_index = 0; // Set this atomic??
     inline std::array<stack_entry, MEM_MAX_ENTRIES> _stack_entries;
-    inline char *_stack_buffer = nullptr;
+    inline std::unique_ptr<char[]> _stack_buffer = nullptr;
 
-    inline void preallocate_stack() { _stack_buffer = new char[MEM_STACK_CAPACITY]; }
-    inline void free_stack() { delete[] _stack_buffer; }
+    inline void preallocate_stack() { _stack_buffer = std::unique_ptr<char[]>(new char[MEM_STACK_CAPACITY]); }
 
     template <typename T>
     class stack_allocator : public std::allocator<T>
@@ -38,10 +37,12 @@ namespace mem
     public:
         stack_allocator() noexcept
         {
+            if (!_stack_buffer)
+                preallocate_stack();
             DBG_TRACE("Instantiated stack allocator.")
         }
         template <typename U>
-        stack_allocator(const stack_allocator<U> &other) noexcept : base(other) {}
+        stack_allocator(const stack_allocator<U> &other) noexcept : base(other), stack_allocator() {}
 
         template <typename U>
         struct rebind
@@ -53,9 +54,9 @@ namespace mem
         {
             DBG_ASSERT_CRITICAL(_entry_index < (MEM_MAX_ENTRIES - 1), "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n * sizeof(T), MEM_MAX_ENTRIES)
 
-            const bool enough_space = _stack_size + n * sizeof(T) < MEM_STACK_CAPACITY;
+            const bool enough_space = (_stack_size + n * sizeof(T)) < MEM_STACK_CAPACITY;
             DBG_ASSERT_WARN(enough_space, "No more space available in stack allocator when trying to allocate {0} bytes! Maximum: {1} bytes", MEM_STACK_CAPACITY)
-            _stack_entries[_entry_index].data = enough_space ? (_stack_buffer + _stack_size) : (char *)base::allocate(n);
+            _stack_entries[_entry_index].data = enough_space ? (_stack_buffer.get() + _stack_size) : (char *)base::allocate(n);
             _stack_entries[_entry_index].used_default = !enough_space;
             ptr p = (ptr)_stack_entries[_entry_index].data;
 
