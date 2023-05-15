@@ -1,0 +1,115 @@
+#ifndef BLOCK_ALLOCATOR_HPP
+#define BLOCK_ALLOCATOR_HPP
+
+#define MEM_MAX_BLOCK_SIZE 512
+#define MEM_SUPPORTED_SIZES_INCREMENT 8
+#define MEM_SUPPORTED_SIZES_COUNT (MEM_MAX_BLOCK_SIZE / MEM_SUPPORTED_SIZES_INCREMENT)
+#define MEM_CHUNK_SIZE (8 * 1024)
+
+#include <cstdint>
+#include <array>
+#include <memory>
+
+namespace mem
+{
+    using byte = std::uint8_t;
+    struct size_helper
+    {
+        size_helper()
+        {
+            for (std::size_t i = 0; i < MEM_SUPPORTED_SIZES_COUNT; i++)
+                supported_sizes[i] = (i + 1) * MEM_SUPPORTED_SIZES_INCREMENT;
+
+            clamped_indices[0] = 0;
+            std::size_t mapped_index = 0;
+            for (std::size_t size = 1; size <= MEM_MAX_BLOCK_SIZE; size++)
+            {
+                if (size > supported_sizes[mapped_index])
+                    mapped_index++;
+                clamped_indices[size] = mapped_index;
+            }
+        }
+        std::array<std::size_t, MEM_MAX_BLOCK_SIZE + 1> clamped_indices;
+        std::array<std::size_t, MEM_SUPPORTED_SIZES_COUNT> supported_sizes;
+    };
+
+    struct block
+    {
+        block *next = nullptr;
+    };
+
+    struct chunk
+    {
+        std::size_t block_size = 0;
+        std::unique_ptr<byte[]> blocks = nullptr;
+    };
+
+    std::vector<chunk> _chunks;
+    std::vector<block *> _free_blocks(MEM_SUPPORTED_SIZES_COUNT, nullptr);
+    inline constexpr size_helper _helper;
+
+    template <typename T>
+    class block_allocator : public std::allocator<T>
+    {
+    private:
+        using base = std::allocator<T>;
+        using ptr = typename std::allocator_traits<base>::pointer;
+        using size = typename std::allocator_traits<base>::size_type;
+
+    public:
+        block_allocator() noexcept
+        {
+            DBG_TRACE("Instantiated block allocator.")
+        }
+        template <typename U>
+        block_allocator(const block_allocator<U> &other) noexcept : base(other) {}
+
+        template <typename U>
+        struct rebind
+        {
+            using other = block_allocator<U>;
+        };
+
+        ptr allocate(size n)
+        {
+            DBG_ASSERT_CRITICAL(n > 0, "Attempting to allocate a non-positive amount of memory: {0}", size)
+            const size n_bytes = n * sizeof(T);
+            if (n_bytes > MEM_MAX_BLOCK_SIZE)
+                return base::allocate(n);
+
+            const std::size_t clamped_index = _helper.clamped_indices[n_bytes],
+                              clamped_size = _helper.supported_sizes[clamped_index];
+            if (_free_blocks[clamped_index])
+            {
+                block *b = _free_blocks[clamped_index];
+                _free_blocks[clamped_index] = b->next;
+                return (ptr)b;
+            }
+
+            chunk &ck = _chunks.emplace_back(clamped_size, std::unique_ptr<byte[]>(new byte[](MEM_CHUNK_SIZE)));
+            byte *first_block = ck.blocks.get();
+            const std::size_t block_count = MEM_CHUNK_SIZE / clamped_size;
+
+            for (std::size_t i = 0; i < block_count - 1; i++)
+            {
+                block *current = (block *)(first_block + i * clamped_size);
+                current->next = (block *)(first_block + (i + 1) * clamped_size);
+            }
+            block *last = (block *)(first_block + (block_count - 1) * clamped_size);
+            last->next = nullptr;
+
+            _free_blocks[clamped_index] = ((block *)first_block)->next;
+            return (ptr)first_block;
+        }
+
+        void deallocte(ptr p, size n)
+        {
+            DBG_ASSERT_CRITICAL(n > 0, "Attempting to deallocate a non-positive amount of memory: {0}", size)
+            const size n_bytes = n * sizeof(T);
+            if (n_bytes > MEM_MAX_BLOCK_SIZE)
+                return base::deallocate(p, n);
+        }
+    };
+}
+
+#endif
