@@ -9,6 +9,7 @@
 #ifdef HAS_DEBUG_LOG_TOOLS
 #include "dbg/log.hpp"
 #endif
+#include "mem/core.hpp"
 
 #define MEM_STACK_CAPACITY (8 * 1024) // Change this so that it can be modified somehow
 #define MEM_MAX_ENTRIES 16

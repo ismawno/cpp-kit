@@ -6,6 +6,12 @@
 #define MEM_SUPPORTED_SIZES_COUNT (MEM_MAX_BLOCK_SIZE / MEM_SUPPORTED_SIZES_INCREMENT)
 #define MEM_CHUNK_SIZE (8 * 1024)
 
+#ifdef HAS_DEBUG_LOG_TOOLS
+#include "dbg/log.hpp"
+#endif
+#include "mem/core.hpp"
+
+#include <vector>
 #include <cstdint>
 #include <array>
 #include <memory>
@@ -44,9 +50,9 @@ namespace mem
         std::unique_ptr<byte[]> blocks = nullptr;
     };
 
-    std::vector<chunk> _chunks;
-    std::vector<block *> _free_blocks(MEM_SUPPORTED_SIZES_COUNT, nullptr);
-    inline constexpr size_helper _helper;
+    inline std::vector<chunk> _chunks;
+    inline std::vector<block *> _free_blocks(MEM_SUPPORTED_SIZES_COUNT, nullptr);
+    inline const size_helper _helper;
 
     template <typename T>
     class block_allocator : public std::allocator<T>
@@ -86,7 +92,7 @@ namespace mem
                 return (ptr)b;
             }
 
-            chunk &ck = _chunks.emplace_back(clamped_size, std::unique_ptr<byte[]>(new byte[](MEM_CHUNK_SIZE)));
+            chunk &ck = _chunks.emplace_back(clamped_size, std::unique_ptr<byte[]>(new byte[MEM_CHUNK_SIZE]));
             byte *first_block = ck.blocks.get();
             const std::size_t block_count = MEM_CHUNK_SIZE / clamped_size;
 
