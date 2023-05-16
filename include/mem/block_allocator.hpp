@@ -46,6 +46,7 @@ namespace mem
 
     struct chunk
     {
+        chunk(const std::size_t size, std::unique_ptr<byte[]> &&bs) : block_size(size), blocks(std::move(bs)) {}
         std::size_t block_size = 0;
         std::unique_ptr<byte[]> blocks = nullptr;
     };
@@ -80,6 +81,7 @@ namespace mem
         {
             const size n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
+            DBG_DEBUG("Block allocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return base::allocate(n);
 
@@ -87,10 +89,12 @@ namespace mem
                               clamped_size = _helper.supported_sizes[clamped_index];
             if (_free_blocks[clamped_index])
             {
+                DBG_DEBUG("Found free block at index {0} with size {1}", clamped_index, clamped_size)
                 block *b = _free_blocks[clamped_index];
                 _free_blocks[clamped_index] = b->next;
                 return (ptr)b;
             }
+            DBG_DEBUG("Creating new chunk at index {0} with size {1} and {2} bytes per block", clamped_index, MEM_CHUNK_SIZE, clamped_size)
 
             chunk &ck = _chunks.emplace_back(clamped_size, std::unique_ptr<byte[]>(new byte[MEM_CHUNK_SIZE]));
             byte *first_block = ck.blocks.get();
@@ -112,6 +116,7 @@ namespace mem
         {
             const size n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
+            DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return base::deallocate(p, n);
             const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
@@ -124,14 +129,14 @@ namespace mem
                 const byte *p_byte = (byte *)p;
                 const bool overlaps_chunk = (p_byte + clamped_size) <= chunk.blocks.get() ||
                                             (chunk.blocks.get() + MEM_CHUNK_SIZE) <= p_byte;
-                DBG_ASSERT_CRITICAL(!(chunk.block_size != clamped_size && overlaps_chunk), "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong chunk!", p, n_bytes)
+                DBG_ASSERT_CRITICAL(!(chunk.block_size != clamped_size && overlaps_chunk), "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong chunk!", (void *)p, n_bytes)
 
                 const bool belongs_to_chunk = chunk.blocks.get() <= p_byte &&
                                               (p_byte + clamped_size) <= (chunk.blocks.get() + MEM_CHUNK_SIZE);
-                DBG_ASSERT_CRITICAL(!(chunk.block_size != clamped_size && belongs_to_chunk), "Pointer {0} with size {1} bytes belongs to the wrong chunk!", p, n_bytes)
+                DBG_ASSERT_CRITICAL(!(chunk.block_size != clamped_size && belongs_to_chunk), "Pointer {0} with size {1} bytes belongs to the wrong chunk!", (void *)p, n_bytes)
                 found = belongs_to_chunk;
             }
-            DBG_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any block of any chunks!", p, n_bytes)
+            DBG_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any block of any chunks!", (void *)p, n_bytes)
 #endif
             block *b = (block *)p;
             b->next = _free_blocks[clamped_index];
