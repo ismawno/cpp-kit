@@ -127,20 +127,34 @@ namespace mem
             for (const auto &chunk : _chunks)
             {
                 const byte *p_byte = (byte *)p;
-                const bool overlaps_chunk = (p_byte + clamped_size) <= chunk.blocks.get() ||
-                                            (chunk.blocks.get() + MEM_CHUNK_SIZE) <= p_byte;
+                const bool overlaps_chunk = (p_byte + clamped_size) > chunk.blocks.get() &&
+                                            (chunk.blocks.get() + MEM_CHUNK_SIZE) > p_byte;
                 DBG_ASSERT_CRITICAL(!(chunk.block_size != clamped_size && overlaps_chunk), "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong chunk!", (void *)p, n_bytes)
 
                 const bool belongs_to_chunk = chunk.blocks.get() <= p_byte &&
                                               (p_byte + clamped_size) <= (chunk.blocks.get() + MEM_CHUNK_SIZE);
                 DBG_ASSERT_CRITICAL(!(chunk.block_size != clamped_size && belongs_to_chunk), "Pointer {0} with size {1} bytes belongs to the wrong chunk!", (void *)p, n_bytes)
-                found = belongs_to_chunk;
+                if (belongs_to_chunk)
+                {
+                    found = true;
+                    break;
+                }
             }
             DBG_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any block of any chunks!", (void *)p, n_bytes)
 #endif
             block *b = (block *)p;
             b->next = _free_blocks[clamped_index];
             _free_blocks[clamped_index] = (block *)p;
+        }
+    };
+
+    template <typename T>
+    struct block_deleter
+    {
+        void operator()(T *p)
+        {
+            static block_allocator<T> alloc;
+            alloc.deallocate(p, 1);
         }
     };
 }

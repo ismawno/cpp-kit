@@ -85,6 +85,16 @@ namespace mem
             DBG_DEBUG("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
         }
     };
+
+    template <typename T>
+    struct stack_deleter
+    {
+        void operator()(T *p)
+        {
+            static stack_allocator<T> alloc;
+            alloc.deallocate(p, 1);
+        }
+    };
 }
 
 #endif
