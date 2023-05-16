@@ -46,7 +46,6 @@ namespace mem
 
     struct chunk
     {
-        chunk(const std::size_t size, std::unique_ptr<byte[]> &&bs) : block_size(size), blocks(std::move(bs)) {}
         std::size_t block_size = 0;
         std::unique_ptr<byte[]> blocks = nullptr;
     };
@@ -69,7 +68,10 @@ namespace mem
             DBG_TRACE("Instantiated block allocator.")
         }
         template <typename U>
-        block_allocator(const block_allocator<U> &other) noexcept : base(other) {}
+        block_allocator(const block_allocator<U> &other) noexcept : base(other)
+        {
+            DBG_TRACE("Instantiated block allocator.")
+        }
 
         template <typename U>
         struct rebind
@@ -79,7 +81,7 @@ namespace mem
 
         ptr allocate(size n)
         {
-            const size n_bytes = n * sizeof(T);
+            const std::size_t n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
             DBG_DEBUG("Block allocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
@@ -96,9 +98,13 @@ namespace mem
             }
             DBG_DEBUG("Creating new chunk at index {0} with size {1} and {2} bytes per block", clamped_index, MEM_CHUNK_SIZE, clamped_size)
 
-            chunk &ck = _chunks.emplace_back(clamped_size, std::unique_ptr<byte[]>(new byte[MEM_CHUNK_SIZE]));
+            chunk &ck = _chunks.emplace_back();
+            ck.block_size = clamped_size;
+            ck.blocks = std::unique_ptr<byte[]>(new byte[MEM_CHUNK_SIZE]);
+
             byte *first_block = ck.blocks.get();
             const std::size_t block_count = MEM_CHUNK_SIZE / clamped_size;
+            DBG_ASSERT_ERROR(block_count * clamped_size <= MEM_CHUNK_SIZE, "Number of blocks times the size of each block is not equal (or less) than the chunk size!")
 
             for (std::size_t i = 0; i < block_count - 1; i++)
             {
@@ -114,7 +120,12 @@ namespace mem
 
         void deallocate(ptr p, size n)
         {
-            const size n_bytes = n * sizeof(T);
+            if (!p)
+            {
+                DBG_WARN("Attempting to deallocate null pointer!")
+                return;
+            }
+            const std::size_t n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
             DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
@@ -144,7 +155,7 @@ namespace mem
 #endif
             block *b = (block *)p;
             b->next = _free_blocks[clamped_index];
-            _free_blocks[clamped_index] = (block *)p;
+            _free_blocks[clamped_index] = b;
         }
     };
 

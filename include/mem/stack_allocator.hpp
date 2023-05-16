@@ -45,7 +45,12 @@ namespace mem
             DBG_TRACE("Instantiated stack allocator.")
         }
         template <typename U>
-        stack_allocator(const stack_allocator<U> &other) noexcept : base(other), stack_allocator() {}
+        stack_allocator(const stack_allocator<U> &other) noexcept : stack_allocator()
+        {
+            if (!_stack_buffer)
+                preallocate_stack();
+            DBG_TRACE("Instantiated stack allocator.")
+        }
 
         template <typename U>
         struct rebind
@@ -55,7 +60,7 @@ namespace mem
 
         ptr allocate(size n)
         {
-            const size n_bytes = n * sizeof(T);
+            const std::size_t n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
             DBG_ASSERT_CRITICAL(_entry_index < (MEM_MAX_ENTRIES - 1), "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n_bytes, MEM_MAX_ENTRIES)
 
@@ -74,7 +79,7 @@ namespace mem
 
         void deallocate(ptr p, size n)
         {
-            const size n_bytes = n * sizeof(T);
+            const std::size_t n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
             _entry_index--;
             DBG_ASSERT_CRITICAL(p == (ptr)_stack_entries[_entry_index].data, "Trying to deallocate disorderly from stack allocator!")
