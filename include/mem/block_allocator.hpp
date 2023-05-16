@@ -165,6 +165,7 @@ namespace mem
         void operator()(T *p)
         {
             static block_allocator<T> alloc;
+            p->~T();
             alloc.deallocate(p, 1);
         }
     };
