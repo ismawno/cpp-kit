@@ -11,8 +11,8 @@
 #endif
 #include "mem/core.hpp"
 
-#define MEM_STACK_CAPACITY (8 * 1024) // Change this so that it can be modified somehow
-#define MEM_MAX_ENTRIES 16
+#define MEM_STACK_CAPACITY (64 * 1024) // Change this so that it can be modified somehow
+#define MEM_MAX_ENTRIES 64
 
 namespace mem
 {
@@ -73,7 +73,7 @@ namespace mem
             _entry_index++;
             _stack_size += n_bytes;
 
-            DBG_DEBUG("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n * sizeof(T), MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
+            DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n * sizeof(T), MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
             return p;
         }
 
@@ -87,7 +87,7 @@ namespace mem
                 base::deallocate(p, n);
             else
                 _stack_size -= n_bytes;
-            DBG_DEBUG("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
+            DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
         }
     };
 
