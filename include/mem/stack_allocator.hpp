@@ -65,7 +65,7 @@ namespace mem
             DBG_ASSERT_CRITICAL(_entry_index < (MEM_MAX_ENTRIES - 1), "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n_bytes, MEM_MAX_ENTRIES)
 
             const bool enough_space = (_stack_size + n_bytes) < MEM_STACK_CAPACITY;
-            DBG_ASSERT_WARN(enough_space, "No more space available in stack allocator when trying to allocate {0} bytes! Maximum: {1} bytes", MEM_STACK_CAPACITY)
+            DBG_ASSERT_WARN(enough_space, "No more space available in stack allocator when trying to allocate {0} bytes! Capacity: {1} bytes, amount used: {2}", MEM_STACK_CAPACITY, _stack_size)
             _stack_entries[_entry_index].data = enough_space ? (_stack_buffer.get() + _stack_size) : (byte *)base::allocate(n);
             _stack_entries[_entry_index].used_default = !enough_space;
             ptr p = (ptr)_stack_entries[_entry_index].data;
@@ -73,7 +73,7 @@ namespace mem
             _entry_index++;
             _stack_size += n_bytes;
 
-            DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n * sizeof(T), MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
+            DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
             return p;
         }
 
