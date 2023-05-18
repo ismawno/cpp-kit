@@ -7,13 +7,13 @@
 
 #ifdef __clang__
 #define DBG_BREAK() __builtin_debugtrap();
-#elif defined(SIGTRAP)
-#define DBG_BREAK() raise(SIGTRAP);
-#elif defined(SIGABRT)
-#define DBG_BRAK() raise(SIGABRT);
 #elif defined(_MSVC_VER)
 #include <intrin.h>
 #define DBG_BREAK() __debugbreak();
+#elif defined(SIGTRAP)
+#define DBG_BREAK() raise(SIGTRAP);
+#elif defined(SIGABRT)
+#define DBG_BREAK() raise(SIGABRT);
 #endif
 
 #define DBG_SET_LEVEL(lvl) spdlog::set_level(spdlog::level::lvl);
