@@ -102,7 +102,7 @@ namespace mem
 
         void operator()(T *p)
         {
-            static stack_allocator<T> alloc;
+            stack_allocator<T> alloc;
             p->~T();
             alloc.deallocate(p, 1);
         }

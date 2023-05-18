@@ -245,7 +245,7 @@ namespace mem
 
         void operator()(T *p)
         {
-            static block_allocator<T> alloc;
+            block_allocator<T> alloc;
             if (m_size > MEM_MAX_BLOCK_SIZE)
                 delete p;
             else
