@@ -104,7 +104,7 @@ namespace mem
                 DBG_WARN("Attempting to deallocate null pointer!")
                 return;
             }
-            const std::size_t n_bytes = n * sizeof(T);
+            const std::size_t n_bytes = n * sizeof(*p);
             DBG_ASSERT_CRITICAL(n > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
             DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
@@ -222,6 +222,11 @@ namespace mem
     template <typename T>
     struct block_deleter
     {
+        constexpr block_deleter() noexcept = default;
+
+        template <typename U>
+        constexpr block_deleter(const block_deleter<U> &bd) noexcept {}
+
         void operator()(T *p)
         {
             static block_allocator<T> alloc;

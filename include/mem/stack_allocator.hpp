@@ -94,6 +94,11 @@ namespace mem
     template <typename T>
     struct stack_deleter
     {
+        constexpr stack_deleter() noexcept = default;
+
+        template <typename U>
+        constexpr stack_deleter(const stack_deleter<U> &bd) noexcept {}
+
         void operator()(T *p)
         {
             static stack_allocator<T> alloc;
