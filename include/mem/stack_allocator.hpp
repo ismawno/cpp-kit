@@ -19,18 +19,18 @@
 namespace mem
 {
     using byte = std::uint8_t;
-    inline std::mutex mtx;
-    struct stack_entry
+
+    class sdata
     {
-        byte *data = nullptr;
-        bool used_default = false;
+        inline static std::size_t s_size = 0, s_index = 0;
+        inline static std::array<byte *, MEM_MAX_ENTRIES> s_entries;
+        inline static std::unique_ptr<byte[]> s_buffer = nullptr;
+        inline static std::mutex s_mtx;
+
+        static void preallocate() { s_buffer = std::unique_ptr<byte[]>(new byte[MEM_STACK_CAPACITY]); }
+        template <typename T>
+        friend class stack_allocator;
     };
-
-    inline std::size_t _stack_size = 0, _entry_index = 0; // Set this atomic??
-    inline std::array<stack_entry, MEM_MAX_ENTRIES> _stack_entries;
-    inline std::unique_ptr<byte[]> _stack_buffer = nullptr;
-
-    inline void preallocate_stack() { _stack_buffer = std::unique_ptr<byte[]>(new byte[MEM_STACK_CAPACITY]); }
 
     template <typename T>
     class stack_allocator : public std::allocator<T>
@@ -43,15 +43,15 @@ namespace mem
     public:
         stack_allocator() noexcept
         {
-            if (!_stack_buffer)
-                preallocate_stack();
+            if (!sdata::s_buffer)
+                sdata::preallocate();
             DBG_TRACE("Instantiated stack allocator.")
         }
         template <typename U>
         stack_allocator(const stack_allocator<U> &other) noexcept : stack_allocator()
         {
-            if (!_stack_buffer)
-                preallocate_stack();
+            if (!sdata::s_buffer)
+                sdata::preallocate();
             DBG_TRACE("Instantiated stack allocator.")
         }
 
@@ -61,42 +61,74 @@ namespace mem
             using other = stack_allocator<U>;
         };
 
+        ptr allocate_raw(size n_bytes) const noexcept
+        {
+            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
+            DBG_ASSERT_WARN(has_enough_entries(), "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum entries: {1}", n_bytes, MEM_MAX_ENTRIES)
+            DBG_ASSERT_WARN(has_enough_space(n_bytes), "No more space available in stack allocator when trying to allocate {0} bytes! Capacity: {1} bytes, amount used: {2}", n_bytes, MEM_STACK_CAPACITY, sdata::s_size)
+            if (!has_enough_entries() || !has_enough_space(n_bytes))
+                return nullptr;
+
+            std::scoped_lock lock(sdata::s_mtx);
+
+            sdata::s_entries[sdata::s_index] = sdata::s_buffer.get() + sdata::s_size;
+            ptr p = (ptr)sdata::s_entries[sdata::s_index];
+
+            sdata::s_index++;
+            sdata::s_size += n_bytes;
+
+            DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - sdata::s_index, MEM_STACK_CAPACITY - sdata::s_size)
+            return p;
+        }
+
+        bool deallocate_raw(ptr p, size n_bytes, const bool destroy_manually = false) const noexcept
+        {
+            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
+            if (!p)
+            {
+                DBG_WARN("Attempting to deallocate null pointer!")
+                return false;
+            }
+
+#ifdef DEBUG
+            for (std::size_t i = sdata::s_index - 2; i >= 0 && i < sdata::s_entries.size(); i--)
+            {
+                DBG_ASSERT_CRITICAL(p != (ptr)sdata::s_entries[i], "Attempting to deallocate disorderly from stack! Entry is {0} positions away from top.", sdata::s_index - i)
+            }
+#endif
+            if (sdata::s_index == 0 || p != (ptr)sdata::s_entries[sdata::s_index - 1])
+                return false;
+
+            if (destroy_manually)
+                p->~T();
+            std::scoped_lock lock(sdata::s_mtx);
+            sdata::s_index--;
+            sdata::s_size -= n_bytes;
+            DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - sdata::s_index, MEM_STACK_CAPACITY - sdata::s_size)
+            return true;
+        }
+
         ptr allocate(size n)
         {
-            const std::size_t n_bytes = n * sizeof(T);
-            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
-            DBG_ASSERT_CRITICAL(_entry_index < (MEM_MAX_ENTRIES - 1), "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n_bytes, MEM_MAX_ENTRIES)
-
-            std::scoped_lock lock(mtx);
-            const bool enough_space = (_stack_size + n_bytes) < MEM_STACK_CAPACITY;
-            DBG_ASSERT_WARN(enough_space, "No more space available in stack allocator when trying to allocate {0} bytes! Capacity: {1} bytes, amount used: {2}", MEM_STACK_CAPACITY, _stack_size)
-            _stack_entries[_entry_index].data = enough_space ? (_stack_buffer.get() + _stack_size) : (byte *)base::allocate(n);
-            _stack_entries[_entry_index].used_default = !enough_space;
-            ptr p = (ptr)_stack_entries[_entry_index].data;
-
-            _entry_index++;
-            _stack_size += n_bytes;
-
-            DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
+            const size n_bytes = n * sizeof(T);
+            ptr p = allocate_raw(n_bytes);
+            if (!p)
+                return base::allocate(n);
             return p;
         }
 
         void deallocate(ptr p, size n)
         {
-            const std::size_t n_bytes = n * sizeof(T);
-            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
-            std::scoped_lock lock(mtx);
-            _entry_index--;
-            DBG_ASSERT_CRITICAL(p == (ptr)_stack_entries[_entry_index].data, "Trying to deallocate disorderly from stack allocator!")
-            if (_stack_entries[_entry_index].used_default)
+            const size n_bytes = n * sizeof(T);
+            if (!deallocate_raw(p, n_bytes))
                 base::deallocate(p, n);
-            else
-                _stack_size -= n_bytes;
-            DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - _entry_index, MEM_STACK_CAPACITY - _stack_size)
         }
+
+        bool has_enough_entries() const { return sdata::s_index < (MEM_MAX_ENTRIES - 1); }
+        bool has_enough_space(const size n_bytes) const { return (sdata::s_size + n_bytes) < MEM_STACK_CAPACITY; }
     };
 
-    // Only works for single allocations
+    // Only works for single allocations. It is intended to be used with smart pointers that default to new/delete if there is not enough memory
     template <typename T>
     struct stack_deleter
     {
@@ -108,8 +140,8 @@ namespace mem
         void operator()(T *p)
         {
             stack_allocator<T> alloc;
-            p->~T();
-            alloc.deallocate(p, 1);
+            if (!alloc.deallocate_raw(p, m_size, true))
+                delete p;
         }
 
     private:

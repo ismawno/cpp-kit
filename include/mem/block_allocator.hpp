@@ -20,7 +20,6 @@
 namespace mem
 {
     using byte = std::uint8_t;
-    inline std::mutex mtx;
     struct size_helper
     {
         size_helper()
@@ -56,9 +55,16 @@ namespace mem
 #endif
     };
 
-    inline std::vector<chunk> _chunks;
-    inline std::vector<block *> _free_blocks(MEM_SUPPORTED_SIZES_COUNT, nullptr);
-    inline const size_helper _helper;
+    class bdata
+    {
+        inline static std::vector<chunk> s_chunks;
+        inline static std::vector<block *> s_free_blocks{MEM_SUPPORTED_SIZES_COUNT, nullptr};
+        inline static const size_helper s_helper;
+        inline static std::mutex s_mtx;
+
+        template <typename T>
+        friend class block_allocator;
+    };
 
     template <typename T>
     class block_allocator : public std::allocator<T>
@@ -92,41 +98,42 @@ namespace mem
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return nullptr;
 
-            std::scoped_lock lock(mtx);
-            const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
-            if (_free_blocks[clamped_index])
+            std::scoped_lock lock(bdata::s_mtx);
+            const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
+            if (bdata::s_free_blocks[clamped_index])
                 return next_free_block(clamped_index);
             return first_block_of_new_chunk(clamped_index);
         }
 
-        bool deallocate_raw(ptr p, size n_bytes) const noexcept
+        bool deallocate_raw(ptr p, size n_bytes, const bool destroy_manually = false) const noexcept
         {
+            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
             if (!p)
             {
                 DBG_WARN("Attempting to deallocate null pointer!")
                 return false;
             }
-
-            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
             DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return false;
 
-            std::scoped_lock lock(mtx);
-            const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
+            if (destroy_manually)
+                p->~T();
+            std::scoped_lock lock(bdata::s_mtx);
+            const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
 #ifdef DEBUG
             make_sure_block_belongs_to_allocator(clamped_index, p, n_bytes);
 #endif
             block *b = (block *)p;
-            b->next = _free_blocks[clamped_index];
-            _free_blocks[clamped_index] = b;
+            b->next = bdata::s_free_blocks[clamped_index];
+            bdata::s_free_blocks[clamped_index] = b;
+
             return true;
         }
 
         ptr allocate(size n)
         {
-            // DBG_ASSERT_WARN(n <= 1, "Allocating more than one object at a time with block allocator. This is discouraged: the current implementation is intended to be used for single allocations (may change in the future)")
-            const std::size_t n_bytes = n * sizeof(T);
+            const size n_bytes = n * sizeof(T);
             ptr p = allocate_raw(n_bytes);
             if (!p)
                 return base::allocate(n);
@@ -135,17 +142,17 @@ namespace mem
 
         void deallocate(ptr p, size n) noexcept
         {
-            const std::size_t n_bytes = n * sizeof(*p);
+            const size n_bytes = n * sizeof(*p);
             if (!deallocate_raw(p, n_bytes))
-                return base::deallocate(p, n);
+                base::deallocate(p, n);
         }
 
         ptr next_free_block(const std::size_t idx) const
         {
-            block *b = _free_blocks[idx];
-            _free_blocks[idx] = b->next;
+            block *b = bdata::s_free_blocks[idx];
+            bdata::s_free_blocks[idx] = b->next;
 #ifdef DEBUG
-            for (chunk &ck : _chunks)
+            for (chunk &ck : bdata::s_chunks)
                 if (ck.last == b)
                 {
                     ck.alloc_count++;
@@ -159,10 +166,10 @@ namespace mem
 
         ptr first_block_of_new_chunk(const std::size_t idx) const
         {
-            const std::size_t clamped_size = _helper.supported_sizes[idx];
+            const std::size_t clamped_size = bdata::s_helper.supported_sizes[idx];
             DBG_INFO("Creating new chunk at index {0} with size {1} and {2} bytes per block", idx, MEM_CHUNK_SIZE, clamped_size)
 
-            chunk &ck = _chunks.emplace_back();
+            chunk &ck = bdata::s_chunks.emplace_back();
             ck.block_size = clamped_size;
             ck.blocks = std::unique_ptr<byte[]>(new byte[MEM_CHUNK_SIZE]);
 
@@ -178,21 +185,21 @@ namespace mem
             block *last = (block *)(first_block + (block_count - 1) * clamped_size);
             last->next = nullptr;
 
-            _free_blocks[idx] = ((block *)first_block)->next;
+            bdata::s_free_blocks[idx] = ((block *)first_block)->next;
 #ifdef DEBUG
             ck.alloc_count = 1;
-            ck.last = _free_blocks[idx];
+            ck.last = bdata::s_free_blocks[idx];
             report_chunks();
 #endif
             return (ptr)first_block;
         }
 
 #ifdef DEBUG
-        void make_sure_block_belongs_to_allocator(const std::size_t idx, ptr p, const std::size_t n_bytes) const
+        void make_sure_block_belongs_to_allocator(const std::size_t idx, ptr p, const size n_bytes) const
         {
-            const std::size_t clamped_size = _helper.supported_sizes[idx];
+            const std::size_t clamped_size = bdata::s_helper.supported_sizes[idx];
             bool found = false;
-            for (chunk &ck : _chunks)
+            for (chunk &ck : bdata::s_chunks)
             {
                 const byte *p_byte = (byte *)p;
                 const bool overlaps_chunk = (p_byte + clamped_size) > ck.blocks.get() &&
@@ -216,9 +223,9 @@ namespace mem
 
         void report_chunks() const
         {
-            DBG_INFO("There are currently {0} chunk(s) allocated, occupying {1} bytes each ({2} bytes total)", _chunks.size(), MEM_CHUNK_SIZE, _chunks.size() * MEM_CHUNK_SIZE)
+            DBG_INFO("There are currently {0} chunk(s) allocated, occupying {1} bytes each ({2} bytes total)", bdata::s_chunks.size(), MEM_CHUNK_SIZE, bdata::s_chunks.size() * MEM_CHUNK_SIZE)
             std::size_t idx = 0;
-            for (const chunk &ck : _chunks)
+            for (const chunk &ck : bdata::s_chunks)
             {
                 const std::size_t block_count = MEM_CHUNK_SIZE / ck.block_size;
                 DBG_INFO("Chunk {0}: {1} blocks, with {2} bytes per block, of which {3} are occupied ({4} bytes)", idx++, block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
@@ -228,8 +235,8 @@ namespace mem
         void report_chunk(const chunk &ck) const
         {
             std::size_t idx = 0;
-            for (std::size_t i = 1; i < _chunks.size(); i++)
-                if (&ck == &(_chunks[i]))
+            for (std::size_t i = 1; i < bdata::s_chunks.size(); i++)
+                if (&ck == &(bdata::s_chunks[i]))
                 {
                     idx = i;
                     break;
@@ -252,13 +259,8 @@ namespace mem
         void operator()(T *p)
         {
             block_allocator<T> alloc;
-            if (m_size > MEM_MAX_BLOCK_SIZE)
+            if (!alloc.deallocate_raw(p, m_size, true))
                 delete p;
-            else
-            {
-                p->~T();
-                alloc.deallocate_raw(p, m_size);
-            }
         }
 
     private:
