@@ -15,10 +15,12 @@
 #include <cstdint>
 #include <array>
 #include <memory>
+#include <mutex>
 
 namespace mem
 {
     using byte = std::uint8_t;
+    inline std::mutex mtx;
     struct size_helper
     {
         size_helper()
@@ -90,6 +92,7 @@ namespace mem
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return nullptr;
 
+            std::scoped_lock lock(mtx);
             const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
             if (_free_blocks[clamped_index])
                 return next_free_block(clamped_index);
@@ -108,6 +111,8 @@ namespace mem
             DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return false;
+
+            std::scoped_lock lock(mtx);
             const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
 #ifdef DEBUG
             make_sure_block_belongs_to_allocator(clamped_index, p, n_bytes);

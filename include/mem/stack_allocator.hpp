@@ -9,7 +9,9 @@
 #ifdef HAS_DEBUG_LOG_TOOLS
 #include "dbg/log.hpp"
 #endif
+
 #include "mem/core.hpp"
+#include <mutex>
 
 #define MEM_STACK_CAPACITY (64 * 1024) // Change this so that it can be modified somehow
 #define MEM_MAX_ENTRIES 64
@@ -17,6 +19,7 @@
 namespace mem
 {
     using byte = std::uint8_t;
+    inline std::mutex mtx;
     struct stack_entry
     {
         byte *data = nullptr;
@@ -64,6 +67,7 @@ namespace mem
             DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
             DBG_ASSERT_CRITICAL(_entry_index < (MEM_MAX_ENTRIES - 1), "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum: {1}", n_bytes, MEM_MAX_ENTRIES)
 
+            std::scoped_lock lock(mtx);
             const bool enough_space = (_stack_size + n_bytes) < MEM_STACK_CAPACITY;
             DBG_ASSERT_WARN(enough_space, "No more space available in stack allocator when trying to allocate {0} bytes! Capacity: {1} bytes, amount used: {2}", MEM_STACK_CAPACITY, _stack_size)
             _stack_entries[_entry_index].data = enough_space ? (_stack_buffer.get() + _stack_size) : (byte *)base::allocate(n);
@@ -81,6 +85,7 @@ namespace mem
         {
             const std::size_t n_bytes = n * sizeof(T);
             DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
+            std::scoped_lock lock(mtx);
             _entry_index--;
             DBG_ASSERT_CRITICAL(p == (ptr)_stack_entries[_entry_index].data, "Trying to deallocate disorderly from stack allocator!")
             if (_stack_entries[_entry_index].used_default)
