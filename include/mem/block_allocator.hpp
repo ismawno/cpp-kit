@@ -120,7 +120,7 @@ namespace mem
 
         ptr allocate(size n)
         {
-            DBG_ASSERT_WARN(n <= 1, "Allocating more than one object at a time with block allocator. This is discouraged: the current implementation is intended to be used for single allocations (may change in the future)")
+            // DBG_ASSERT_WARN(n <= 1, "Allocating more than one object at a time with block allocator. This is discouraged: the current implementation is intended to be used for single allocations (may change in the future)")
             const std::size_t n_bytes = n * sizeof(T);
             ptr p = allocate_raw(n_bytes);
             if (!p)
@@ -131,7 +131,7 @@ namespace mem
         void deallocate(ptr p, size n) noexcept
         {
             const std::size_t n_bytes = n * sizeof(*p);
-            if (!deallocate_raw(n_bytes))
+            if (!deallocate_raw(p, n_bytes))
                 return base::deallocate(p, n);
         }
 
