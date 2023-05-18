@@ -91,13 +91,14 @@ namespace mem
         }
     };
 
+    // Only works for single allocations
     template <typename T>
     struct stack_deleter
     {
-        constexpr stack_deleter() noexcept = default;
+        constexpr stack_deleter() noexcept : m_size(sizeof(T)){};
 
         template <typename U>
-        constexpr stack_deleter(const stack_deleter<U> &bd) noexcept {}
+        stack_deleter(const stack_deleter<U> &bd) noexcept : m_size(bd.m_size) {}
 
         void operator()(T *p)
         {
@@ -105,6 +106,12 @@ namespace mem
             p->~T();
             alloc.deallocate(p, 1);
         }
+
+    private:
+        std::size_t m_size = 0;
+
+        template <typename U>
+        friend struct stack_deleter;
     };
 }
 

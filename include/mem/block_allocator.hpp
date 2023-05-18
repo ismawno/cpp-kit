@@ -83,13 +83,12 @@ namespace mem
             using other = block_allocator<U>;
         };
 
-        ptr allocate(size n)
+        ptr allocate_raw(size n_bytes) const noexcept
         {
-            const std::size_t n_bytes = n * sizeof(T);
-            DBG_ASSERT_CRITICAL(n > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
+            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
             DBG_DEBUG("Block allocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
-                return base::allocate(n);
+                return nullptr;
 
             const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
             if (_free_blocks[clamped_index])
@@ -97,26 +96,42 @@ namespace mem
             return first_block_of_new_chunk(clamped_index);
         }
 
-        void deallocate(ptr p, size n)
+        bool deallocate_raw(ptr p, size n_bytes) const noexcept
         {
             if (!p)
             {
                 DBG_WARN("Attempting to deallocate null pointer!")
-                return;
+                return false;
             }
-            const std::size_t n_bytes = n * sizeof(*p);
-            DBG_ASSERT_CRITICAL(n > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
+
+            DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
             DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
-                return base::deallocate(p, n);
+                return false;
             const std::size_t clamped_index = _helper.clamped_indices[n_bytes];
-
 #ifdef DEBUG
             make_sure_block_belongs_to_allocator(clamped_index, p, n_bytes);
 #endif
             block *b = (block *)p;
             b->next = _free_blocks[clamped_index];
             _free_blocks[clamped_index] = b;
+            return true;
+        }
+
+        ptr allocate(size n)
+        {
+            const std::size_t n_bytes = n * sizeof(T);
+            ptr p = allocate_raw(n_bytes);
+            if (!p)
+                return base::allocate(n);
+            return p;
+        }
+
+        void deallocate(ptr p, size n) noexcept
+        {
+            const std::size_t n_bytes = n * sizeof(*p);
+            if (!deallocate_raw(n_bytes))
+                return base::deallocate(p, n);
         }
 
         ptr next_free_block(const std::size_t idx) const
@@ -219,20 +234,32 @@ namespace mem
 #endif
     };
 
+    // Only works for single allocations
     template <typename T>
     struct block_deleter
     {
-        constexpr block_deleter() noexcept = default;
+        constexpr block_deleter() noexcept : m_size(sizeof(T)){};
 
         template <typename U>
-        constexpr block_deleter(const block_deleter<U> &bd) noexcept {}
+        block_deleter(const block_deleter<U> &bd) noexcept : m_size(bd.m_size) {}
 
         void operator()(T *p)
         {
             static block_allocator<T> alloc;
-            p->~T();
-            alloc.deallocate(p, 1);
+            if (m_size > MEM_MAX_BLOCK_SIZE)
+                delete p;
+            else
+            {
+                p->~T();
+                alloc.deallocate_raw(p, m_size);
+            }
         }
+
+    private:
+        std::size_t m_size = 0;
+
+        template <typename U>
+        friend struct block_deleter;
     };
 }
 
