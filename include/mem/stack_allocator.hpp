@@ -11,7 +11,6 @@
 #endif
 
 #include "mem/core.hpp"
-#include <mutex>
 
 #define MEM_STACK_CAPACITY (64 * 1024) // Change this so that it can be modified somehow
 #define MEM_MAX_ENTRIES 64
@@ -25,7 +24,6 @@ namespace mem
         inline static std::size_t s_size = 0, s_index = 0;
         inline static std::array<byte *, MEM_MAX_ENTRIES> s_entries;
         inline static std::unique_ptr<byte[]> s_buffer = nullptr;
-        inline static std::mutex s_mtx;
 
         static void preallocate() { s_buffer = std::unique_ptr<byte[]>(new byte[MEM_STACK_CAPACITY]); }
         template <typename T>
@@ -69,8 +67,6 @@ namespace mem
             if (!has_enough_entries() || !has_enough_space(n_bytes))
                 return nullptr;
 
-            std::scoped_lock lock(sdata::s_mtx);
-
             sdata::s_entries[sdata::s_index] = sdata::s_buffer.get() + sdata::s_size;
             ptr p = (ptr)sdata::s_entries[sdata::s_index];
 
@@ -101,7 +97,6 @@ namespace mem
 
             if (destroy_manually)
                 p->~T();
-            std::scoped_lock lock(sdata::s_mtx);
             sdata::s_index--;
             sdata::s_size -= n_bytes;
             DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes, MEM_MAX_ENTRIES - sdata::s_index, MEM_STACK_CAPACITY - sdata::s_size)

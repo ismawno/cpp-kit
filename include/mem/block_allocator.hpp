@@ -15,7 +15,6 @@
 #include <cstdint>
 #include <array>
 #include <memory>
-#include <mutex>
 
 namespace mem
 {
@@ -60,7 +59,6 @@ namespace mem
         inline static std::vector<chunk> s_chunks;
         inline static std::vector<block *> s_free_blocks{MEM_SUPPORTED_SIZES_COUNT, nullptr};
         inline static const size_helper s_helper;
-        inline static std::mutex s_mtx;
 
         template <typename T>
         friend class block_allocator;
@@ -98,7 +96,6 @@ namespace mem
             if (n_bytes > MEM_MAX_BLOCK_SIZE)
                 return nullptr;
 
-            std::scoped_lock lock(bdata::s_mtx);
             const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
             if (bdata::s_free_blocks[clamped_index])
                 return next_free_block(clamped_index);
@@ -119,7 +116,6 @@ namespace mem
 
             if (destroy_manually)
                 p->~T();
-            std::scoped_lock lock(bdata::s_mtx);
             const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
 #ifdef DEBUG
             make_sure_block_belongs_to_allocator(clamped_index, p, n_bytes);
