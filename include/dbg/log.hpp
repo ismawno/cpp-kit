@@ -2,8 +2,8 @@
 #define DBG_LOG_HPP
 
 #ifdef DEBUG
-#include <spdlog/spdlog.h>
 #include <signal.h>
+#include <spdlog/spdlog.h>
 
 #ifdef __clang__
 #define DBG_BREAK() __builtin_debugtrap();
@@ -23,36 +23,36 @@
 #define DBG_DEBUG(...) spdlog::debug(__VA_ARGS__);
 #define DBG_INFO(...) spdlog::info(__VA_ARGS__);
 #define DBG_WARN(...) spdlog::warn(__VA_ARGS__);
-#define DBG_ERROR(...)          \
-    spdlog::error(__VA_ARGS__); \
+#define DBG_ERROR(...)                                                                                                 \
+    spdlog::error(__VA_ARGS__);                                                                                        \
     DBG_BREAK()
-#define DBG_CRITICAL(...)          \
-    spdlog::critical(__VA_ARGS__); \
+#define DBG_CRITICAL(...)                                                                                              \
+    spdlog::critical(__VA_ARGS__);                                                                                     \
     DBG_BREAK()
 
-#define DBG_ASSERT_TRACE(cond, ...) \
-    if (!(cond))                    \
+#define DBG_ASSERT_TRACE(cond, ...)                                                                                    \
+    if (!(cond))                                                                                                       \
         spdlog::trace(__VA_ARGS__);
-#define DBG_ASSERT_DEBUG(cond, ...) \
-    if (!(cond))                    \
+#define DBG_ASSERT_DEBUG(cond, ...)                                                                                    \
+    if (!(cond))                                                                                                       \
         spdlog::debug(__VA_ARGS__);
-#define DBG_ASSERT_INFO(cond, ...) \
-    if (!(cond))                   \
+#define DBG_ASSERT_INFO(cond, ...)                                                                                     \
+    if (!(cond))                                                                                                       \
         spdlog::info(__VA_ARGS__);
-#define DBG_ASSERT_WARN(cond, ...) \
-    if (!(cond))                   \
+#define DBG_ASSERT_WARN(cond, ...)                                                                                     \
+    if (!(cond))                                                                                                       \
         spdlog::warn(__VA_ARGS__);
-#define DBG_ASSERT_ERROR(cond, ...) \
-    if (!(cond))                    \
-    {                               \
-        spdlog::error(__VA_ARGS__); \
-        DBG_BREAK()                 \
+#define DBG_ASSERT_ERROR(cond, ...)                                                                                    \
+    if (!(cond))                                                                                                       \
+    {                                                                                                                  \
+        spdlog::error(__VA_ARGS__);                                                                                    \
+        DBG_BREAK()                                                                                                    \
     }
-#define DBG_ASSERT_CRITICAL(cond, ...) \
-    if (!(cond))                       \
-    {                                  \
-        spdlog::critical(__VA_ARGS__); \
-        DBG_BREAK()                    \
+#define DBG_ASSERT_CRITICAL(cond, ...)                                                                                 \
+    if (!(cond))                                                                                                       \
+    {                                                                                                                  \
+        spdlog::critical(__VA_ARGS__);                                                                                 \
+        DBG_BREAK()                                                                                                    \
     }
 #else
 #define DBG_SET_LEVEL(lvl)
