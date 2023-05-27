@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-// #include <atomic>
 #ifdef HAS_DEBUG_LOG_TOOLS
 #include "dbg/log.hpp"
 #endif
