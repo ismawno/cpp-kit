@@ -6,19 +6,19 @@
 
 namespace perf
 {
-    class timer
-    {
-    public:
-        timer(const char *m_name);
-        ~timer();
+class timer
+{
+  public:
+    timer(const char *m_name);
+    ~timer();
 
-        long long stop();
+    long long stop();
 
-    private:
-        bool m_stopped = false;
-        const std::chrono::time_point<std::chrono::high_resolution_clock> m_startpoint;
-        const char *m_name;
-    };
-}
+  private:
+    bool m_stopped = false;
+    const std::chrono::time_point<std::chrono::high_resolution_clock> m_startpoint;
+    const char *m_name;
+};
+} // namespace perf
 
 #endif
