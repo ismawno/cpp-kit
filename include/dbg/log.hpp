@@ -54,6 +54,8 @@
         spdlog::critical(__VA_ARGS__);                                                                                 \
         DBG_BREAK()                                                                                                    \
     }
+
+#define DBG_CHECK_RETURN_VALUE(expression, expected, level, msg) DBG_ASSERT_##level(expression == expected, msg)
 #else
 #define DBG_SET_LEVEL(lvl)
 #define DBG_SET_PATTERN(patt)
@@ -73,5 +75,7 @@
 #define DBG_ASSERT_ERROR(cond, ...)
 #define DBG_ASSERT_CRITICAL(cond, ...)
 #define DBG_ASSERT_FATAL(cond, ...)
+
+#define DBG_CHECK_RETURN_VALUE(expression, expected, level, msg) expression;
 #endif
 #endif
