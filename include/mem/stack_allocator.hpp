@@ -43,13 +43,11 @@ template <typename T> class stack_allocator : public std::allocator<T>
     {
         if (!sdata::s_buffer)
             sdata::preallocate();
-        DBG_TRACE("Instantiated stack allocator.")
     }
     template <typename U> stack_allocator(const stack_allocator<U> &other) noexcept : stack_allocator()
     {
         if (!sdata::s_buffer)
             sdata::preallocate();
-        DBG_TRACE("Instantiated stack allocator.")
     }
 
     template <typename U> struct rebind

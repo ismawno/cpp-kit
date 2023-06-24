@@ -73,11 +73,9 @@ template <typename T> class block_allocator : public std::allocator<T>
   public:
     block_allocator() noexcept
     {
-        DBG_TRACE("Instantiated block allocator.")
     }
     template <typename U> block_allocator(const block_allocator<U> &other) noexcept : base(other)
     {
-        DBG_TRACE("Instantiated block allocator.")
     }
 
     template <typename U> struct rebind
