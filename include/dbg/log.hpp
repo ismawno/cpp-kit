@@ -55,7 +55,7 @@
         DBG_BREAK()                                                                                                    \
     }
 
-#define DBG_CHECK_RETURN_VALUE(expression, expected, level, msg) DBG_ASSERT_##level(expression == expected, msg)
+#define DBG_CHECK_RETURN_VALUE(expression, expected, level, ...) DBG_ASSERT_##level(expression == expected, __VA_ARGS__)
 #else
 #define DBG_SET_LEVEL(lvl)
 #define DBG_SET_PATTERN(patt)
