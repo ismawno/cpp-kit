@@ -76,6 +76,6 @@
 #define DBG_ASSERT_CRITICAL(cond, ...)
 #define DBG_ASSERT_FATAL(cond, ...)
 
-#define DBG_CHECK_RETURN_VALUE(expression, expected, level, msg) expression;
+#define DBG_CHECK_RETURN_VALUE(expression, expected, level, ...) expression;
 #endif
 #endif
