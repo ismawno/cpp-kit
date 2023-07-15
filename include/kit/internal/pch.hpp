@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <stack>
+#include <functional>
+#include <random>
 #include "kit/debug/log.hpp"
 
 #endif
