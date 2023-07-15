@@ -1,10 +1,10 @@
-#ifndef PERF_HPP
-#define PERF_HPP
+#ifndef KIT_PERF_HPP
+#define KIT_PERF_HPP
 
-#include "perf/timer.hpp"
-#include "perf/profiler.hpp"
+#include "kit/profile/timer.hpp"
+#include "kit/profile/profiler.hpp"
 
-#ifdef PERF
+#ifdef KIT_PERF
 #define PERF_BEGIN_SESSION(name, pexport) perf::profiler::get().begin_session(pexport, name);
 #define PERF_END_SESSION() perf::profiler::get().end_session();
 #define PERF_SCOPE(name) perf::timer tm##__LINE__(name);

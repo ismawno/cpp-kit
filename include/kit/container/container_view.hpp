@@ -1,5 +1,5 @@
-#ifndef CONTAINER_VIEW_HPP
-#define CONTAINER_VIEW_HPP
+#ifndef KIT_CONTAINER_VIEW_HPP
+#define KIT_CONTAINER_VIEW_HPP
 
 #include <map>
 #include <set>
@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace cvw
+namespace kit
 {
 template <template <typename...> typename C, typename... Args> class container
 {
@@ -58,6 +58,6 @@ template <typename K, typename V> using map = container<std::map, K, V>;
 template <typename T> using unordered_set = container<std::unordered_set, T>;
 
 template <typename T> using set = container<std::set, T>;
-} // namespace cvw
+} // namespace kit
 
 #endif

@@ -1,14 +1,14 @@
-#ifndef PROFILER_HPP
-#define PROFILER_HPP
+#ifndef KIT_PROFILER_HPP
+#define KIT_PROFILER_HPP
 
-#include "perf/profile_stats.hpp"
+#include "kit/profile/profile_stats.hpp"
 #include <vector>
 #include <unordered_map>
 #include <string>
 #include <fstream>
 #include <stack>
 
-namespace perf
+namespace kit
 {
 struct profile_result
 {
@@ -70,5 +70,5 @@ class profiler
     profiler(const profiler &) = delete;
 };
 
-} // namespace perf
+} // namespace kit
 #endif

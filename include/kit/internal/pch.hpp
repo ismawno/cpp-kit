@@ -1,5 +1,5 @@
-#ifndef PERF_PCH_HPP
-#define PERF_PCH_HPP
+#ifndef KIT_PCH_HPP
+#define KIT_PCH_HPP
 
 #include <unordered_map>
 #include <cstdint>
@@ -11,9 +11,6 @@
 #include <algorithm>
 #include <filesystem>
 #include <stack>
-#ifdef HAS_DEBUG_LOG_TOOLS
-#include "dbg/log.hpp"
-#endif
-#include "perf/core.hpp"
+#include "kit/debug/log.hpp"
 
 #endif

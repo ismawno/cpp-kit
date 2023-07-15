@@ -1,7 +1,7 @@
-#include "perf/pch.hpp"
-#include "perf/profile_stats.hpp"
+#include "kit/internal/pch.hpp"
+#include "kit/profile/profile_stats.hpp"
 
-namespace perf
+namespace kit
 {
 void profile_stats::compute_relative_durations()
 {
@@ -74,4 +74,4 @@ const std::unordered_map<const char *, profile_stats> &profile_stats::children()
 {
     return m_children;
 }
-} // namespace perf
+} // namespace kit

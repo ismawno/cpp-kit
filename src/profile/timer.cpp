@@ -1,8 +1,8 @@
-#include "perf/pch.hpp"
-#include "perf/timer.hpp"
-#include "perf/profiler.hpp"
+#include "kit/internal/pch.hpp"
+#include "kit/profile/timer.hpp"
+#include "kit/profile/profiler.hpp"
 
-namespace perf
+namespace kit
 {
 timer::timer(const char *name) : m_startpoint(std::chrono::high_resolution_clock::now()), m_name(name)
 {
@@ -26,4 +26,4 @@ long long timer::stop()
     profiler::get().end_timer({m_name, start, end});
     return end - start;
 }
-} // namespace perf
+} // namespace kit

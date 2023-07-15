@@ -1,7 +1,7 @@
-#include "perf/pch.hpp"
-#include "perf/profiler.hpp"
+#include "kit/internal/pch.hpp"
+#include "kit/profile/profiler.hpp"
 
-namespace perf
+namespace kit
 {
 profiler &profiler::get()
 {
@@ -181,4 +181,4 @@ void profiler::smoothness(const float smoothness)
 {
     m_smoothness = smoothness;
 }
-} // namespace perf
+} // namespace kit

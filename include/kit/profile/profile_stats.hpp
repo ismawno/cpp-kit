@@ -1,12 +1,12 @@
-#ifndef PROFILE_STATS_HPP
-#define PROFILE_STATS_HPP
+#ifndef KIT_PROFILE_STATS_HPP
+#define KIT_PROFILE_STATS_HPP
 
 #include <unordered_map>
 #include <cstdint>
 #include <string>
 #include <fstream>
 
-namespace perf
+namespace kit
 {
 class profile_stats
 {
@@ -38,6 +38,6 @@ class profile_stats
 
     friend class profiler;
 };
-} // namespace perf
+} // namespace kit
 
 #endif

@@ -5,28 +5,24 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#ifdef HAS_DEBUG_LOG_TOOLS
-#include "dbg/log.hpp"
-#endif
+#include "kit/debug/log.hpp"
 
-#include "mem/core.hpp"
+#define KIT_MEM_STACK_CAPACITY (64 * 1024) // Change this so that it can be modified somehow
+#define KIT_MEM_MAX_ENTRIES 64
 
-#define MEM_STACK_CAPACITY (64 * 1024) // Change this so that it can be modified somehow
-#define MEM_MAX_ENTRIES 64
-
-namespace mem
+namespace kit
 {
 using byte = std::uint8_t;
 
 class sdata
 {
     inline static std::size_t s_size = 0, s_index = 0;
-    inline static std::array<byte *, MEM_MAX_ENTRIES> s_entries;
+    inline static std::array<byte *, KIT_MEM_MAX_ENTRIES> s_entries;
     inline static std::unique_ptr<byte[]> s_buffer = nullptr;
 
     static void preallocate()
     {
-        s_buffer = std::unique_ptr<byte[]>(new byte[MEM_STACK_CAPACITY]);
+        s_buffer = std::unique_ptr<byte[]>(new byte[KIT_MEM_STACK_CAPACITY]);
     }
     template <typename T> friend class stack_allocator;
 };
@@ -61,11 +57,11 @@ template <typename T> class stack_allocator : public std::allocator<T>
         DBG_ASSERT_WARN(
             has_enough_entries(),
             "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum entries: {1}",
-            n_bytes, MEM_MAX_ENTRIES)
+            n_bytes, KIT_MEM_MAX_ENTRIES)
         DBG_ASSERT_WARN(has_enough_space(n_bytes),
                         "No more space available in stack allocator when trying to allocate {0} bytes! Capacity: {1} "
                         "bytes, amount used: {2}",
-                        n_bytes, MEM_STACK_CAPACITY, sdata::s_size)
+                        n_bytes, KIT_MEM_STACK_CAPACITY, sdata::s_size)
         if (!has_enough_entries() || !has_enough_space(n_bytes))
             return nullptr;
 
@@ -76,7 +72,7 @@ template <typename T> class stack_allocator : public std::allocator<T>
         sdata::s_size += n_bytes;
 
         DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes,
-                  MEM_MAX_ENTRIES - sdata::s_index, MEM_STACK_CAPACITY - sdata::s_size)
+                  KIT_MEM_MAX_ENTRIES - sdata::s_index, KIT_MEM_STACK_CAPACITY - sdata::s_size)
         return p;
     }
 
@@ -105,7 +101,7 @@ template <typename T> class stack_allocator : public std::allocator<T>
         sdata::s_index--;
         sdata::s_size -= n_bytes;
         DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes,
-                  MEM_MAX_ENTRIES - sdata::s_index, MEM_STACK_CAPACITY - sdata::s_size)
+                  KIT_MEM_MAX_ENTRIES - sdata::s_index, KIT_MEM_STACK_CAPACITY - sdata::s_size)
         return true;
     }
 
@@ -127,11 +123,11 @@ template <typename T> class stack_allocator : public std::allocator<T>
 
     bool has_enough_entries() const
     {
-        return sdata::s_index < (MEM_MAX_ENTRIES - 1);
+        return sdata::s_index < (KIT_MEM_MAX_ENTRIES - 1);
     }
     bool has_enough_space(const size n_bytes) const
     {
-        return (sdata::s_size + n_bytes) < MEM_STACK_CAPACITY;
+        return (sdata::s_size + n_bytes) < KIT_MEM_STACK_CAPACITY;
     }
 };
 
@@ -157,6 +153,6 @@ template <typename T> struct stack_deleter
 
     template <typename U> friend struct stack_deleter;
 };
-} // namespace mem
+} // namespace kit
 
 #endif

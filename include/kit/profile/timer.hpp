@@ -1,10 +1,10 @@
-#ifndef TIMER_HPP
-#define TIMER_HPP
+#ifndef KIT_TIMER_HPP
+#define KIT_TIMER_HPP
 
 #include <fstream>
 #include <chrono>
 
-namespace perf
+namespace kit
 {
 class timer
 {
@@ -19,6 +19,6 @@ class timer
     const std::chrono::time_point<std::chrono::high_resolution_clock> m_startpoint;
     const char *m_name;
 };
-} // namespace perf
+} // namespace kit
 
 #endif

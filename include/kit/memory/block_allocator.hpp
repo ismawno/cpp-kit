@@ -1,42 +1,39 @@
-#ifndef BLOCK_ALLOCATOR_HPP
-#define BLOCK_ALLOCATOR_HPP
+#ifndef KIT_BLOCK_ALLOCATOR_HPP
+#define KIT_BLOCK_ALLOCATOR_HPP
 
-#define MEM_MAX_BLOCK_SIZE 2048
-#define MEM_SUPPORTED_SIZES_INCREMENT 32
-#define MEM_SUPPORTED_SIZES_COUNT (MEM_MAX_BLOCK_SIZE / MEM_SUPPORTED_SIZES_INCREMENT)
-#define MEM_CHUNK_SIZE (16 * 1024)
+#define KIT_MEM_MAX_BLOCK_SIZE 2048
+#define KIT_MEM_SUPPORTED_SIZES_INCREMENT 32
+#define KIT_MEM_SUPPORTED_SIZES_COUNT (KIT_MEM_MAX_BLOCK_SIZE / KIT_MEM_SUPPORTED_SIZES_INCREMENT)
+#define KIT_MEM_CHUNK_SIZE (16 * 1024)
 
-#ifdef HAS_DEBUG_LOG_TOOLS
-#include "dbg/log.hpp"
-#endif
-#include "mem/core.hpp"
+#include "kit/debug/log.hpp"
 
 #include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-namespace mem
+namespace kit
 {
 using byte = std::uint8_t;
 struct size_helper
 {
     size_helper()
     {
-        for (std::size_t i = 0; i < MEM_SUPPORTED_SIZES_COUNT; i++)
-            supported_sizes[i] = (i + 1) * MEM_SUPPORTED_SIZES_INCREMENT;
+        for (std::size_t i = 0; i < KIT_MEM_SUPPORTED_SIZES_COUNT; i++)
+            supported_sizes[i] = (i + 1) * KIT_MEM_SUPPORTED_SIZES_INCREMENT;
 
         clamped_indices[0] = 0;
         std::size_t mapped_index = 0;
-        for (std::size_t size = 1; size <= MEM_MAX_BLOCK_SIZE; size++)
+        for (std::size_t size = 1; size <= KIT_MEM_MAX_BLOCK_SIZE; size++)
         {
             if (size > supported_sizes[mapped_index])
                 mapped_index++;
             clamped_indices[size] = mapped_index;
         }
     }
-    std::array<std::size_t, MEM_MAX_BLOCK_SIZE + 1> clamped_indices;
-    std::array<std::size_t, MEM_SUPPORTED_SIZES_COUNT> supported_sizes;
+    std::array<std::size_t, KIT_MEM_MAX_BLOCK_SIZE + 1> clamped_indices;
+    std::array<std::size_t, KIT_MEM_SUPPORTED_SIZES_COUNT> supported_sizes;
 };
 
 struct block
@@ -57,7 +54,7 @@ struct chunk
 class bdata
 {
     inline static std::vector<chunk> s_chunks;
-    inline static std::vector<block *> s_free_blocks{MEM_SUPPORTED_SIZES_COUNT, nullptr};
+    inline static std::vector<block *> s_free_blocks{KIT_MEM_SUPPORTED_SIZES_COUNT, nullptr};
     inline static const size_helper s_helper;
 
     template <typename T> friend class block_allocator;
@@ -87,7 +84,7 @@ template <typename T> class block_allocator : public std::allocator<T>
     {
         DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
         DBG_DEBUG("Block allocating {0} bytes of data", n_bytes)
-        if (n_bytes > MEM_MAX_BLOCK_SIZE)
+        if (n_bytes > KIT_MEM_MAX_BLOCK_SIZE)
             return nullptr;
 
         const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
@@ -105,7 +102,7 @@ template <typename T> class block_allocator : public std::allocator<T>
             return false;
         }
         DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
-        if (n_bytes > MEM_MAX_BLOCK_SIZE)
+        if (n_bytes > KIT_MEM_MAX_BLOCK_SIZE)
             return false;
 
         if (destroy_manually)
@@ -157,16 +154,16 @@ template <typename T> class block_allocator : public std::allocator<T>
     ptr first_block_of_new_chunk(const std::size_t idx) const
     {
         const std::size_t clamped_size = bdata::s_helper.supported_sizes[idx];
-        DBG_INFO("Creating new chunk at index {0} with size {1} and {2} bytes per block", idx, MEM_CHUNK_SIZE,
+        DBG_INFO("Creating new chunk at index {0} with size {1} and {2} bytes per block", idx, KIT_MEM_CHUNK_SIZE,
                  clamped_size)
 
         chunk &ck = bdata::s_chunks.emplace_back();
         ck.block_size = clamped_size;
-        ck.blocks = std::unique_ptr<byte[]>(new byte[MEM_CHUNK_SIZE]);
+        ck.blocks = std::unique_ptr<byte[]>(new byte[KIT_MEM_CHUNK_SIZE]);
 
         byte *first_block = ck.blocks.get();
-        const std::size_t block_count = MEM_CHUNK_SIZE / clamped_size;
-        DBG_ASSERT_ERROR(block_count * clamped_size <= MEM_CHUNK_SIZE,
+        const std::size_t block_count = KIT_MEM_CHUNK_SIZE / clamped_size;
+        DBG_ASSERT_ERROR(block_count * clamped_size <= KIT_MEM_CHUNK_SIZE,
                          "Number of blocks times the size of each block is not equal (or less) than the chunk size!")
 
         for (std::size_t i = 0; i < block_count - 1; i++)
@@ -195,13 +192,13 @@ template <typename T> class block_allocator : public std::allocator<T>
         {
             const byte *p_byte = (byte *)p;
             const bool overlaps_chunk =
-                (p_byte + clamped_size) > ck.blocks.get() && (ck.blocks.get() + MEM_CHUNK_SIZE) > p_byte;
+                (p_byte + clamped_size) > ck.blocks.get() && (ck.blocks.get() + KIT_MEM_CHUNK_SIZE) > p_byte;
             DBG_ASSERT_CRITICAL(!(ck.block_size != clamped_size && overlaps_chunk),
                                 "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong chunk!", (void *)p,
                                 n_bytes)
 
             const bool belongs_to_chunk =
-                ck.blocks.get() <= p_byte && (p_byte + clamped_size) <= (ck.blocks.get() + MEM_CHUNK_SIZE);
+                ck.blocks.get() <= p_byte && (p_byte + clamped_size) <= (ck.blocks.get() + KIT_MEM_CHUNK_SIZE);
             DBG_ASSERT_CRITICAL(!(ck.block_size != clamped_size && belongs_to_chunk),
                                 "Pointer {0} with size {1} bytes belongs to the wrong chunk!", (void *)p, n_bytes)
             if (belongs_to_chunk)
@@ -220,11 +217,11 @@ template <typename T> class block_allocator : public std::allocator<T>
     void report_chunks() const
     {
         DBG_INFO("There are currently {0} chunk(s) allocated, occupying {1} bytes each ({2} bytes total)",
-                 bdata::s_chunks.size(), MEM_CHUNK_SIZE, bdata::s_chunks.size() * MEM_CHUNK_SIZE)
+                 bdata::s_chunks.size(), KIT_MEM_CHUNK_SIZE, bdata::s_chunks.size() * KIT_MEM_CHUNK_SIZE)
         std::size_t idx = 0;
         for (const chunk &ck : bdata::s_chunks)
         {
-            const std::size_t block_count = MEM_CHUNK_SIZE / ck.block_size;
+            const std::size_t block_count = KIT_MEM_CHUNK_SIZE / ck.block_size;
             DBG_INFO("Chunk {0}: {1} blocks, with {2} bytes per block, of which {3} are occupied ({4} bytes)", idx++,
                      block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
         }
@@ -239,7 +236,7 @@ template <typename T> class block_allocator : public std::allocator<T>
                 idx = i;
                 break;
             }
-        const std::size_t block_count = MEM_CHUNK_SIZE / ck.block_size;
+        const std::size_t block_count = KIT_MEM_CHUNK_SIZE / ck.block_size;
         DBG_DEBUG("Chunk {0} reported with {1} blocks and {2} bytes per block, of which {3} are occupied ({4} bytes)",
                   idx, block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
     }
@@ -267,6 +264,6 @@ template <typename T> struct block_deleter
 
     template <typename U> friend struct block_deleter;
 };
-} // namespace mem
+} // namespace kit
 
 #endif

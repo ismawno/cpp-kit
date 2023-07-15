@@ -1,7 +1,7 @@
-#ifndef DBG_LOG_HPP
-#define DBG_LOG_HPP
+#ifndef KIT_DBG_LOG_HPP
+#define KIT_DBG_LOG_HPP
 
-#ifdef DEBUG
+#if defined(KIT_DEBUG) && defined(KIT_USE_SPDLOG)
 #include <signal.h>
 #include <spdlog/spdlog.h>
 

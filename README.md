@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # container-view
 
 container-view is a simple, single-header C++ library that implements a templated class compatible with `std::vector`. It enables modification of the contents of a `std::vector` while preventing the user from altering its size or any other properties. This functionality is particularly useful when limiting the reach of a non-const getter of a `std::vector`.
@@ -48,7 +47,6 @@ For more information on how to use debug-tools and the available macros, please 
 ## License
 
 debug-tools is licensed under the MIT License. See LICENSE for more information.
-=======
 # profile-tools
 
 profile-tools is a performance profiling library for C++ projects, designed to accurately measure and report the elapsed time of specific code blocks. By leveraging the concept of C++ scope and utilizing macros, the library can efficiently profile the execution time of individual processes and their associated subprocesses. Results can be output as a JSON file for visualization in `chrome://tracing`, or as an in-memory hierarchy displaying the relative durations of parent and child processes in percentage terms. The profiler functionality is easily enabled or disabled by defining (or not defining) the `PERF` macro, offering flexibility to users during development.
@@ -80,4 +78,3 @@ The [fetch_dependencies.py](https://github.com/ismawno/profile-tools/scripts/fet
 ## License
 
 profile-tools is licensed under the MIT License. See LICENSE for more information.
->>>>>>> profile-tools/master
