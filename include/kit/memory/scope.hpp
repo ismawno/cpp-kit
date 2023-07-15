@@ -19,7 +19,7 @@ template <typename T, class... Args> inline scope<T> make_scope(Args &&...args)
         return scope<T>(new T(std::forward<Args>(args)...));
 
     T *p = new (buff) T(std::forward<Args>(args)...);
-    DBG_ASSERT_WARN((std::uint64_t)p % alignof(T) == 0, "Block allocated pointer {0} is not aligned! Alignment: {1}",
+    KIT_ASSERT_WARN((std::uint64_t)p % alignof(T) == 0, "Block allocated pointer {0} is not aligned! Alignment: {1}",
                     (void *)p, alignof(T))
     return scope<T>(p);
 }

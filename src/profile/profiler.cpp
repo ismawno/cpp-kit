@@ -17,7 +17,7 @@ void profiler::begin_session(std::uint8_t pexport, const char *name)
         open_file();
     if (m_export & HIERARCHY)
     {
-        DBG_ASSERT_ERROR(m_current_hierarchy.empty(),
+        KIT_ASSERT_ERROR(m_current_hierarchy.empty(),
                          "Starting a new profile session with an unfinished hierarchy from the last session. Number of "
                          "pending parents: {0}.",
                          m_current_hierarchy.size())
@@ -44,14 +44,14 @@ void profiler::end_session()
         close_file();
         m_runs = 0;
     }
-    DBG_ASSERT_ERROR(m_current_hierarchy.empty(),
+    KIT_ASSERT_ERROR(m_current_hierarchy.empty(),
                      "Ending profile session with pending records. Number of pending records: {0}.",
                      m_current_hierarchy.size())
 }
 
 void profiler::write(const profile_result &result)
 {
-    DBG_ASSERT_ERROR(m_output.is_open(),
+    KIT_ASSERT_ERROR(m_output.is_open(),
                      "Trying to profile with an unfinished hierarchy. Number of pending parents: {0}.",
                      m_current_hierarchy.size())
     if (m_output.tellp() > m_max_mb * 1000000)

@@ -53,12 +53,12 @@ template <typename T> class stack_allocator : public std::allocator<T>
 
     ptr allocate_raw(size n_bytes) const noexcept
     {
-        DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
-        DBG_ASSERT_WARN(
+        KIT_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
+        KIT_ASSERT_WARN(
             has_enough_entries(),
             "No more entries available in stack allocator when trying to allocate {0} bytes! Maximum entries: {1}",
             n_bytes, KIT_MEM_MAX_ENTRIES)
-        DBG_ASSERT_WARN(has_enough_space(n_bytes),
+        KIT_ASSERT_WARN(has_enough_space(n_bytes),
                         "No more space available in stack allocator when trying to allocate {0} bytes! Capacity: {1} "
                         "bytes, amount used: {2}",
                         n_bytes, KIT_MEM_STACK_CAPACITY, sdata::s_size)
@@ -71,24 +71,24 @@ template <typename T> class stack_allocator : public std::allocator<T>
         sdata::s_index++;
         sdata::s_size += n_bytes;
 
-        DBG_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes,
+        KIT_TRACE("Stack allocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes,
                   KIT_MEM_MAX_ENTRIES - sdata::s_index, KIT_MEM_STACK_CAPACITY - sdata::s_size)
         return p;
     }
 
     bool deallocate_raw(ptr p, size n_bytes, const bool destroy_manually = false) const noexcept
     {
-        DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
+        KIT_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
         if (!p)
         {
-            DBG_WARN("Attempting to deallocate null pointer!")
+            KIT_WARN("Attempting to deallocate null pointer!")
             return false;
         }
 
 #ifdef DEBUG
         for (std::size_t i = sdata::s_index - 2; i >= 0 && i < sdata::s_entries.size(); i--)
         {
-            DBG_ASSERT_CRITICAL(p != (ptr)sdata::s_entries[i],
+            KIT_ASSERT_CRITICAL(p != (ptr)sdata::s_entries[i],
                                 "Attempting to deallocate disorderly from stack! Entry is {0} positions away from top.",
                                 sdata::s_index - i)
         }
@@ -100,7 +100,7 @@ template <typename T> class stack_allocator : public std::allocator<T>
             p->~T();
         sdata::s_index--;
         sdata::s_size -= n_bytes;
-        DBG_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes,
+        KIT_TRACE("Stack deallocating {0} bytes of data. {1} entries and {2} bytes remaining in buffer.", n_bytes,
                   KIT_MEM_MAX_ENTRIES - sdata::s_index, KIT_MEM_STACK_CAPACITY - sdata::s_size)
         return true;
     }

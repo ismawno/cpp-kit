@@ -4,7 +4,7 @@
 #include "kit/profile/timer.hpp"
 #include "kit/profile/profiler.hpp"
 
-#ifdef KIT_PERF
+#ifdef KIT_PROFILE
 #define PERF_BEGIN_SESSION(name, pexport) kit::profiler::get().begin_session(pexport, name);
 #define PERF_END_SESSION() kit::profiler::get().end_session();
 #define PERF_SCOPE(name) kit::timer tm##__LINE__(name);

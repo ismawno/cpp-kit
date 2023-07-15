@@ -82,8 +82,8 @@ template <typename T> class block_allocator : public std::allocator<T>
 
     ptr allocate_raw(size n_bytes) const noexcept
     {
-        DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
-        DBG_DEBUG("Block allocating {0} bytes of data", n_bytes)
+        KIT_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
+        KIT_DEBUG("Block allocating {0} bytes of data", n_bytes)
         if (n_bytes > KIT_MEM_MAX_BLOCK_SIZE)
             return nullptr;
 
@@ -95,13 +95,13 @@ template <typename T> class block_allocator : public std::allocator<T>
 
     bool deallocate_raw(ptr p, size n_bytes, const bool destroy_manually = false) const noexcept
     {
-        DBG_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
+        KIT_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
         if (!p)
         {
-            DBG_WARN("Attempting to deallocate null pointer!")
+            KIT_WARN("Attempting to deallocate null pointer!")
             return false;
         }
-        DBG_DEBUG("Block deallocating {0} bytes of data", n_bytes)
+        KIT_DEBUG("Block deallocating {0} bytes of data", n_bytes)
         if (n_bytes > KIT_MEM_MAX_BLOCK_SIZE)
             return false;
 
@@ -154,7 +154,7 @@ template <typename T> class block_allocator : public std::allocator<T>
     ptr first_block_of_new_chunk(const std::size_t idx) const
     {
         const std::size_t clamped_size = bdata::s_helper.supported_sizes[idx];
-        DBG_INFO("Creating new chunk at index {0} with size {1} and {2} bytes per block", idx, KIT_MEM_CHUNK_SIZE,
+        KIT_INFO("Creating new chunk at index {0} with size {1} and {2} bytes per block", idx, KIT_MEM_CHUNK_SIZE,
                  clamped_size)
 
         chunk &ck = bdata::s_chunks.emplace_back();
@@ -163,7 +163,7 @@ template <typename T> class block_allocator : public std::allocator<T>
 
         byte *first_block = ck.blocks.get();
         const std::size_t block_count = KIT_MEM_CHUNK_SIZE / clamped_size;
-        DBG_ASSERT_ERROR(block_count * clamped_size <= KIT_MEM_CHUNK_SIZE,
+        KIT_ASSERT_ERROR(block_count * clamped_size <= KIT_MEM_CHUNK_SIZE,
                          "Number of blocks times the size of each block is not equal (or less) than the chunk size!")
 
         for (std::size_t i = 0; i < block_count - 1; i++)
@@ -193,13 +193,13 @@ template <typename T> class block_allocator : public std::allocator<T>
             const byte *p_byte = (byte *)p;
             const bool overlaps_chunk =
                 (p_byte + clamped_size) > ck.blocks.get() && (ck.blocks.get() + KIT_MEM_CHUNK_SIZE) > p_byte;
-            DBG_ASSERT_CRITICAL(!(ck.block_size != clamped_size && overlaps_chunk),
+            KIT_ASSERT_CRITICAL(!(ck.block_size != clamped_size && overlaps_chunk),
                                 "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong chunk!", (void *)p,
                                 n_bytes)
 
             const bool belongs_to_chunk =
                 ck.blocks.get() <= p_byte && (p_byte + clamped_size) <= (ck.blocks.get() + KIT_MEM_CHUNK_SIZE);
-            DBG_ASSERT_CRITICAL(!(ck.block_size != clamped_size && belongs_to_chunk),
+            KIT_ASSERT_CRITICAL(!(ck.block_size != clamped_size && belongs_to_chunk),
                                 "Pointer {0} with size {1} bytes belongs to the wrong chunk!", (void *)p, n_bytes)
             if (belongs_to_chunk)
             {
@@ -210,19 +210,19 @@ template <typename T> class block_allocator : public std::allocator<T>
                 break;
             }
         }
-        DBG_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any block of any chunks!",
+        KIT_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any block of any chunks!",
                             (void *)p, n_bytes)
     }
 
     void report_chunks() const
     {
-        DBG_INFO("There are currently {0} chunk(s) allocated, occupying {1} bytes each ({2} bytes total)",
+        KIT_INFO("There are currently {0} chunk(s) allocated, occupying {1} bytes each ({2} bytes total)",
                  bdata::s_chunks.size(), KIT_MEM_CHUNK_SIZE, bdata::s_chunks.size() * KIT_MEM_CHUNK_SIZE)
         std::size_t idx = 0;
         for (const chunk &ck : bdata::s_chunks)
         {
             const std::size_t block_count = KIT_MEM_CHUNK_SIZE / ck.block_size;
-            DBG_INFO("Chunk {0}: {1} blocks, with {2} bytes per block, of which {3} are occupied ({4} bytes)", idx++,
+            KIT_INFO("Chunk {0}: {1} blocks, with {2} bytes per block, of which {3} are occupied ({4} bytes)", idx++,
                      block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
         }
     }
@@ -237,7 +237,7 @@ template <typename T> class block_allocator : public std::allocator<T>
                 break;
             }
         const std::size_t block_count = KIT_MEM_CHUNK_SIZE / ck.block_size;
-        DBG_DEBUG("Chunk {0} reported with {1} blocks and {2} bytes per block, of which {3} are occupied ({4} bytes)",
+        KIT_DEBUG("Chunk {0} reported with {1} blocks and {2} bytes per block, of which {3} are occupied ({4} bytes)",
                   idx, block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
     }
 #endif
