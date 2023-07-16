@@ -1,7 +1,7 @@
 #ifndef KIT_IDENTIFIABLE_HPP
 #define KIT_IDENTIFIABLE_HPP
 
-#include "kit/interface/uuid.hpp"
+#include "kit/utility/uuid.hpp"
 
 namespace kit
 {

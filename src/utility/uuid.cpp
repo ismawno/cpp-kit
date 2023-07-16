@@ -1,5 +1,5 @@
 #include "kit/internal/pch.hpp"
-#include "kit/interface/uuid.hpp"
+#include "kit/utility/uuid.hpp"
 
 namespace kit
 {
