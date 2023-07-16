@@ -1,7 +1,7 @@
 #ifndef KIT_EVENT_HPP
 #define KIT_EVENT_HPP
 
-#include <functional>
+#include "kit/utility/callback.hpp"
 #include <vector>
 
 namespace kit
@@ -11,41 +11,37 @@ template <class... Ts> class event final
   public:
     event()
     {
-        m_subscriptions.reserve(10);
+        m_callbacks.reserve(10);
     }
 
-  private:
-    using subscription = std::function<void(Ts...)>;
-
-  public:
-    event &operator+=(const subscription &s)
+    event &operator+=(const callback<Ts...> &cb)
     {
-        m_subscriptions.push_back(s);
+        m_callbacks.push_back(cb);
         return *this;
     }
-    event &operator-=(const subscription &s)
+    event &operator-=(const callback<Ts...> &cb)
     {
-        for (auto it = m_subscriptions.begin(); it != m_subscriptions.end(); ++it)
-            if (*it == s)
+        for (auto it = m_callbacks.begin(); it != m_callbacks.end(); ++it)
+            if (*it == cb)
             {
-                m_subscriptions.erase(it);
+                m_callbacks.erase(it);
                 return *this;
             }
         return *this;
     }
     void operator()(Ts &&...args) const
     {
-        for (const auto &sub : m_subscriptions)
-            sub(std::forward<Ts>(args)...);
+        for (const auto &cb : m_callbacks)
+            cb(std::forward<Ts>(args)...);
     }
 
-    const std::vector<subscription> &subscriptions() const
+    const std::vector<callback<Ts...>> &callbacks() const
     {
-        return m_subscriptions;
+        return m_callbacks;
     }
 
   private:
-    std::vector<subscription> m_subscriptions;
+    std::vector<callback<Ts...>> m_callbacks;
 };
 } // namespace kit
 

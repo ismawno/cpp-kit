@@ -13,6 +13,10 @@
 #include <stack>
 #include <functional>
 #include <random>
+#include <map>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
 #include "kit/debug/log.hpp"
 
 #endif
