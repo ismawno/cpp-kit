@@ -31,8 +31,8 @@ template <class... Ts> class event final
     }
     void operator()(Ts &&...args) const
     {
-        for (const auto &cb : m_callbacks)
-            cb(std::forward<Ts>(args)...);
+        for (std::size_t i = m_callbacks.size() - 1; i < m_callbacks.size(); i--)
+            m_callbacks[i](std::forward<Ts>(args)...);
     }
 
     const std::vector<callback<Ts...>> &callbacks() const

@@ -2,6 +2,7 @@
 #define KIT_TRACK_VECTOR_HPP
 
 #include "kit/utility/event.hpp"
+#include "kit/interface/indexable.hpp"
 
 #include <vector>
 
@@ -9,9 +10,6 @@ namespace kit
 {
 template <typename T, typename Alloc = std::allocator<T>> class track_vector
 {
-    // static_assert(std::is_base_of<T, identifiable>::value && std::is_base_of<T, indexable>::value,
-    //               "Elements of a track vector must be identifiable and indexable");
-
   public:
     template <typename... VectorArgs> track_vector(VectorArgs &&...args) : m_vector(std::forward<VectorArgs>(args)...)
     {
@@ -19,7 +17,7 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     track_vector(std::initializer_list<T> lst) : m_vector(lst)
     {
     }
-    event<std::size_t> on_erase;
+    mutable event<std::size_t> on_erase;
 
     T &operator[](const std::size_t index)
     {
@@ -32,17 +30,18 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
 
     template <class... EmplaceArgs> T &emplace_back(EmplaceArgs &&...args)
     {
-#ifdef KIT_LOG
         T &elm = m_vector.emplace_back(std::forward<EmplaceArgs>(args)...);
         KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
+
+        if constexpr (std::is_base_of<indexable, T>::value)
+            elm.index(m_vector.size() - 1);
         return elm;
-#else
-        return m_vector.emplace_back(std::forward<EmplaceArgs>(args)...);
-#endif
     }
     template <class... PushArgs> void push_back(PushArgs &&...args)
     {
         m_vector.push_back(std::forward<PushArgs>(args)...);
+        if constexpr (std::is_base_of<indexable, T>::value)
+            m_vector.back().index(m_vector.size() - 1);
         KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
     }
 
@@ -50,7 +49,50 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     {
         m_vector.erase(m_vector.begin() + (long)index);
         on_erase(std::move(index));
+        if constexpr (std::is_base_of<indexable, T>::value)
+            for (std::size_t i = index; i < m_vector.size(); i++)
+                m_vector[i].index(i);
         KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
+    }
+    void erase(const T &elm)
+    {
+        static_assert(std::is_base_of<indexable, T>::value, "Can only erase with vector element if type is indexable");
+        erase(elm.index());
+    }
+
+    auto erase(typename std::vector<T>::const_iterator it)
+    {
+        static_assert(std::is_base_of<indexable, T>::value,
+                      "Can only erase with vector iterators if type is indexable");
+        on_erase(it->index());
+        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
+        for (std::size_t i = it->index() + 1; i < m_vector.size(); i++)
+            m_vector[i].index(i - 1);
+
+        return m_vector.erase(it);
+    }
+    auto erase(typename std::vector<T>::const_iterator from, typename std::vector<T>::const_iterator to)
+    {
+        static_assert(std::is_base_of<indexable, T>::value,
+                      "Can only erase with vector iterators if type is indexable");
+        KIT_ASSERT_ERROR(from < to, "'from' iterator must be lower than 'to'")
+
+        for (auto it = from; it != to; ++it)
+            on_erase(it->index());
+
+        const std::size_t diff = to->index() - from->index();
+        for (std::size_t i = to->index() + 1; i < m_vector.size(); i++)
+            m_vector[i].index(i - diff);
+
+        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
+        return m_vector.erase(from, to);
+    }
+
+    void clear()
+    {
+        for (std::size_t i = 0; i < m_vector.size(); i++)
+            on_erase(std::move(i));
+        m_vector.clear();
     }
 
     void reserve(const std::size_t n)
