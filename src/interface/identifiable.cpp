@@ -25,3 +25,11 @@ bool operator!=(const identifiable &lhs, const identifiable &rhs)
     return lhs.id() != rhs.id();
 }
 } // namespace kit
+
+namespace std
+{
+size_t hash<kit::identifiable>::operator()(const kit::identifiable &key) const
+{
+    return hash<kit::uuid>()(key.id());
+}
+} // namespace std

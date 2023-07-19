@@ -17,6 +17,14 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     track_vector(std::initializer_list<T> lst) : m_vector(lst)
     {
     }
+#ifdef KIT_LOG
+    ~track_vector()
+    {
+        KIT_ASSERT_ERROR(
+            on_erase.callbacks().empty(),
+            "Destroying a track vector with active subscribed pointers will cause them to become silently invalid")
+    }
+#endif
     mutable event<std::size_t> on_erase;
 
     T &operator[](const std::size_t index)
@@ -31,7 +39,6 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     template <class... EmplaceArgs> T &emplace_back(EmplaceArgs &&...args)
     {
         T &elm = m_vector.emplace_back(std::forward<EmplaceArgs>(args)...);
-        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
 
         if constexpr (std::is_base_of<indexable, T>::value)
             elm.index(m_vector.size() - 1);
@@ -42,17 +49,17 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
         m_vector.push_back(std::forward<PushArgs>(args)...);
         if constexpr (std::is_base_of<indexable, T>::value)
             m_vector.back().index(m_vector.size() - 1);
-        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
     }
 
     void erase(std::size_t index)
     {
         m_vector.erase(m_vector.begin() + (long)index);
+        KIT_DEBUG("Track vector erase: {0} callbacks prior", on_erase.callbacks().size())
         on_erase(std::move(index));
         if constexpr (std::is_base_of<indexable, T>::value)
             for (std::size_t i = index; i < m_vector.size(); i++)
                 m_vector[i].index(i);
-        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
+        KIT_DEBUG("Track vector erase: {0} callbacks later", on_erase.callbacks().size())
     }
     void erase(const T &elm)
     {
@@ -64,8 +71,10 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     {
         static_assert(std::is_base_of<indexable, T>::value,
                       "Can only erase with vector iterators if type is indexable");
+
+        KIT_DEBUG("Track vector erase: {0} callbacks prior", on_erase.callbacks().size())
         on_erase(it->index());
-        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
+        KIT_DEBUG("Track vector erase: {0} callbacks later", on_erase.callbacks().size())
         for (std::size_t i = it->index() + 1; i < m_vector.size(); i++)
             m_vector[i].index(i - 1);
 
@@ -77,21 +86,24 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
                       "Can only erase with vector iterators if type is indexable");
         KIT_ASSERT_ERROR(from < to, "'from' iterator must be lower than 'to'")
 
+        KIT_DEBUG("Track vector erase: {0} callbacks prior", on_erase.callbacks().size())
         for (auto it = from; it != to; ++it)
             on_erase(it->index());
+        KIT_DEBUG("Track vector erase: {0} callbacks later", on_erase.callbacks().size())
 
         const std::size_t diff = to->index() - from->index();
         for (std::size_t i = to->index() + 1; i < m_vector.size(); i++)
             m_vector[i].index(i - diff);
 
-        KIT_INFO("Pointer callbacks count: {0}", on_erase.callbacks().size())
         return m_vector.erase(from, to);
     }
 
     void clear()
     {
+        KIT_DEBUG("Track vector clear: {0} callbacks prior", on_erase.callbacks().size())
         for (std::size_t i = 0; i < m_vector.size(); i++)
             on_erase(std::move(i));
+        KIT_DEBUG("Track vector clear: {0} callbacks later", on_erase.callbacks().size())
         m_vector.clear();
     }
 
@@ -102,6 +114,11 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     void resize(const std::size_t n)
     {
         m_vector.resize(n);
+    }
+
+    const std::vector<T> &unwrap() const
+    {
+        return m_vector;
     }
 
     std::size_t size() const

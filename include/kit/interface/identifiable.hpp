@@ -22,4 +22,12 @@ bool operator==(const identifiable &lhs, const identifiable &rhs);
 bool operator!=(const identifiable &lhs, const identifiable &rhs);
 } // namespace kit
 
+namespace std
+{
+template <> struct hash<kit::identifiable>
+{
+    size_t operator()(const kit::identifiable &id) const;
+};
+} // namespace std
+
 #endif

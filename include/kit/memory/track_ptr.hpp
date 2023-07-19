@@ -15,7 +15,7 @@ template <typename T> class const_track_ptr
     const_track_ptr() = default;
     const_track_ptr(const track_vector<T> *vector, const std::size_t index = 0) : m_vector(vector), m_index(index)
     {
-        KIT_ASSERT_ERROR(m_vector != nullptr && m_index < m_vector->size(),
+        KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
                          "A track ptr cannot have an index greater or equal to the vector size!")
         if (vector)
         {
@@ -105,7 +105,7 @@ template <typename T> class track_ptr
     track_ptr() = default;
     track_ptr(track_vector<T> *vector, const std::size_t index = 0) : m_vector(vector), m_index(index)
     {
-        KIT_ASSERT_ERROR(m_vector != nullptr && m_index < m_vector->size(),
+        KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
                          "A track ptr cannot have an index greater or equal to the vector size!")
         if (vector)
         {

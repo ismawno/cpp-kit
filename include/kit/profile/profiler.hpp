@@ -19,7 +19,7 @@ struct profile_result
 class profiler
 {
   public:
-    enum profile_export
+    enum class export
     {
         FILE = 0x01,
         HIERARCHY = 0x02

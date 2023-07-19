@@ -27,13 +27,13 @@ void profiler::begin_session(std::uint8_t pexport, const char *name)
 void profiler::begin_timer()
 {
     if (m_export & HIERARCHY)
-        m_current_hierarchy.push({});
+        m_current_hierarchy.emplace();
 }
 void profiler::end_timer(const profile_result &result)
 {
     if (m_export & FILE)
         write(result);
-    if ((m_export & HIERARCHY))
+    if (m_export & HIERARCHY)
         add_to_hierarchy(result);
 }
 
