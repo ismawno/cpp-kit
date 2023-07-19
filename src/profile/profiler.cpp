@@ -9,13 +9,13 @@ profiler &profiler::get()
     return p;
 }
 
-void profiler::begin_session(std::uint8_t pexport, const char *name)
+void profiler::begin_session(std::uint8_t poutput, const char *name)
 {
     m_session = name;
-    m_export = pexport;
-    if (m_export & FILE)
+    m_export = poutput;
+    if (m_export & (std::uint8_t)output::FILE)
         open_file();
-    if (m_export & HIERARCHY)
+    if (m_export & (std::uint8_t)output::HIERARCHY)
     {
         KIT_ASSERT_ERROR(m_current_hierarchy.empty(),
                          "Starting a new profile session with an unfinished hierarchy from the last session. Number of "
@@ -26,20 +26,20 @@ void profiler::begin_session(std::uint8_t pexport, const char *name)
 
 void profiler::begin_timer()
 {
-    if (m_export & HIERARCHY)
+    if (m_export & (std::uint8_t)output::HIERARCHY)
         m_current_hierarchy.emplace();
 }
 void profiler::end_timer(const profile_result &result)
 {
-    if (m_export & FILE)
+    if (m_export & (std::uint8_t)output::FILE)
         write(result);
-    if (m_export & HIERARCHY)
+    if (m_export & (std::uint8_t)output::HIERARCHY)
         add_to_hierarchy(result);
 }
 
 void profiler::end_session()
 {
-    if (m_export & FILE)
+    if (m_export & (std::uint8_t)output::FILE)
     {
         close_file();
         m_runs = 0;

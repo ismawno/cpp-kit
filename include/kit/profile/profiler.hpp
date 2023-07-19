@@ -19,7 +19,7 @@ struct profile_result
 class profiler
 {
   public:
-    enum class export
+    enum class output
     {
         FILE = 0x01,
         HIERARCHY = 0x02
@@ -27,7 +27,7 @@ class profiler
 
     static profiler &get();
 
-    void begin_session(std::uint8_t pexport, const char *name = "results");
+    void begin_session(std::uint8_t poutput, const char *name = "results");
     void begin_timer();
     void end_timer(const profile_result &result);
     void end_session();
