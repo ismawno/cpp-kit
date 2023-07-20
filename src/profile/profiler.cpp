@@ -181,4 +181,13 @@ void profiler::smoothness(const float smoothness)
 {
     m_smoothness = smoothness;
 }
+
+profiler::ptimer::ptimer(const char *name) : m_name(name)
+{
+    get().begin_timer();
+}
+profiler::ptimer::~ptimer()
+{
+    get().end_timer({m_name, m_clock.start_time(), m_clock.current_time()});
+}
 } // namespace kit

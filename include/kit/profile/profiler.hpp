@@ -2,6 +2,7 @@
 #define KIT_PROFILER_HPP
 
 #include "kit/profile/profile_stats.hpp"
+#include "kit/profile/clock.hpp"
 #include <vector>
 #include <unordered_map>
 #include <string>
@@ -24,12 +25,20 @@ class profiler
         FILE = 0x01,
         HIERARCHY = 0x02
     };
+    class ptimer
+    {
+      public:
+        ptimer(const char *name);
+        ~ptimer();
+
+      private:
+        const char *m_name;
+        clock m_clock;
+    };
 
     static profiler &get();
 
     void begin_session(std::uint8_t poutput, const char *name = "results");
-    void begin_timer();
-    void end_timer(const profile_result &result);
     void end_session();
     void write(const profile_result &result);
 
@@ -57,6 +66,9 @@ class profiler
     std::unordered_map<std::string, profile_stats> m_hierarchy;
     std::stack<profile_stats> m_current_hierarchy;
     float m_smoothness = 0.f;
+
+    void begin_timer();
+    void end_timer(const profile_result &result);
 
     void end_hierarchy(profile_stats &head);
     void add_to_hierarchy(const profile_result &result);
