@@ -28,5 +28,7 @@ files {
 
 includedirs {
    "include",
-   "%{wks.location}/vendor/spdlog/include"
+   "%{wks.location}/vendor/spdlog/include",
+   "%{wks.location}/vendor/yaml-cpp/include",
+   "%{wks.location}/vendor/glm"
 }
