@@ -23,16 +23,16 @@ class time
 
     time(duration::nanoseconds elapsed = duration::nanoseconds::zero());
 
-    template <typename TimeUnit, typename Type> Type as() const
+    template <typename TimeUnit, typename T> T as() const
     {
-        return std::chrono::duration<Type, TimeUnit>(m_elapsed).count();
+        return std::chrono::duration<T, TimeUnit>(m_elapsed).count();
     }
 
     static void sleep(time tm);
 
-    template <typename TimeDuration, typename Type> static time from(Type elapsed)
+    template <typename TimeDuration, typename T> static time from(T elapsed)
     {
-        return time(std::chrono::round<TimeDuration>(std::chrono::duration<Type>(elapsed)));
+        return time(std::chrono::round<TimeDuration>(std::chrono::duration<T>(elapsed)));
     }
 
     bool operator==(const time &other);
@@ -50,9 +50,34 @@ class time
     time &operator+=(const time &other);
     time &operator-=(const time &other);
 
+    template <typename T> time operator*(const T scalar)
+    {
+        return time(m_elapsed * scalar);
+    }
+    template <typename T> time operator/(const T scalar)
+    {
+        return time(m_elapsed / scalar);
+    }
+
+    template <typename T> time &operator*=(const T scalar)
+    {
+        m_elapsed *= scalar;
+        return *this;
+    }
+    template <typename T> time &operator/=(const T scalar)
+    {
+        m_elapsed /= scalar;
+        return *this;
+    }
+
   private:
     duration::nanoseconds m_elapsed;
 };
+
+template <typename T> time operator*(const T scalar, const time &rhs)
+{
+    return rhs * scalar;
+}
 } // namespace kit
 
 #endif
