@@ -3,6 +3,9 @@
 
 namespace kit
 {
+profile_stats::profile_stats() : nameable("null")
+{
+}
 void profile_stats::compute_relative_durations()
 {
     m_relative_calls = 1;
@@ -45,11 +48,6 @@ long long profile_stats::duration_per_call() const
 long long profile_stats::duration_over_calls() const
 {
     return m_duration_over_calls;
-}
-
-const char *profile_stats::name() const
-{
-    return m_name;
 }
 
 std::uint32_t profile_stats::relative_calls() const

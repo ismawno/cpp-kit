@@ -25,14 +25,13 @@ class profiler
         FILE = 0x01,
         HIERARCHY = 0x02
     };
-    class ptimer
+    class ptimer : public nameable
     {
       public:
         ptimer(const char *name);
         ~ptimer();
 
       private:
-        const char *m_name;
         clock m_clock;
     };
 

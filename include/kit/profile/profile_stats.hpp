@@ -1,6 +1,8 @@
 #ifndef KIT_PROFILE_STATS_HPP
 #define KIT_PROFILE_STATS_HPP
 
+#include "kit/interface/nameable.hpp"
+
 #include <unordered_map>
 #include <cstdint>
 #include <string>
@@ -8,17 +10,16 @@
 
 namespace kit
 {
-class profile_stats
+class profile_stats : public nameable
 {
   public:
-    profile_stats() = default;
+    profile_stats();
 
     long long duration_per_call() const;
     long long duration_over_calls() const;
 
     void smooth_stats(const profile_stats &stats, float smoothness);
 
-    const char *name() const;
     std::uint32_t relative_calls() const;
     std::uint32_t total_calls() const;
     float relative_percent() const;
@@ -26,7 +27,6 @@ class profile_stats
     const std::unordered_map<const char *, profile_stats> &children() const;
 
   private:
-    const char *m_name;
     long long m_duration_per_call = 0, m_duration_over_calls = 0;
     std::uint32_t m_relative_calls = 1, m_total_calls = 1;
 

@@ -88,7 +88,7 @@ void profiler::add_to_hierarchy(const profile_result &result)
 {
     profile_stats stats = m_current_hierarchy.top();
     const long long duration = result.end - result.start;
-    stats.m_name = result.name;
+    stats.name(result.name);
 
     stats.m_relative_calls = 1;
     stats.m_duration_per_call = duration;
@@ -182,12 +182,12 @@ void profiler::smoothness(const float smoothness)
     m_smoothness = smoothness;
 }
 
-profiler::ptimer::ptimer(const char *name) : m_name(name)
+profiler::ptimer::ptimer(const char *name) : nameable(name)
 {
     get().begin_timer();
 }
 profiler::ptimer::~ptimer()
 {
-    get().end_timer({m_name, m_clock.start_time(), m_clock.current_time()});
+    get().end_timer({name(), m_clock.start_time(), m_clock.current_time()});
 }
 } // namespace kit
