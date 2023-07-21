@@ -17,6 +17,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <thread>
 #include "kit/debug/log.hpp"
 
 #endif

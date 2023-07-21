@@ -7,6 +7,11 @@ time::time(const std::chrono::nanoseconds elapsed) : m_elapsed(elapsed)
 {
 }
 
+void time::sleep(const time tm)
+{
+    std::this_thread::sleep_for(tm.m_elapsed);
+}
+
 bool time::operator==(const time &other)
 {
     return m_elapsed == other.m_elapsed;

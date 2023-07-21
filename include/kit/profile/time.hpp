@@ -13,9 +13,26 @@ class time
     using milliseconds = std::chrono::milliseconds::period;
     using seconds = std::chrono::seconds::period;
 
-    template <typename Type, typename TimeUnit> Type as() const
+    struct duration
+    {
+        using nanoseconds = std::chrono::nanoseconds;
+        using microseconds = std::chrono::microseconds;
+        using milliseconds = std::chrono::milliseconds;
+        using seconds = std::chrono::seconds;
+    };
+
+    time(duration::nanoseconds elapsed = duration::nanoseconds::zero());
+
+    template <typename TimeUnit, typename Type> Type as() const
     {
         return std::chrono::duration<Type, TimeUnit>(m_elapsed).count();
+    }
+
+    static void sleep(time tm);
+
+    template <typename TimeDuration, typename Type> static time from(Type elapsed)
+    {
+        return time(std::chrono::round<TimeDuration>(std::chrono::duration<Type>(elapsed)));
     }
 
     bool operator==(const time &other);
@@ -34,10 +51,7 @@ class time
     time &operator-=(const time &other);
 
   private:
-    time(std::chrono::nanoseconds elapsed);
-    std::chrono::nanoseconds m_elapsed;
-
-    friend class clock;
+    duration::nanoseconds m_elapsed;
 };
 } // namespace kit
 
