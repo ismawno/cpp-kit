@@ -1,6 +1,6 @@
 #ifdef KIT_USE_YAML_CPP
 #include "kit/internal/pch.hpp"
-#include "kit/interface/serializable.hpp"
+#include "kit/interface/serialization.hpp"
 
 namespace kit
 {

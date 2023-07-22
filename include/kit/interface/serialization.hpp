@@ -1,5 +1,5 @@
-#ifndef KIT_SERIALIZABLE_HPP
-#define KIT_SERIALIZABLE_HPP
+#ifndef KIT_SERIALIZATION_HPP
+#define KIT_SERIALIZATION_HPP
 
 #ifdef KIT_USE_YAML_CPP
 #include <yaml-cpp/yaml.h>
