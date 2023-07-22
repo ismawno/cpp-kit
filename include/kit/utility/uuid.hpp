@@ -10,7 +10,9 @@ class uuid
 {
   public:
     uuid();
-    uuid(std::uint64_t uuid);
+    template <typename T> uuid(T id) : m_uuid((std::uint64_t)id)
+    {
+    }
 
     operator std::uint64_t() const;
 

@@ -10,7 +10,8 @@ static std::uniform_int_distribution<uint64_t> s_dist;
 uuid::uuid() : m_uuid(s_dist(s_eng))
 {
 }
-uuid::uuid(const std::uint64_t uuid) : m_uuid(uuid)
+
+template <> uuid::uuid(const std::uint64_t uuid) : m_uuid(uuid)
 {
 }
 
