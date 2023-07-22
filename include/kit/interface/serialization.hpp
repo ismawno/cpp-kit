@@ -28,6 +28,12 @@ template <typename T> class serializer
         KIT_CHECK_RETURN_VALUE(decode(node, instance), true, ERROR,
                                "Failed to deserialize. Attempted to decode with wrong node?")
     }
+    T deserialize(const std::string &path)
+    {
+        T instance;
+        deserialize(instance, path);
+        return instance;
+    }
 
     virtual YAML::Node encode(const T &) const = 0;
     virtual bool decode(const YAML::Node &node, T &) = 0;
