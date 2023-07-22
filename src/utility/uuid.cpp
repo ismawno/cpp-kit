@@ -11,7 +11,7 @@ uuid::uuid() : m_uuid(s_dist(s_eng))
 {
 }
 
-template <> uuid::uuid(const std::uint64_t uuid) : m_uuid(uuid)
+uuid::uuid(const std::uint64_t uuid) : m_uuid(uuid)
 {
 }
 

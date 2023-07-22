@@ -7,7 +7,7 @@
 
 namespace kit
 {
-template <typename... Ts> class callback : public identifiable
+template <typename... Ts> class callback : public identifiable<>
 {
   public:
     callback(std::function<void(Ts...)> &&cb) : m_callback(cb)

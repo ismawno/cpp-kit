@@ -5,28 +5,46 @@
 
 namespace kit
 {
-class identifiable
+template <typename T = uuid> class identifiable
 {
   public:
     identifiable() = default;
-    identifiable(uuid id);
+    identifiable(const T &id) : m_id(id)
+    {
+    }
 
-    uuid id() const;
-    void id(uuid id);
+    const T &id() const
+    {
+        return m_id;
+    }
+    void id(const T &id)
+    {
+        m_id = id;
+    }
 
   private:
-    uuid m_uuid;
+    T m_id;
 };
 
-bool operator==(const identifiable &lhs, const identifiable &rhs);
-bool operator!=(const identifiable &lhs, const identifiable &rhs);
+template <typename T> bool operator==(const identifiable<T> &lhs, const identifiable<T> &rhs)
+{
+    return lhs.id() == rhs.id();
+}
+
+template <typename T> bool operator!=(const identifiable<T> &lhs, const identifiable<T> &rhs)
+{
+    return lhs.id() != rhs.id();
+}
 } // namespace kit
 
 namespace std
 {
-template <> struct hash<kit::identifiable>
+template <typename T> struct hash<kit::identifiable<T>>
 {
-    size_t operator()(const kit::identifiable &id) const;
+    size_t operator()(const kit::identifiable<T> &id) const
+    {
+        return hash<T>()(id.id());
+    }
 };
 } // namespace std
 
