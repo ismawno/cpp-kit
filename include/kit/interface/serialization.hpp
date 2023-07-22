@@ -22,13 +22,13 @@ template <typename T> class serializer
         std::ofstream file(path);
         file << out.c_str();
     }
-    void deserialize(T &instance, const std::string &path)
+    void deserialize(T &instance, const std::string &path) const
     {
         const YAML::Node node = YAML::LoadFile(path);
         KIT_CHECK_RETURN_VALUE(decode(node, instance), true, ERROR,
                                "Failed to deserialize. Attempted to decode with wrong node?")
     }
-    T deserialize(const std::string &path)
+    T deserialize(const std::string &path) const
     {
         T instance;
         deserialize(instance, path);
@@ -36,7 +36,7 @@ template <typename T> class serializer
     }
 
     virtual YAML::Node encode(const T &) const = 0;
-    virtual bool decode(const YAML::Node &node, T &) = 0;
+    virtual bool decode(const YAML::Node &node, T &) const = 0;
 #endif
 };
 
@@ -53,17 +53,51 @@ class serializable
 };
 
 #ifdef KIT_USE_YAML_CPP
-YAML::Emitter &operator<<(YAML::Emitter &out, const serializable &srz);
+template <typename T> YAML::Emitter &operator<<(YAML::Emitter &out, const T &instance)
+{
+    out << YAML::BeginMap;
+    if constexpr (std::is_base_of<serializable, T>::value)
+        out << instance.encode();
+    else
+    {
+        static_assert(std::is_base_of<kit::serializer<T>, typename T::serializer>::value,
+                      "Nested serializer class of type T must inherit from serializer<T>");
+        const typename T::serializer srz;
+        out << srz.encode(instance);
+    }
+    out << YAML::EndMap;
+    return out;
+}
 #endif
 } // namespace kit
 
 #ifdef KIT_USE_YAML_CPP
 namespace YAML
 {
-template <> struct convert<kit::serializable>
+template <typename T> struct convert
 {
-    static Node encode(const kit::serializable &srz);
-    static bool decode(const Node &node, kit::serializable &srz);
+    static Node encode(const T &instance)
+    {
+        if constexpr (std::is_base_of<kit::serializable, T>::value)
+            return instance.encode();
+        else
+        {
+            const typename T::serializer srz;
+            return srz.encode(instance);
+        }
+    }
+    static bool decode(const Node &node, T &instance)
+    {
+        if constexpr (std::is_base_of<kit::serializable, T>::value)
+            return instance.decode(node);
+        else
+        {
+            static_assert(std::is_base_of<kit::serializer<T>, typename T::serializer>::value,
+                          "Nested serializer class of type T must inherit from serializer<T>");
+            const typename T::serializer srz;
+            return srz.decode(node, instance);
+        }
+    }
 };
 } // namespace YAML
 #endif

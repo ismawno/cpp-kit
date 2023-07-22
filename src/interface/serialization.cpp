@@ -18,26 +18,6 @@ void serializable::deserialize(const std::string &path)
     const YAML::Node node = YAML::LoadFile(path);
     KIT_CHECK_RETURN_VALUE(decode(node), true, ERROR, "Failed to deserialize. Attempted to decode with wrong node?")
 }
-
-YAML::Emitter &operator<<(YAML::Emitter &out, const serializable &srz)
-{
-    out << YAML::BeginMap;
-    out << srz.encode();
-    out << YAML::EndMap;
-    return out;
-}
 } // namespace kit
-
-namespace YAML
-{
-Node convert<kit::serializable>::encode(const kit::serializable &szr)
-{
-    return szr.encode();
-}
-bool convert<kit::serializable>::decode(const Node &node, kit::serializable &szr)
-{
-    return szr.decode(node);
-}
-} // namespace YAML
 
 #endif
