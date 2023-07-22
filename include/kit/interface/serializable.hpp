@@ -9,6 +9,31 @@
 
 namespace kit
 {
+template <typename T> class serializer
+{
+#ifdef KIT_USE_YAML_CPP
+  public:
+    void serialize(const T &instance, const std::string &path) const
+    {
+        const YAML::Node node = encode(instance);
+        YAML::Emitter out;
+        out << node;
+
+        std::ofstream file(path);
+        file << out.c_str();
+    }
+    void deserialize(T &instance, const std::string &path)
+    {
+        const YAML::Node node = YAML::LoadFile(path);
+        KIT_CHECK_RETURN_VALUE(decode(node, instance), true, ERROR,
+                               "Failed to deserialize. Attempted to decode with wrong node?")
+    }
+
+    virtual YAML::Node encode(const T &) const = 0;
+    virtual bool decode(const YAML::Node &node, T &) = 0;
+#endif
+};
+
 class serializable
 {
 #ifdef KIT_USE_YAML_CPP
@@ -16,14 +41,8 @@ class serializable
     void serialize(const std::string &path) const;
     void deserialize(const std::string &path);
 
-  private:
     virtual YAML::Node encode() const = 0;
     virtual bool decode(const YAML::Node &node) = 0;
-
-#ifdef KIT_USE_YAML_CPP
-    friend YAML::Emitter &operator<<(YAML::Emitter &, const serializable &);
-    friend struct YAML::convert<serializable>;
-#endif
 #endif
 };
 

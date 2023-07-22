@@ -13,7 +13,6 @@ void serializable::serialize(const std::string &path) const
     std::ofstream file(path);
     file << out.c_str();
 }
-
 void serializable::deserialize(const std::string &path)
 {
     const YAML::Node node = YAML::LoadFile(path);
