@@ -17,14 +17,10 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     track_vector(std::initializer_list<T> lst) : m_vector(lst)
     {
     }
-#ifdef KIT_LOG
     ~track_vector()
     {
-        KIT_ASSERT_ERROR(
-            on_erase.callbacks().empty(),
-            "Destroying a track vector with active subscribed pointers will cause them to become silently invalid")
+        clear();
     }
-#endif
     mutable event<std::size_t> on_erase;
 
     T &operator[](const std::size_t index)
@@ -87,7 +83,7 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
         KIT_ASSERT_ERROR(from < to, "'from' iterator must be lower than 'to'")
 
         KIT_DEBUG("Track vector erase: {0} callbacks prior", on_erase.callbacks().size())
-        for (auto it = from; it != to; ++it)
+        for (auto it = to - 1; it >= from; --it)
             on_erase(it->index());
         KIT_DEBUG("Track vector erase: {0} callbacks later", on_erase.callbacks().size())
 
@@ -101,9 +97,14 @@ template <typename T, typename Alloc = std::allocator<T>> class track_vector
     void clear()
     {
         KIT_DEBUG("Track vector clear: {0} callbacks prior", on_erase.callbacks().size())
-        for (std::size_t i = 0; i < m_vector.size(); i++)
+        for (std::size_t i = m_vector.size() - 1; i < m_vector.size(); i--)
             on_erase(std::move(i));
         KIT_DEBUG("Track vector clear: {0} callbacks later", on_erase.callbacks().size())
+
+        KIT_ASSERT_ERROR(on_erase.callbacks().empty(),
+                         "When clearing a track_vector, all pointers should be invalidated (i.e no more on_erase "
+                         "callbacks). Callbacks remaining: {0}",
+                         on_erase.callbacks().size())
         m_vector.clear();
     }
 
