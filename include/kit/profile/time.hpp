@@ -30,9 +30,9 @@ class time
 
     static void sleep(time tm);
 
-    template <typename TimeDuration, typename T> static time from(T elapsed)
+    template <typename TimeUnit, typename T> static time from(T elapsed)
     {
-        return time(std::chrono::round<TimeDuration>(std::chrono::duration<T>(elapsed)));
+        return time(std::chrono::round<duration::nanoseconds>(std::chrono::duration<T, TimeUnit>(elapsed)));
     }
 
     bool operator==(const time &other);

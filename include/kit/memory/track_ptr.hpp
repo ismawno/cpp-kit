@@ -2,56 +2,41 @@
 #define KIT_TRACK_PTR_HPP
 
 #include "kit/utility/uuid.hpp"
-#include "kit/utility/callback.hpp"
-#include "kit/container/track_vector.hpp"
+#include "kit/interface/identifiable.hpp"
+#include "kit/interface/indexable.hpp"
 #include "kit/debug/log.hpp"
+#include <vector>
 #include <cstddef>
 
 namespace kit
 {
-template <typename T> class const_track_ptr
+template <typename T, typename ID = uuid> class const_track_ptr : public identifiable<ID>
 {
+    static_assert(std::is_base_of<identifiable<ID>, T>::value,
+                  "The type of a track_ptr must be identifiable with the ID type");
+
   public:
     const_track_ptr() = default;
-    const_track_ptr(const track_vector<T> *vector, const std::size_t index = 0) : m_vector(vector), m_index(index)
+    const_track_ptr(const std::vector<T> *vector, const std::size_t index = 0)
+        : identifiable<ID>(vector ? (*vector)[index].id() : ID()), m_vector(vector), m_index(index)
     {
         KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
                          "A track ptr cannot have an index greater or equal to the vector size!")
-        if (vector)
-        {
-            m_callback = erase_callback();
-            vector->on_erase += m_callback;
-        }
-    }
-    const_track_ptr(const const_track_ptr &other) : const_track_ptr(other.m_vector, other.m_index)
-    {
-    }
-
-    ~const_track_ptr()
-    {
-        if (m_vector)
-            m_vector->on_erase -= m_callback;
-    }
-
-    const_track_ptr &operator=(const const_track_ptr &other)
-    {
-        if (m_vector)
-            m_vector->on_erase -= m_callback;
-        m_vector = other.m_vector;
-        m_index = other.m_index;
-        if (m_vector)
-        {
-            m_callback = erase_callback();
-            m_vector->on_erase += m_callback;
-        }
-        return *this;
     }
 
     operator bool() const
     {
-        KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
-                         "A track ptr cannot have an index greater or equal to the vector size!")
-        return m_vector != nullptr;
+        if (!m_vector)
+            return false;
+        if ((*m_vector)[m_index].id() == this->id())
+            return true;
+        for (std::size_t i = 0; i < m_vector->size(); i++)
+            if ((*m_vector)[i].id() == this->id())
+            {
+                m_index = i;
+                return true;
+            }
+        return false;
     }
 
     const T *raw() const
@@ -69,83 +54,38 @@ template <typename T> class const_track_ptr
         return (*m_vector)[m_index];
     }
 
-    bool operator==(const const_track_ptr &other)
-    {
-        return m_vector == other.m_vector && m_index == other.m_index;
-    }
-    bool operator!=(const const_track_ptr &other)
-    {
-        return !(*this == other);
-    }
-
-    callback<std::size_t> erase_callback()
-    {
-        return callback<std::size_t>([this](const std::size_t removed) {
-            KIT_ASSERT_CRITICAL(m_vector, "Underlying track vector cannot have a callback from a null track pointer")
-            if (removed == m_index)
-            {
-                m_vector->on_erase -= m_callback;
-                m_vector = nullptr;
-                return;
-            }
-            if (removed < m_index)
-                m_index--;
-        });
-    }
-
   private:
-    const track_vector<T> *m_vector = nullptr;
-    std::size_t m_index;
-    callback<std::size_t> m_callback{nullptr};
+    const std::vector<T> *m_vector = nullptr;
+    mutable std::size_t m_index;
 };
 
-template <typename T> class track_ptr
+template <typename T, typename ID = uuid> class track_ptr : public identifiable<ID>
 {
+    static_assert(std::is_base_of<identifiable<ID>, T>::value,
+                  "The type of a track_ptr must be identifiable with the ID type");
+
   public:
     track_ptr() = default;
-    track_ptr(track_vector<T> *vector, const std::size_t index = 0) : m_vector(vector), m_index(index)
+    track_ptr(std::vector<T> *vector, const std::size_t index = 0)
+        : identifiable<ID>(vector ? (*vector)[index].id() : ID()), m_vector(vector), m_index(index)
     {
         KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
                          "A track ptr cannot have an index greater or equal to the vector size!")
-        if (vector)
-        {
-            m_callback = erase_callback();
-            vector->on_erase += m_callback;
-        }
-    }
-    track_ptr(const track_ptr &other) : track_ptr(other.m_vector, other.m_index)
-    {
-    }
-
-    ~track_ptr()
-    {
-        if (m_vector)
-            m_vector->on_erase -= m_callback;
-    }
-
-    track_ptr &operator=(const track_ptr &other)
-    {
-        if (m_vector)
-            m_vector->on_erase -= m_callback;
-        m_vector = other.m_vector;
-        m_index = other.m_index;
-        if (m_vector)
-        {
-            m_callback = erase_callback();
-            m_vector->on_erase += m_callback;
-        }
-        return *this;
     }
 
     operator bool() const
     {
-        KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
-                         "A track ptr cannot have an index greater or equal to the vector size!")
-        return m_vector != nullptr;
-    }
-    operator const_track_ptr<T>() const
-    {
-        return const_track_ptr(m_vector, m_index);
+        if (!m_vector)
+            return false;
+        if ((*m_vector)[m_index].id() == this->id())
+            return true;
+        for (std::size_t i = 0; i < m_vector->size(); i++)
+            if ((*m_vector)[i].id() == this->id())
+            {
+                m_index = i;
+                return true;
+            }
+        return false;
     }
 
     T *raw() const
@@ -163,33 +103,16 @@ template <typename T> class track_ptr
         return (*m_vector)[m_index];
     }
 
-    bool operator==(const track_ptr &other)
+    operator const_track_ptr<T, ID>() const
     {
-        return m_vector == other.m_vector && m_index == other.m_index;
-    }
-    bool operator!=(const track_ptr &other)
-    {
-        return !(*this == other);
-    }
-
-    callback<std::size_t> erase_callback()
-    {
-        return callback<std::size_t>([this](const std::size_t removed) {
-            if (removed == m_index)
-            {
-                m_vector->on_erase -= m_callback;
-                m_vector = nullptr;
-                return;
-            }
-            if (removed < m_index)
-                m_index--;
-        });
+        const_track_ptr<T, ID> ptr{m_vector, m_index};
+        ptr.id(this->id());
+        return ptr;
     }
 
   private:
-    track_vector<T> *m_vector = nullptr;
-    std::size_t m_index = 0;
-    callback<std::size_t> m_callback{nullptr};
+    std::vector<T> *m_vector = nullptr;
+    mutable std::size_t m_index;
 };
 } // namespace kit
 

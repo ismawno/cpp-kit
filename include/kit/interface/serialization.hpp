@@ -6,6 +6,7 @@
 #endif
 
 #include <string>
+#include <fstream>
 
 namespace kit
 {

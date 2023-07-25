@@ -1,8 +1,6 @@
 #ifndef KIT_CONTAINER_VIEW_HPP
 #define KIT_CONTAINER_VIEW_HPP
 
-#include "kit/container/track_vector.hpp"
-
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -52,8 +50,6 @@ template <template <typename...> typename C, typename... Args> class container_v
 };
 
 template <typename T> using vector_view = container_view<std::vector, T>;
-
-template <typename T> using track_vector_view = container_view<track_vector, T>;
 
 template <typename K, typename V> using unordered_map_view = container_view<std::unordered_map, K, V>;
 
