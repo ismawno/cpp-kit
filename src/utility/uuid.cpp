@@ -30,10 +30,8 @@ bool operator!=(const uuid &id1, const uuid &id2)
 }
 } // namespace kit
 
-namespace std
+std::size_t std::hash<kit::uuid>::operator()(const kit::uuid &key) const
 {
-size_t hash<kit::uuid>::operator()(const kit::uuid &key) const
-{
-    return hash<uint64_t>()((uint64_t)key);
-}
+    return std::hash<uint64_t>()((std::uint64_t)key);
+
 } // namespace std

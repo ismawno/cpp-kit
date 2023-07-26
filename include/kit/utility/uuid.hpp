@@ -10,7 +10,7 @@ class uuid
 {
   public:
     uuid();
-    uuid(std::uint64_t id);
+    explicit uuid(std::uint64_t id);
 
     operator std::uint64_t() const;
 

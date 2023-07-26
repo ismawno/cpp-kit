@@ -27,10 +27,15 @@ class profile_stats : public nameable
     const std::unordered_map<const char *, profile_stats> &children() const;
 
   private:
-    long long m_duration_per_call = 0, m_duration_over_calls = 0;
-    std::uint32_t m_relative_calls = 1, m_total_calls = 1;
+    long long m_duration_per_call = 0;
+    long long m_duration_over_calls = 0;
 
-    float m_relative_percent = 0.f, m_total_percent = 0.f;
+    std::uint32_t m_relative_calls = 1;
+    std::uint32_t m_total_calls = 1;
+
+    float m_relative_percent = 0.f;
+    float m_total_percent = 0.f;
+
     std::unordered_map<const char *, profile_stats> m_children;
 
     void compute_relative_durations();

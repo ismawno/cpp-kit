@@ -14,7 +14,8 @@ namespace kit
 struct profile_result
 {
     const char *name;
-    long long start, end;
+    long long start;
+    long long end;
 };
 
 class profiler
@@ -28,7 +29,7 @@ class profiler
     class ptimer : public nameable
     {
       public:
-        ptimer(const char *name);
+        explicit ptimer(const char *name);
         ~ptimer();
 
       private:
@@ -59,8 +60,14 @@ class profiler
     profiler() = default;
 
     std::ofstream m_output;
-    std::uint32_t m_count = 0, m_runs = 0, m_max_mb = 200;
-    const char *m_session, *m_extension = ".json", *m_path = "./";
+    std::uint32_t m_count = 0;
+    std::uint32_t m_runs = 0;
+    std::uint32_t m_max_mb = 200;
+
+    const char *m_session;
+    const char *m_extension = ".json";
+    const char *m_path = "./";
+
     std::uint8_t m_output_format;
     std::unordered_map<std::string, profile_stats> m_hierarchy;
     std::stack<profile_stats> m_current_hierarchy;

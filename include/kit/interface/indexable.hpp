@@ -9,7 +9,7 @@ class indexable
 {
   public:
     indexable() = default;
-    indexable(std::size_t index);
+    explicit indexable(std::size_t index);
 
     std::size_t index() const;
     void index(std::size_t index);

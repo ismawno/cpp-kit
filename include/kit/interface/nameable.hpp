@@ -6,7 +6,7 @@ namespace kit
 class nameable
 {
   public:
-    nameable(const char *name);
+    explicit nameable(const char *name);
 
     const char *name() const;
     void name(const char *name);

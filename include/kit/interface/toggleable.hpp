@@ -6,7 +6,7 @@ namespace kit
 class toggleable
 {
   public:
-    toggleable(bool enabled = true);
+    explicit toggleable(bool enabled = true);
 
     bool enabled() const;
     void enabled(bool enabled);

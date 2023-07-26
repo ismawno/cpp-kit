@@ -120,7 +120,9 @@ void profiler::open_file()
 {
     if (!std::filesystem::exists(m_path))
         std::filesystem::create_directories(m_path);
-    m_output.open(m_path + std::string(m_session) + "-" + std::to_string(++m_runs) + m_extension);
+
+    m_runs++;
+    m_output.open(m_path + std::string(m_session) + "-" + std::to_string(m_runs) + m_extension);
     write_header();
 }
 

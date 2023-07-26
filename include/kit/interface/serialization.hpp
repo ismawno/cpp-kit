@@ -50,6 +50,8 @@ class serializable
 
     virtual YAML::Node encode() const = 0;
     virtual bool decode(const YAML::Node &node) = 0;
+
+    virtual ~serializable() = default;
 #endif
 };
 
