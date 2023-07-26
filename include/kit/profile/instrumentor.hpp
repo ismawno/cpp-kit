@@ -31,7 +31,7 @@ class instrumentor
 
     static instrumentor &get();
 
-    const char *directory_path = "./";
+    const char *directory_path = "profile-results/";
     std::uint32_t max_mb_per_file = 200;
 
     void begin_session(const char *name, std::uint8_t format);

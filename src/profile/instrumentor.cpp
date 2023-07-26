@@ -26,6 +26,9 @@ void instrumentor::begin_session(const char *name, const std::uint8_t format)
     KIT_ASSERT_ERROR(!m_session_name, "There is already a session running")
     KIT_ASSERT_ERROR(format & output_format::JSON_TRACE | format & output_format::HIERARCHY, "Must be a valid format")
 
+    m_session_name = name;
+    m_format = format;
+
     if (format & output_format::JSON_TRACE)
         open_file();
 }
@@ -58,6 +61,9 @@ void instrumentor::end_measurement(const char *name, long long start, long long 
     if (m_current_measurements.empty())
     {
         measure.duration_over_calls = duration;
+        measure.compute_relative_measurements();
+        if (m_smoothness != 0.f)
+            measure.smooth_measurements(m_head_measurement, m_smoothness);
         m_head_measurement = std::move(measure);
         return;
     }
@@ -97,7 +103,10 @@ void instrumentor::open_file()
         std::filesystem::create_directories(directory_path);
 
     m_file_count++;
-    m_output.open(directory_path + std::string(m_session_name) + "-" + std::to_string(m_file_count) + ".json");
+
+    const std::string filepath =
+        directory_path + std::string(m_session_name) + "-" + std::to_string(m_file_count) + ".json";
+    m_output.open(filepath);
     write_header();
 }
 void instrumentor::close_file()
@@ -110,14 +119,17 @@ void instrumentor::write_measurement(const char *name, long long start, long lon
 {
     KIT_ASSERT_ERROR(m_session_name, "A session must be active to write a measurement")
     KIT_ASSERT_ERROR(m_output.is_open(), "File must be open to write a measurement")
+    static bool first_call_ever = true;
 
     if (m_output.tellp() > max_mb_per_file * 1000000)
     {
         close_file();
         open_file();
     }
-    else
+    else if (!first_call_ever)
         m_output << ",\n";
+
+    first_call_ever = false;
 
     std::string new_name = name;
     std::replace(new_name.begin(), new_name.end(), '"', '\'');

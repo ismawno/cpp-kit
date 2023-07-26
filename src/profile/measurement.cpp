@@ -13,8 +13,10 @@ void measurement::compute_relative_measurements(const measurement &parent)
     duration_per_call = duration_over_calls / parent_relative_calls;
     total_calls = parent_relative_calls + parent.total_calls;
 
-    parent_relative_percent = duration_over_calls.as<kit::time::nanoseconds, float>() /
-                              parent.duration_per_call.as<kit::time::nanoseconds, float>();
+    const float parent_per_call = parent.duration_per_call.as<kit::time::nanoseconds, float>();
+    parent_relative_percent =
+        parent_per_call > 0.f ? duration_over_calls.as<kit::time::nanoseconds, float>() / parent_per_call : 0.f;
+
     total_percent = parent_relative_percent * parent.total_percent;
     for (measurement &m : children)
         m.compute_relative_measurements(*this);
@@ -22,8 +24,7 @@ void measurement::compute_relative_measurements(const measurement &parent)
 
 void measurement::compute_relative_measurements()
 {
-    for (measurement &m : children)
-        m.compute_relative_measurements(*this);
+    compute_relative_measurements(*this);
 }
 
 void measurement::smooth_measurements(const measurement &measure, const float smoothness)
