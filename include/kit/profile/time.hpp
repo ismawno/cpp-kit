@@ -8,55 +8,55 @@ namespace kit
 class time
 {
   public:
-    using nanoseconds = std::chrono::nanoseconds::period;
-    using microseconds = std::chrono::microseconds::period;
-    using milliseconds = std::chrono::milliseconds::period;
-    using seconds = std::chrono::seconds::period;
+    using nanoseconds = std::chrono::nanoseconds;
+    using microseconds = std::chrono::microseconds;
+    using milliseconds = std::chrono::milliseconds;
+    using seconds = std::chrono::seconds;
 
-    struct duration
-    {
-        using nanoseconds = std::chrono::nanoseconds;
-        using microseconds = std::chrono::microseconds;
-        using milliseconds = std::chrono::milliseconds;
-        using seconds = std::chrono::seconds;
-    };
-
-    time(duration::nanoseconds elapsed = duration::nanoseconds::zero());
+    time(nanoseconds elapsed = nanoseconds::zero());
 
     template <typename TimeUnit, typename T> T as() const
     {
-        return std::chrono::duration<T, TimeUnit>(m_elapsed).count();
+        static_assert(std::is_floating_point<T>::value || std::is_integral<T>::value,
+                      "Type T must be either a floating point or an integer type");
+        if constexpr (std::is_floating_point<T>::value)
+            return std::chrono::duration<T, typename TimeUnit::period>(m_elapsed).count();
+        else
+        {
+            const auto as_time_unit = std::chrono::duration_cast<TimeUnit>(m_elapsed);
+            return std::chrono::duration<T, typename TimeUnit::period>(as_time_unit).count();
+        }
     }
 
     static void sleep(time tm);
 
     template <typename TimeUnit, typename T> static time from(T elapsed)
     {
-        return time(std::chrono::round<duration::nanoseconds>(std::chrono::duration<T, TimeUnit>(elapsed)));
+        return time(std::chrono::round<nanoseconds>(std::chrono::duration<T, typename TimeUnit::period>(elapsed)));
     }
 
-    bool operator==(const time &other);
-    bool operator!=(const time &other);
+    bool operator==(const time &other) const;
+    bool operator!=(const time &other) const;
 
-    bool operator<(const time &other);
-    bool operator>(const time &other);
+    bool operator<(const time &other) const;
+    bool operator>(const time &other) const;
 
-    bool operator<=(const time &other);
-    bool operator>=(const time &other);
+    bool operator<=(const time &other) const;
+    bool operator>=(const time &other) const;
 
-    time operator+(const time &other);
-    time operator-(const time &other);
+    time operator+(const time &other) const;
+    time operator-(const time &other) const;
 
     time &operator+=(const time &other);
     time &operator-=(const time &other);
 
-    template <typename T> time operator*(const T scalar)
+    template <typename T> time operator*(const T scalar) const
     {
-        return time(m_elapsed * scalar);
+        return time(std::chrono::round<nanoseconds>(m_elapsed * scalar));
     }
-    template <typename T> time operator/(const T scalar)
+    template <typename T> time operator/(const T scalar) const
     {
-        return time(m_elapsed / scalar);
+        return time(std::chrono::round<nanoseconds>(m_elapsed / scalar));
     }
 
     template <typename T> time &operator*=(const T scalar)
@@ -71,7 +71,7 @@ class time
     }
 
   private:
-    duration::nanoseconds m_elapsed;
+    nanoseconds m_elapsed;
 };
 
 template <typename T> time operator*(const T scalar, const time &rhs)
