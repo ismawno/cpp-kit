@@ -1,30 +1,28 @@
 #ifndef KIT_PERF_HPP
 #define KIT_PERF_HPP
 
-#include "kit/profile/profiler.hpp"
+#include "kit/profile/instrumentor.hpp"
 
 #ifdef KIT_PROFILE
-#define KIT_PERF_BEGIN_SESSION(name, pexport) kit::profiler::get().begin_session((std::uint8_t)pexport, name);
-#define KIT_PERF_END_SESSION() kit::profiler::get().end_session();
-#define KIT_PERF_SCOPE(name) kit::profiler::ptimer tm##__LINE__(name);
-#define KIT_PERF_FUNCTION() kit::profiler::ptimer tm##__LINE__(__FUNCTION__);
+#define KIT_PERF_BEGIN_SESSION(name, export_format) kit::instrumentor::get().begin_session(name, export_format);
+#define KIT_PERF_END_SESSION() kit::instrumentor::get().end_session();
+#define KIT_PERF_SCOPE(name) kit::instrumentor::timer tm##__LINE__(name);
+#define KIT_PERF_FUNCTION() kit::instrumentor::timer tm##__LINE__(__FUNCTION__);
 #ifdef __PRETTY_FUNCTION__
-#define KIT_PERF_PRETTY_FUNCTION() kit::profiler::ptimer tm##__LINE__(__PRETTY_FUNCTION__);
+#define KIT_PERF_PRETTY_FUNCTION() kit::instrumentor::timer tm##__LINE__(__PRETTY_FUNCTION__);
 #else
 #define KIT_PERF_PRETTY_FUNCTION() KIT_PERF_FUNCTION()
 #endif
-#define KIT_PERF_SET_MAX_FILE_MB(size) kit::profiler::get().max_mb(size);
-#define KIT_PERF_SET_EXTENSION(ext) kit::profiler::get().extension(ext);
-#define KIT_PERF_SET_PATH(pth) kit::profiler::get().path(pth);
+#define KIT_PERF_SET_MAX_FILE_MB(size) kit::instrumentor::get().max_mb_per_file = size;
+#define KIT_PERF_SET_DIRECTORY_PATH(pth) kit::instrumentor::get().directory_path = pth;
 #else
-#define KIT_PERF_BEGIN_SESSION(pexport, name)
+#define KIT_PERF_BEGIN_SESSION(export_format, name)
 #define KIT_PERF_END_SESSION()
 #define KIT_PERF_SCOPE(name)
 #define KIT_PERF_FUNCTION()
 #define KIT_PERF_PRETTY_FUNCTION()
 #define KIT_PERF_SET_MAX_FILE_MB(size)
-#define KIT_PERF_SET_EXTENSION(extension)
-#define KIT_PERF_SET_PATH(path)
+#define KIT_PERF_SET_DIRECTORY_PATH(pth)
 #endif
 
 #endif

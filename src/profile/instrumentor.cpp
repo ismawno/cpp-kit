@@ -20,29 +20,20 @@ instrumentor &instrumentor::get()
     return inst;
 }
 
-static bool is_json(const instrumentor::output_format format)
-{
-    return (std::uint32_t)format & (std::uint32_t)instrumentor::output_format::JSON_TRACE;
-}
-static bool is_hierarchy(const instrumentor::output_format format)
-{
-    return (std::uint32_t)format & (std::uint32_t)instrumentor::output_format::MEASUREMENT_HIERARCHY;
-}
-
-void instrumentor::begin_session(const char *name, output_format format)
+void instrumentor::begin_session(const char *name, const std::uint8_t format)
 {
     KIT_ASSERT_ERROR(name, "Session name must not be null")
     KIT_ASSERT_ERROR(!m_session_name, "There is already a session running")
-    KIT_ASSERT_ERROR(is_json(format) || is_hierarchy(format), "Must be a valid format")
+    KIT_ASSERT_ERROR(format & output_format::JSON_TRACE | format & output_format::HIERARCHY, "Must be a valid format")
 
-    if (is_json(format))
+    if (format & output_format::JSON_TRACE)
         open_file();
 }
 
 void instrumentor::end_session()
 {
     KIT_ASSERT_ERROR(m_session_name, "No session is currently running")
-    if (is_json(m_format))
+    if (m_format & output_format::JSON_TRACE)
     {
         close_file();
         m_file_count = 0;
@@ -57,9 +48,9 @@ void instrumentor::begin_measurement(const char *name)
 
 void instrumentor::end_measurement(const char *name, long long start, long long end, time duration)
 {
-    if (is_json(m_format))
+    if (m_format & output_format::JSON_TRACE)
         write_measurement(name, start, end);
-    if (!is_hierarchy(m_format))
+    if (!(m_format & output_format::HIERARCHY))
         return;
 
     measurement measure = std::move(m_current_measurements.top());

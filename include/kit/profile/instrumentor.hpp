@@ -5,6 +5,8 @@
 #include "kit/profile/time.hpp"
 #include "kit/profile/clock.hpp"
 #include "kit/profile/measurement.hpp"
+#include <stack>
+#include <fstream>
 
 namespace kit
 {
@@ -21,10 +23,10 @@ class instrumentor
         clock m_clock;
     };
 
-    enum class output_format
+    struct output_format
     {
-        JSON_TRACE = 0x01,
-        MEASUREMENT_HIERARCHY = 0x02
+        inline static constexpr std::uint8_t JSON_TRACE = 1 << 0;
+        inline static constexpr std::uint8_t HIERARCHY = 1 << 1;
     };
 
     static instrumentor &get();
@@ -32,7 +34,7 @@ class instrumentor
     const char *directory_path = "./";
     std::uint32_t max_mb_per_file = 200;
 
-    void begin_session(const char *name, output_format format);
+    void begin_session(const char *name, std::uint8_t format);
     void end_session();
 
     const measurement &last_measurement() const;
@@ -56,9 +58,8 @@ class instrumentor
     measurement m_head_measurement{"$NULL$"};
 
     const char *m_session_name = nullptr;
-    const char *m_total_measurement_name = nullptr;
 
-    output_format m_format;
+    std::uint8_t m_format;
     std::ofstream m_output;
     std::uint32_t m_file_count = 0;
 
