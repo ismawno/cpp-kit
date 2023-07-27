@@ -73,6 +73,7 @@ void instrumentor::end_measurement(const char *name, long long start, long long 
 
     if (!equivalent)
     {
+        measure.duration_over_calls = duration;
         parent.children.push_back(std::move(measure));
         return;
     }

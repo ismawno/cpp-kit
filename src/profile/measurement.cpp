@@ -11,7 +11,7 @@ measurement::measurement(const char *name) : nameable(name)
 void measurement::compute_relative_measurements(const measurement &parent)
 {
     duration_per_call = duration_over_calls / parent_relative_calls;
-    total_calls = parent_relative_calls + parent.total_calls;
+    total_calls = parent_relative_calls * parent.total_calls;
 
     const float parent_per_call = parent.duration_per_call.as<kit::time::nanoseconds, float>();
     parent_relative_percent =
