@@ -39,10 +39,7 @@ void measurement::smooth_measurements(const measurement &measure, const float sm
     total_percent = smoothness * measure.total_percent + (1.f - smoothness) * total_percent;
 
     if (measure.children.size() != children.size())
-    {
-        KIT_WARN("Measure children count is not equal when smoothing out measurements. Exiting recursion now")
         return;
-    }
 
     for (std::size_t i = 0; i < children.size(); i++)
     {
