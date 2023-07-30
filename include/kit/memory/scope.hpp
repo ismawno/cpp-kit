@@ -5,29 +5,37 @@
 #include "kit/memory/block_allocator.hpp"
 #endif
 #include <memory>
+#include <cstddef>
+#include <cstdint>
 
 namespace kit
 {
 #ifdef KIT_USE_CUSTOM_ALLOC
-template <typename T> using scope = std::unique_ptr<T, block_deleter<T>>;
+template <typename T, std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024,
+          std::uint32_t SupportedSizesIncrement = 32>
+using scope = std::unique_ptr<T, block_deleter<T, BlockSize, MaxChunkSize, SupportedSizesIncrement>>;
 
-template <typename T, class... Args> inline scope<T> make_scope(Args &&...args)
+template <typename T, std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024,
+          std::uint32_t SupportedSizesIncrement = 32, class... Args>
+inline scope<T> make_scope(Args &&...args)
 {
-    block_allocator<T> alloc; // I dont think static is even worth it
-    T *buff = alloc.allocate_raw(sizeof(T));
-    if (!buff)
+    if (!block_allocator<BlockSize, MaxChunkSize, SupportedSizesIncrement>::template can_allocate<T>())
         return scope<T>(new T(std::forward<Args>(args)...));
 
-    T *p = new (buff) T(std::forward<Args>(args)...);
-    KIT_ASSERT_WARN((std::uint64_t)p % alignof(T) == 0, "Block allocated pointer {0} is not aligned! Alignment: {1}",
-                    (void *)p, alignof(T))
-    return scope<T>(p);
+    T *buff = block_allocator<BlockSize, MaxChunkSize, SupportedSizesIncrement>::template allocate<T>();
+    T *ptr = new (buff) T(std::forward<Args>(args)...);
+    return scope<T>(ptr);
 }
 
 #else
 
-template <typename T> using scope = std::unique_ptr<T>;
-template <typename T, class... Args> inline scope<T> make_scope(Args &&...args)
+template <typename T, std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024,
+          std::uint32_t SupportedSizesIncrement = 32>
+using scope = std::unique_ptr<T>;
+
+template <typename T, std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024,
+          std::uint32_t SupportedSizesIncrement = 32, class... Args>
+inline scope<T> make_scope(Args &&...args)
 {
     return std::make_unique<T>(std::forward<Args>(args)...);
 }

@@ -2,6 +2,7 @@
 #define KIT_PCH_HPP
 
 #include <unordered_map>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <fstream>

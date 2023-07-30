@@ -1,268 +1,246 @@
 #ifndef KIT_BLOCK_ALLOCATOR_HPP
 #define KIT_BLOCK_ALLOCATOR_HPP
 
-#define KIT_MEM_MAX_BLOCK_SIZE 2048
-#define KIT_MEM_SUPPORTED_SIZES_INCREMENT 32
-#define KIT_MEM_SUPPORTED_SIZES_COUNT (KIT_MEM_MAX_BLOCK_SIZE / KIT_MEM_SUPPORTED_SIZES_INCREMENT)
-#define KIT_MEM_CHUNK_SIZE (16 * 1024)
-
 #include "kit/debug/log.hpp"
 
 #include <array>
-#include <cstdint>
+#include <cstddef>
 #include <memory>
 #include <vector>
 
 namespace kit
 {
-using byte = std::uint8_t;
-struct size_helper
+
+template <std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024, std::uint32_t SupportedSizesIncrement = 32>
+class block_allocator
 {
-    size_helper()
+    inline static constexpr std::size_t SUPPORTED_SIZES_COUNT = MaxChunkSize / SupportedSizesIncrement + 1;
+    struct chunk
     {
-        for (std::size_t i = 0; i < KIT_MEM_SUPPORTED_SIZES_COUNT; i++)
-            supported_sizes[i] = (i + 1) * KIT_MEM_SUPPORTED_SIZES_INCREMENT;
-
-        clamped_indices[0] = 0;
-        std::size_t mapped_index = 0;
-        for (std::size_t size = 1; size <= KIT_MEM_MAX_BLOCK_SIZE; size++)
-        {
-            if (size > supported_sizes[mapped_index])
-                mapped_index++;
-            clamped_indices[size] = mapped_index;
-        }
-    }
-    std::array<std::size_t, KIT_MEM_MAX_BLOCK_SIZE + 1> clamped_indices;
-    std::array<std::size_t, KIT_MEM_SUPPORTED_SIZES_COUNT> supported_sizes;
-};
-
-struct block
-{
-    block *next = nullptr;
-};
-
-struct chunk
-{
-    std::size_t block_size = 0;
-    std::unique_ptr<byte[]> blocks = nullptr;
-#ifdef DEBUG
-    block *last = nullptr;
-    std::size_t alloc_count;
-#endif
-};
-
-class bdata
-{
-    inline static std::vector<chunk> s_chunks;
-    inline static std::vector<block *> s_free_blocks{KIT_MEM_SUPPORTED_SIZES_COUNT, nullptr};
-    inline static const size_helper s_helper;
-
-    template <typename T> friend class block_allocator;
-};
-
-template <typename T> class block_allocator : public std::allocator<T>
-{
-  private:
-    using base = std::allocator<T>;
-    using ptr = typename std::allocator_traits<base>::pointer;
-    using size = typename std::allocator_traits<base>::size_type;
-
-  public:
-    block_allocator() noexcept
-    {
-    }
-    template <typename U> block_allocator(const block_allocator<U> &other) noexcept : base(other)
-    {
-    }
-
-    template <typename U> struct rebind
-    {
-        using other = block_allocator<U>;
+        chunk *next = nullptr;
     };
 
-    ptr allocate_raw(size n_bytes) const noexcept
+    struct block
     {
-        KIT_ASSERT_CRITICAL(n_bytes > 0, "Attempting to allocate a non-positive amount of memory: {0}", n_bytes)
-        KIT_DEBUG("Block allocating {0} bytes of data", n_bytes)
-        if (n_bytes > KIT_MEM_MAX_BLOCK_SIZE)
-            return nullptr;
-
-        const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
-        if (bdata::s_free_blocks[clamped_index])
-            return next_free_block(clamped_index);
-        return first_block_of_new_chunk(clamped_index);
-    }
-
-    bool deallocate_raw(ptr p, size n_bytes, const bool destroy_manually = false) const noexcept
-    {
-        KIT_ASSERT_CRITICAL(n_bytes > 0, "Attempting to deallocate a non-positive amount of memory: {0}", n_bytes)
-        if (!p)
-        {
-            KIT_WARN("Attempting to deallocate null pointer!")
-            return false;
-        }
-        KIT_DEBUG("Block deallocating {0} bytes of data", n_bytes)
-        if (n_bytes > KIT_MEM_MAX_BLOCK_SIZE)
-            return false;
-
-        if (destroy_manually)
-            p->~T();
-        const std::size_t clamped_index = bdata::s_helper.clamped_indices[n_bytes];
+        std::unique_ptr<std::byte[]> chunks = nullptr;
+        std::size_t chunk_size = 0;
 #ifdef DEBUG
-        make_sure_block_belongs_to_allocator(clamped_index, p, n_bytes);
+        chunk *last = nullptr;
+        std::uint32_t alloc_count;
 #endif
-        block *b = (block *)p;
-        b->next = bdata::s_free_blocks[clamped_index];
-        bdata::s_free_blocks[clamped_index] = b;
+        // ~block()
+        // {
+        //     if (chunks)
+        //         delete[] chunks;
+        // }
+    };
 
-        return true;
-    }
-
-    ptr allocate(size n)
+    struct size_index_mapper
     {
-        const size n_bytes = n * sizeof(T);
-        ptr p = allocate_raw(n_bytes);
-        if (!p)
-            return base::allocate(n);
-        return p;
-    }
+        size_index_mapper()
+        {
+            for (std::size_t i = 0; i < SUPPORTED_SIZES_COUNT; i++)
+                supported_sizes[i] = i * SupportedSizesIncrement;
 
-    void deallocate(ptr p, size n) noexcept
-    {
-        const size n_bytes = n * sizeof(*p);
-        if (!deallocate_raw(p, n_bytes))
-            base::deallocate(p, n);
-    }
-
-    ptr next_free_block(const std::size_t idx) const
-    {
-        block *b = bdata::s_free_blocks[idx];
-        bdata::s_free_blocks[idx] = b->next;
-#ifdef DEBUG
-        for (chunk &ck : bdata::s_chunks)
-            if (ck.last == b)
+            size_to_index[0] = 0;
+            std::size_t mapped_index = 0;
+            for (std::size_t size = 1; size <= MaxChunkSize; size++)
             {
-                ck.alloc_count++;
-                ck.last = b->next;
-                report_chunk(ck);
+                if (size > supported_sizes[mapped_index])
+                    mapped_index++;
+                size_to_index[size] = mapped_index;
+            }
+        }
+
+        std::array<std::size_t, MaxChunkSize + 1> size_to_index;
+        std::array<std::size_t, SUPPORTED_SIZES_COUNT> supported_sizes;
+    };
+
+    inline static const size_index_mapper s_mapper{};
+    inline static std::vector<block> s_blocks{};
+    inline static std::array<chunk *, SUPPORTED_SIZES_COUNT> s_free_chunks{};
+
+  public:
+    template <typename T> static T *allocate()
+    {
+        KIT_DEBUG("Block allocating {0} bytes of data", sizeof(T))
+        const std::size_t mapped_index = s_mapper.size_to_index[sizeof(T)];
+        if (s_free_chunks[mapped_index])
+            return next_free_chunk<T>(mapped_index);
+        return first_chunk_of_new_block<T>(mapped_index);
+    }
+
+    template <typename T> static void deallocate(T *ptr, const std::size_t size = sizeof(T))
+    {
+        KIT_ASSERT_CRITICAL(size > 0, "Attempting to deallocate a non-positive amount of memory: {0}", size)
+        KIT_ASSERT_ERROR(ptr, "Attempting to deallocate null pointer in block allocator")
+        KIT_ASSERT_CRITICAL(size <= MaxChunkSize,
+                            "Attempting to deallocate a chunk with size greater that MaxChunkSize. size: {0}, max: {1}",
+                            size, MaxChunkSize)
+        KIT_DEBUG("Block deallocating {0} bytes of data", size)
+
+        const std::size_t mapped_index = s_mapper.size_to_index[size];
+#ifdef DEBUG
+        make_sure_chunk_belongs_to_allocator(mapped_index, ptr, size);
+#endif
+        chunk *ck = (chunk *)ptr;
+        ck->next = s_free_chunks[mapped_index];
+        s_free_chunks[mapped_index] = ck;
+    }
+
+    template <typename T> static constexpr bool can_allocate()
+    {
+        return sizeof(T) <= MaxChunkSize;
+    }
+
+    static bool can_deallocate(const std::size_t size)
+    {
+        return size <= MaxChunkSize;
+    }
+
+  private:
+    template <typename T> static T *next_free_chunk(const std::size_t mapped_index)
+    {
+        chunk *ck = s_free_chunks[mapped_index];
+        s_free_chunks[mapped_index] = ck->next;
+#ifdef DEBUG
+        for (block &bk : s_blocks)
+            if (bk.last == ck)
+            {
+                bk.alloc_count++;
+                bk.last = ck->next;
+                report_block(bk);
                 break;
             }
 #endif
-        return (ptr)b;
+        return (T *)ck;
     }
 
-    ptr first_block_of_new_chunk(const std::size_t idx) const
+    template <typename T> static T *first_chunk_of_new_block(const std::size_t mapped_index)
     {
-        const std::size_t clamped_size = bdata::s_helper.supported_sizes[idx];
-        KIT_INFO("Creating new chunk at index {0} with size {1} and {2} bytes per block", idx, KIT_MEM_CHUNK_SIZE,
-                 clamped_size)
+        const std::size_t mapped_size = s_mapper.supported_sizes[mapped_index];
+        KIT_INFO("Creating new block at index {0} with size {1} and {2} bytes per chunk", mapped_index, BlockSize,
+                 mapped_size)
 
-        chunk &ck = bdata::s_chunks.emplace_back();
-        ck.block_size = clamped_size;
-        ck.blocks = std::unique_ptr<byte[]>(new byte[KIT_MEM_CHUNK_SIZE]);
+        block &bk = s_blocks.emplace_back();
+        bk.chunk_size = mapped_size;
+        bk.chunks = std::unique_ptr<std::byte[]>(new std::byte[BlockSize]);
 
-        byte *first_block = ck.blocks.get();
-        const std::size_t block_count = KIT_MEM_CHUNK_SIZE / clamped_size;
-        KIT_ASSERT_ERROR(block_count * clamped_size <= KIT_MEM_CHUNK_SIZE,
-                         "Number of blocks times the size of each block is not equal (or less) than the chunk size!")
+        std::byte *first_chunk = bk.chunks.get();
+        const std::size_t chunk_count = BlockSize / mapped_size;
+        KIT_ASSERT_ERROR(chunk_count * mapped_size <= BlockSize,
+                         "Number of chunks times the size of each chunk is not equal (or less) than the chunk size!")
 
-        for (std::size_t i = 0; i < block_count - 1; i++)
+        for (std::size_t i = 0; i < chunk_count - 1; i++)
         {
-            block *current = (block *)(first_block + i * clamped_size);
-            current->next = (block *)(first_block + (i + 1) * clamped_size);
+            chunk *current = (chunk *)(first_chunk + i * mapped_size);
+            current->next = (chunk *)(first_chunk + (i + 1) * mapped_size);
         }
-        block *last = (block *)(first_block + (block_count - 1) * clamped_size);
+        chunk *last = (chunk *)(first_chunk + (chunk_count - 1) * mapped_size);
         last->next = nullptr;
 
-        bdata::s_free_blocks[idx] = ((block *)first_block)->next;
+        s_free_chunks[mapped_index] = ((chunk *)first_chunk)->next;
 #ifdef DEBUG
-        ck.alloc_count = 1;
-        ck.last = bdata::s_free_blocks[idx];
-        report_chunks();
+        bk.alloc_count = 1;
+        bk.last = s_free_chunks[mapped_index];
+        report_blocks();
 #endif
-        return (ptr)first_block;
+        return (T *)first_chunk;
     }
 
 #ifdef DEBUG
-    void make_sure_block_belongs_to_allocator(const std::size_t idx, ptr p, const size n_bytes) const
+    template <typename T>
+    static void make_sure_chunk_belongs_to_allocator(const std::size_t mapped_index, const T *ptr,
+                                                     const std::size_t size)
     {
-        const std::size_t clamped_size = bdata::s_helper.supported_sizes[idx];
+        const std::size_t mapped_size = s_mapper.supported_sizes[mapped_index];
         bool found = false;
-        for (chunk &ck : bdata::s_chunks)
+        for (block &bk : s_blocks)
         {
-            const byte *p_byte = (byte *)p;
-            const bool overlaps_chunk =
-                (p_byte + clamped_size) > ck.blocks.get() && (ck.blocks.get() + KIT_MEM_CHUNK_SIZE) > p_byte;
-            KIT_ASSERT_CRITICAL(!(ck.block_size != clamped_size && overlaps_chunk),
-                                "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong chunk!", (void *)p,
-                                n_bytes)
+            const std::byte *ptr_byte = (std::byte *)ptr;
+            const std::byte *chunks = bk.chunks.get();
 
-            const bool belongs_to_chunk =
-                ck.blocks.get() <= p_byte && (p_byte + clamped_size) <= (ck.blocks.get() + KIT_MEM_CHUNK_SIZE);
-            KIT_ASSERT_CRITICAL(!(ck.block_size != clamped_size && belongs_to_chunk),
-                                "Pointer {0} with size {1} bytes belongs to the wrong chunk!", (void *)p, n_bytes)
-            if (belongs_to_chunk)
+            const bool overlaps_block = (ptr_byte + mapped_size) > chunks && (chunks + BlockSize) > ptr_byte;
+
+            KIT_ASSERT_CRITICAL(!(bk.chunk_size != mapped_size && overlaps_block),
+                                "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong block!", (void *)ptr,
+                                size)
+
+            const bool belongs_to_block = chunks <= ptr_byte && (ptr_byte + mapped_size) <= (chunks + BlockSize);
+
+            KIT_ASSERT_CRITICAL(!(bk.chunk_size != mapped_size && belongs_to_block),
+                                "Pointer {0} with size {1} bytes belongs to the wrong block!", (void *)ptr, size)
+            if (belongs_to_block)
             {
                 found = true;
-                ck.alloc_count--;
-                ck.last = (block *)p;
-                report_chunk(ck);
+                bk.alloc_count--;
+                bk.last = (chunk *)ptr;
+                report_block(bk);
                 break;
             }
         }
-        KIT_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any block of any chunks!",
-                            (void *)p, n_bytes)
+        KIT_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any chunk of any blocks!",
+                            (void *)ptr, size)
     }
 
-    void report_chunks() const
-    {
-        KIT_INFO("There are currently {0} chunk(s) allocated, occupying {1} bytes each ({2} bytes total)",
-                 bdata::s_chunks.size(), KIT_MEM_CHUNK_SIZE, bdata::s_chunks.size() * KIT_MEM_CHUNK_SIZE)
-        std::size_t idx = 0;
-        for (const chunk &ck : bdata::s_chunks)
-        {
-            const std::size_t block_count = KIT_MEM_CHUNK_SIZE / ck.block_size;
-            KIT_INFO("Chunk {0}: {1} blocks, with {2} bytes per block, of which {3} are occupied ({4} bytes)", idx++,
-                     block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
-        }
-    }
-
-    void report_chunk(const chunk &ck) const
+    static void report_block(const block &bk)
     {
         std::size_t idx = 0;
-        for (std::size_t i = 1; i < bdata::s_chunks.size(); i++)
-            if (&ck == &(bdata::s_chunks[i]))
+        for (std::size_t i = 1; i < s_blocks.size(); i++)
+            if (&bk == &(s_blocks[i]))
             {
                 idx = i;
                 break;
             }
-        const std::size_t block_count = KIT_MEM_CHUNK_SIZE / ck.block_size;
-        KIT_DEBUG("Chunk {0} reported with {1} blocks and {2} bytes per block, of which {3} are occupied ({4} bytes)",
-                  idx, block_count, ck.block_size, ck.alloc_count, ck.alloc_count * ck.block_size)
+        const std::size_t chunk_count = BlockSize / bk.chunk_size;
+
+        KIT_DEBUG("Block {0}: {1} chunks, with {2} bytes per chunk, of which {3} ({4:.1f}%) are occupied ({5} bytes)",
+                  idx++, chunk_count, bk.chunk_size, bk.alloc_count, (float)bk.alloc_count / (float)chunk_count,
+                  bk.alloc_count * bk.chunk_size)
+    }
+    static void report_blocks()
+    {
+        KIT_INFO("There are currently {0} block(s) allocated, occupying {1} bytes each ({2} bytes total)",
+                 s_blocks.size(), BlockSize, s_blocks.size() * BlockSize)
+        std::size_t idx = 0;
+        for (const block &bk : s_blocks)
+        {
+            const std::size_t chunk_count = BlockSize / bk.chunk_size;
+
+            KIT_INFO(
+                "Block {0}: {1} chunks, with {2} bytes per chunk, of which {3} ({4:.1f}%) are occupied ({5} bytes)",
+                idx++, chunk_count, bk.chunk_size, bk.alloc_count, (float)bk.alloc_count / (float)chunk_count,
+                bk.alloc_count * bk.chunk_size)
+        }
     }
 #endif
 };
 
-// Only works for single allocations
-template <typename T> struct block_deleter
+template <typename T, std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024,
+          std::uint32_t SupportedSizesIncrement = 32>
+struct block_deleter
 {
-    constexpr block_deleter() noexcept : m_size(sizeof(T)){};
+    constexpr block_deleter() noexcept : m_allocated_size(sizeof(T)){};
 
-    template <typename U> block_deleter(const block_deleter<U> &bd) noexcept : m_size(bd.m_size)
+    template <typename U> block_deleter(const block_deleter<U> &bd) noexcept : m_allocated_size(bd.m_allocated_size)
     {
     }
 
     void operator()(T *p)
     {
-        block_allocator<T> alloc;
-        if (!alloc.deallocate_raw(p, m_size, true))
+        if (block_allocator<BlockSize, MaxChunkSize, SupportedSizesIncrement>::can_deallocate(m_allocated_size))
+        {
+            p->~T();
+            block_allocator<BlockSize, MaxChunkSize, SupportedSizesIncrement>::deallocate(p, m_allocated_size);
+        }
+        else
             delete p;
     }
 
   private:
-    std::size_t m_size = 0;
+    std::size_t m_allocated_size;
 
-    template <typename U> friend struct block_deleter;
+    template <typename U, std::size_t BS, std::size_t MCS, std::uint32_t SSI> friend struct block_deleter;
 };
 } // namespace kit
 
