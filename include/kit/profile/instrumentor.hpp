@@ -29,41 +29,39 @@ class instrumentor
         inline static constexpr std::uint8_t HIERARCHY = 1 << 1;
     };
 
-    static instrumentor &get();
+    static inline const char *directory_path = "profile-results/";
+    static inline std::uint32_t max_mb_per_file = 200;
 
-    const char *directory_path = "profile-results/";
-    std::uint32_t max_mb_per_file = 200;
+    static void begin_session(const char *name, std::uint8_t format);
+    static void end_session();
 
-    void begin_session(const char *name, std::uint8_t format);
-    void end_session();
-
-    const measurement &last_measurement() const;
-    float measurement_smoothness() const;
-    void measurement_smoothness(float smoothness);
+    static const measurement &last_measurement();
+    static float measurement_smoothness();
+    static void measurement_smoothness(float smoothness);
 
   private:
-    instrumentor() = default;
+    instrumentor() = delete;
 
-    void begin_measurement(const char *name);
-    void end_measurement(const char *name, long long start, long long end, time duration);
+    static void begin_measurement(const char *name);
+    static void end_measurement(const char *name, long long start, long long end, time duration);
 
-    void open_file();
-    void close_file();
+    static void open_file();
+    static void close_file();
 
-    void write_header();
-    void write_measurement(const char *name, long long start, long long end);
-    void write_footer();
+    static void write_header();
+    static void write_measurement(const char *name, long long start, long long end);
+    static void write_footer();
 
-    std::stack<measurement> m_current_measurements;
-    measurement m_head_measurement{"$NULL$"};
+    static inline std::stack<measurement> s_current_measurements{};
+    static inline measurement s_head_measurement{"$NULL$"};
 
-    const char *m_session_name = nullptr;
+    static inline const char *s_session_name = nullptr;
 
-    std::uint8_t m_format;
-    std::ofstream m_output;
-    std::uint32_t m_file_count = 0;
+    static inline std::uint8_t s_format;
+    static inline std::ofstream s_output;
+    static inline std::uint32_t s_file_count = 0;
 
-    float m_smoothness = 0.f;
+    static inline float s_smoothness = 0.f;
 };
 } // namespace kit
 
