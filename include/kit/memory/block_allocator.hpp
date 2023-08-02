@@ -195,7 +195,7 @@ class block_allocator
         const std::size_t chunk_count = BlockSize / bk.chunk_size;
 
         KIT_DEBUG("Block {0}: {1} chunks, with {2} bytes per chunk, of which {3} ({4:.1f}%) are occupied ({5} bytes)",
-                  idx++, chunk_count, bk.chunk_size, bk.alloc_count, (float)bk.alloc_count / (float)chunk_count,
+                  idx++, chunk_count, bk.chunk_size, bk.alloc_count, 100.f * (float)bk.alloc_count / (float)chunk_count,
                   bk.alloc_count * bk.chunk_size)
     }
     static void report_blocks()
@@ -209,7 +209,7 @@ class block_allocator
 
             KIT_INFO(
                 "Block {0}: {1} chunks, with {2} bytes per chunk, of which {3} ({4:.1f}%) are occupied ({5} bytes)",
-                idx++, chunk_count, bk.chunk_size, bk.alloc_count, (float)bk.alloc_count / (float)chunk_count,
+                idx++, chunk_count, bk.chunk_size, bk.alloc_count, 100.f * (float)bk.alloc_count / (float)chunk_count,
                 bk.alloc_count * bk.chunk_size)
         }
     }

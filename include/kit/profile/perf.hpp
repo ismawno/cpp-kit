@@ -4,6 +4,12 @@
 #include "kit/profile/instrumentor.hpp"
 
 #ifdef KIT_PROFILE
+
+#ifndef KIT_AKNOWLEDGE_PROFILE_THREAD_UNSAFETY
+#pragma message(                                                                                                       \
+        "Profiling tools provided by cpp-kit are THREAD UNSAFE. Be careful when using them in multi-threaded applications. Any KIT_PERF macro present in multi-threaded code will crash. Define the KIT_AKNOWLEDGE_PROFILE_THREAD_UNSAFETY macro to silence this warning")
+#endif
+
 #define KIT_PERF_BEGIN_SESSION(name, export_format) kit::instrumentor::begin_session(name, export_format);
 #define KIT_PERF_END_SESSION() kit::instrumentor::end_session();
 #define KIT_PERF_SCOPE(name) kit::instrumentor::timer tm##__LINE__(name);
