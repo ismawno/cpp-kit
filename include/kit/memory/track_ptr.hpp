@@ -75,7 +75,7 @@ template <typename T, typename ID = uuid> class track_ptr : public identifiable<
 
     operator bool() const
     {
-        if (!m_vector)
+        if (!m_vector || m_index == SIZE_T_MAX)
             return false;
         if ((*m_vector)[m_index].id() == this->id())
             return true;
@@ -85,6 +85,7 @@ template <typename T, typename ID = uuid> class track_ptr : public identifiable<
                 m_index = i;
                 return true;
             }
+        m_index = SIZE_T_MAX;
         return false;
     }
 
