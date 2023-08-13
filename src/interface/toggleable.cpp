@@ -3,25 +3,16 @@
 
 namespace kit
 {
-toggleable::toggleable(const bool enabled) : m_enabled(enabled)
+toggleable::toggleable(const bool enabled) : enabled(enabled)
 {
-}
-
-bool toggleable::enabled() const
-{
-    return m_enabled;
-}
-void toggleable::enabled(const bool enabled)
-{
-    m_enabled = enabled;
 }
 
 void toggleable::enable()
 {
-    m_enabled = true;
+    enabled = true;
 }
 void toggleable::disable()
 {
-    m_enabled = false;
+    enabled = false;
 }
 } // namespace kit

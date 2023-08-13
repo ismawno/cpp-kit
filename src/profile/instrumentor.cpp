@@ -11,7 +11,7 @@ instrumentor::timer::timer(const char *name) : nameable(name)
 
 instrumentor::timer::~timer()
 {
-    instrumentor::end_measurement(name(), m_clock.start_time(), m_clock.current_time(), m_clock.elapsed());
+    instrumentor::end_measurement(name, m_clock.start_time(), m_clock.current_time(), m_clock.elapsed());
 }
 
 void instrumentor::begin_session(const char *name, const std::uint8_t format)

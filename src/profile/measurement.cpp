@@ -43,8 +43,7 @@ void measurement::smooth_measurements(const measurement &measure, const float sm
 
     for (std::size_t i = 0; i < children.size(); i++)
     {
-        KIT_ASSERT_WARN(children[i].name() == measure.children[i].name(),
-                        "Children in both measures have different names")
+        KIT_ASSERT_WARN(children[i].name == measure.children[i].name, "Children in both measures have different names")
         children[i].smooth_measurements(measure.children[i], smoothness);
     }
 }
@@ -52,7 +51,7 @@ void measurement::smooth_measurements(const measurement &measure, const float sm
 const measurement *measurement::child(const char *name) const
 {
     for (const measurement &m : children)
-        if (m.name() == name)
+        if (m.name == name)
             return &m;
     return nullptr;
 }
@@ -60,7 +59,7 @@ const measurement *measurement::child(const char *name) const
 measurement *measurement::child(const char *name)
 {
     for (measurement &m : children)
-        if (m.name() == name)
+        if (m.name == name)
             return &m;
     return nullptr;
 }

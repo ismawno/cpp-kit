@@ -8,14 +8,10 @@ class toggleable
   public:
     explicit toggleable(bool enabled = true);
 
-    bool enabled() const;
-    void enabled(bool enabled);
+    bool enabled;
 
     void enable();
     void disable();
-
-  private:
-    bool m_enabled;
 };
 } // namespace kit
 

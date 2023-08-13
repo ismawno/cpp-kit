@@ -3,7 +3,6 @@
 
 #include "kit/utility/uuid.hpp"
 #include "kit/interface/identifiable.hpp"
-#include "kit/interface/indexable.hpp"
 #include "kit/debug/log.hpp"
 #include <vector>
 #include <cstddef>
@@ -18,7 +17,7 @@ template <typename T, typename ID = uuid> class const_track_ptr : public identif
   public:
     const_track_ptr() = default;
     const_track_ptr(const std::vector<T> *vector, const std::size_t index = 0)
-        : identifiable<ID>(vector ? (*vector)[index].id() : ID()), m_vector(vector), m_index(index)
+        : identifiable<ID>(vector ? (*vector)[index].id : ID()), m_vector(vector), m_index(index)
     {
         KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
                          "A track ptr cannot have an index greater or equal to the vector size!")
@@ -26,16 +25,17 @@ template <typename T, typename ID = uuid> class const_track_ptr : public identif
 
     operator bool() const
     {
-        if (!m_vector)
+        if (!m_vector || m_index == SIZE_T_MAX)
             return false;
-        if ((*m_vector)[m_index].id() == this->id())
+        if ((*m_vector)[m_index].id == this->id)
             return true;
         for (std::size_t i = 0; i < m_vector->size(); i++)
-            if ((*m_vector)[i].id() == this->id())
+            if ((*m_vector)[i].id == this->id)
             {
                 m_index = i;
                 return true;
             }
+        m_index = SIZE_T_MAX;
         return false;
     }
 
@@ -67,7 +67,7 @@ template <typename T, typename ID = uuid> class track_ptr : public identifiable<
   public:
     track_ptr() = default;
     track_ptr(std::vector<T> *vector, const std::size_t index = 0)
-        : identifiable<ID>(vector ? (*vector)[index].id() : ID()), m_vector(vector), m_index(index)
+        : identifiable<ID>(vector ? (*vector)[index].id : ID()), m_vector(vector), m_index(index)
     {
         KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
                          "A track ptr cannot have an index greater or equal to the vector size!")
@@ -77,10 +77,10 @@ template <typename T, typename ID = uuid> class track_ptr : public identifiable<
     {
         if (!m_vector || m_index == SIZE_T_MAX)
             return false;
-        if ((*m_vector)[m_index].id() == this->id())
+        if ((*m_vector)[m_index].id == this->id)
             return true;
         for (std::size_t i = 0; i < m_vector->size(); i++)
-            if ((*m_vector)[i].id() == this->id())
+            if ((*m_vector)[i].id == this->id)
             {
                 m_index = i;
                 return true;
@@ -107,7 +107,7 @@ template <typename T, typename ID = uuid> class track_ptr : public identifiable<
     operator const_track_ptr<T, ID>() const
     {
         const_track_ptr<T, ID> ptr{m_vector, m_index};
-        ptr.id(this->id());
+        ptr.id = this->id;
         return ptr;
     }
 

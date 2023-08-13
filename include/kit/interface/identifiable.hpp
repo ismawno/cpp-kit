@@ -9,31 +9,21 @@ template <typename T = uuid> class identifiable
 {
   public:
     identifiable() = default;
-    identifiable(const T &id) : m_id(id)
+    identifiable(const T &id) : id(id)
     {
     }
 
-    const T &id() const
-    {
-        return m_id;
-    }
-    void id(const T &id)
-    {
-        m_id = id;
-    }
-
-  private:
-    T m_id;
+    T id;
 };
 
 template <typename T> bool operator==(const identifiable<T> &lhs, const identifiable<T> &rhs)
 {
-    return lhs.id() == rhs.id();
+    return lhs.id == rhs.id;
 }
 
 template <typename T> bool operator!=(const identifiable<T> &lhs, const identifiable<T> &rhs)
 {
-    return lhs.id() != rhs.id();
+    return lhs.id != rhs.id;
 }
 } // namespace kit
 
@@ -43,7 +33,7 @@ template <typename T> struct hash<kit::identifiable<T>>
 {
     size_t operator()(const kit::identifiable<T> &id) const
     {
-        return hash<T>()(id.id());
+        return hash<T>()(id.id);
     }
 };
 } // namespace std
