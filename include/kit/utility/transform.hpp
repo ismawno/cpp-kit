@@ -1,6 +1,8 @@
 #ifndef KIT_TRANSFORM_HPP
 #define KIT_TRANSFORM_HPP
 
+#include "kit/interface/serialization.hpp"
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec2.hpp>
@@ -14,6 +16,27 @@ namespace kit
 class transform2D
 {
   public:
+#ifdef KIT_USE_YAML_CPP
+    class serializer : public kit::serializer<transform2D>
+    {
+      public:
+        YAML::Node encode(const transform2D &transform) const override;
+        bool decode(const YAML::Node &node, transform2D &transform) const override;
+    };
+#endif
+
+    struct builder
+    {
+        builder(const transform2D &transform);
+        builder();
+
+        const builder &position(const glm::vec2 &position) const;
+        const builder &scale(const glm::vec2 &scale) const;
+        const builder &origin(const glm::vec2 &origin) const;
+        const builder &rotation(float rotation) const;
+        transform2D build() const;
+    };
+
     struct trigonometry
     {
         float c;
@@ -49,6 +72,27 @@ class transform2D
 class transform3D
 {
   public:
+#ifdef KIT_USE_YAML_CPP
+    class serializer : public kit::serializer<transform3D>
+    {
+      public:
+        YAML::Node encode(const transform3D &transform) const override;
+        bool decode(const YAML::Node &node, transform3D &transform) const override;
+    };
+#endif
+
+    struct builder
+    {
+        builder(const transform3D &transform);
+        builder();
+
+        const builder &position(const glm::vec3 &position) const;
+        const builder &scale(const glm::vec3 &scale) const;
+        const builder &origin(const glm::vec3 &origin) const;
+        const builder &rotation(const glm::mat3 &rotation) const;
+        transform3D build() const;
+    };
+
     struct trigonometry
     {
         float c1;

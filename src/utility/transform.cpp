@@ -3,6 +3,41 @@
 
 namespace kit
 {
+static thread_local transform2D s_transform2;
+
+transform2D::builder::builder(const transform2D &transform)
+{
+    s_transform2 = transform;
+}
+transform2D::builder::builder()
+{
+    s_transform2 = {};
+}
+const transform2D::builder &transform2D::builder::position(const glm::vec2 &position) const
+{
+    s_transform2.position = position;
+    return *this;
+}
+const transform2D::builder &transform2D::builder::scale(const glm::vec2 &scale) const
+{
+    s_transform2.scale = scale;
+    return *this;
+}
+const transform2D::builder &transform2D::builder::origin(const glm::vec2 &origin) const
+{
+    s_transform2.origin = origin;
+    return *this;
+}
+const transform2D::builder &transform2D::builder::rotation(const float rotation) const
+{
+    s_transform2.rotation = rotation;
+    return *this;
+}
+transform2D transform2D::builder::build() const
+{
+    return s_transform2;
+}
+
 glm::mat3 transform2D::center_scale_rotate_translate3() const
 {
     const glm::mat2 scale_matrix = glm::mat2({scale.x, 0.f}, {0.f, scale.y});
@@ -102,6 +137,63 @@ glm::mat2 transform2D::rotation_matrix(const float rotation)
 glm::mat2 transform2D::inverse_rotation_matrix(const float rotation)
 {
     return rotation_matrix(-rotation);
+}
+
+#ifdef KIT_USE_YAML_CPP
+YAML::Node transform2D::serializer::encode(const transform2D &transform) const
+{
+    YAML::Node node;
+    node["Position"] = transform.position;
+    node["Scale"] = transform.scale;
+    node["Origin"] = transform.origin;
+    node["Rotation"] = transform.rotation;
+    return node;
+}
+bool transform2D::serializer::decode(const YAML::Node &node, transform2D &transform) const
+{
+    if (!node.IsMap() || node.size() != 4)
+        return false;
+    transform.position = node["Position"].as<glm::vec2>();
+    transform.scale = node["Scale"].as<glm::vec2>();
+    transform.origin = node["Origin"].as<glm::vec2>();
+    transform.rotation = node["Rotation"].as<float>();
+    return true;
+}
+#endif
+
+static thread_local transform3D s_transform3;
+
+transform3D::builder::builder(const transform3D &transform)
+{
+    s_transform3 = transform;
+}
+transform3D::builder::builder()
+{
+    s_transform3 = {};
+}
+const transform3D::builder &transform3D::builder::position(const glm::vec3 &position) const
+{
+    s_transform3.position = position;
+    return *this;
+}
+const transform3D::builder &transform3D::builder::scale(const glm::vec3 &scale) const
+{
+    s_transform3.scale = scale;
+    return *this;
+}
+const transform3D::builder &transform3D::builder::origin(const glm::vec3 &origin) const
+{
+    s_transform3.origin = origin;
+    return *this;
+}
+const transform3D::builder &transform3D::builder::rotation(const glm::mat3 &rotation) const
+{
+    s_transform3.rotation = rotation;
+    return *this;
+}
+transform3D transform3D::builder::build() const
+{
+    return s_transform3;
 }
 
 glm::mat4 transform3D::center_scale_rotate_translate4() const
@@ -284,5 +376,31 @@ glm::mat3 transform3D::Z(const float rotz)
     const auto [c, s] = transform2D::trigonometric_functions(rotz);
     return {{c, s, 0.f}, {-s, c, 0.f}, {0.f, 0.f, 1.f}};
 }
+
+#ifdef KIT_USE_YAML_CPP
+YAML::Node transform3D::serializer::encode(const transform3D &transform) const
+{
+    YAML::Node node;
+    node["Position"] = transform.position;
+    node["Scale"] = transform.scale;
+    node["Origin"] = transform.origin;
+    node["XRotation"] = transform.rotation[0];
+    node["YRotation"] = transform.rotation[1];
+    node["ZRotation"] = transform.rotation[2];
+    return node;
+}
+bool transform3D::serializer::decode(const YAML::Node &node, transform3D &transform) const
+{
+    if (!node.IsMap() || node.size() != 6)
+        return false;
+    transform.position = node["Position"].as<glm::vec3>();
+    transform.scale = node["Scale"].as<glm::vec3>();
+    transform.origin = node["Origin"].as<glm::vec3>();
+    transform.rotation[0] = node["XRotation"].as<glm::vec3>();
+    transform.rotation[1] = node["YRotation"].as<glm::vec3>();
+    transform.rotation[2] = node["ZRotation"].as<glm::vec3>();
+    return true;
+}
+#endif
 
 } // namespace kit
