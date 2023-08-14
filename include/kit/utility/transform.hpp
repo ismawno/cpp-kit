@@ -25,11 +25,17 @@ class transform2D
     glm::vec2 origin{0.f};
     float rotation = 0.f;
 
-    glm::mat4 transform() const;
-    glm::mat4 inverse() const;
+    glm::mat3 center_scale_rotate_translate3() const;
+    glm::mat3 inverse_center_scale_rotate_translate3() const;
 
-    glm::mat4 transform_as_camera() const;
-    glm::mat4 inverse_as_camera() const;
+    glm::mat3 inverse_scale_center_rotate_translate3() const;
+    glm::mat3 scale_center_rotate_translate3() const;
+
+    glm::mat4 center_scale_rotate_translate4() const;
+    glm::mat4 inverse_center_scale_rotate_translate4() const;
+
+    glm::mat4 inverse_scale_center_rotate_translate4() const;
+    glm::mat4 scale_center_rotate_translate4() const;
 
     void translate_local(const glm::vec2 &dpos);
     void xtranslate_local(float dx);
@@ -64,11 +70,11 @@ class transform3D
     glm::vec3 origin{0.f};
     glm::mat3 rotation{1.f};
 
-    glm::mat4 transform() const;
-    glm::mat4 inverse() const;
+    glm::mat4 center_scale_rotate_translate4() const;
+    glm::mat4 inverse_center_scale_rotate_translate4() const;
 
-    glm::mat4 transform_as_camera() const;
-    glm::mat4 inverse_as_camera() const;
+    glm::mat4 inverse_scale_center_rotate_translate4() const;
+    glm::mat4 scale_center_rotate_translate4() const;
 
     glm::mat3 inverse_rotation() const;
 

@@ -3,7 +3,39 @@
 
 namespace kit
 {
-glm::mat4 transform2D::transform() const
+glm::mat3 transform2D::center_scale_rotate_translate3() const
+{
+    const glm::mat2 scale_matrix = glm::mat2({scale.x, 0.f}, {0.f, scale.y});
+    const glm::mat2 linear = rotation_matrix(rotation) * scale_matrix;
+    const glm::vec2 translation = position - linear * origin;
+
+    return glm::mat3{glm::vec3(linear[0], 0.f), glm::vec3(linear[1], 0.f), glm::vec3(translation, 1.f)};
+}
+glm::mat3 transform2D::inverse_center_scale_rotate_translate3() const
+{
+    const glm::mat2 inverse_scale_matrix = glm::mat2({1.f / scale.x, 0.f}, {0.f, 1.f / scale.y});
+    const glm::mat2 linear = inverse_scale_matrix * inverse_rotation_matrix(rotation);
+    const glm::vec2 translation = origin - linear * position;
+
+    return glm::mat3{glm::vec3(linear[0], 0.f), glm::vec3(linear[1], 0.f), glm::vec3(translation, 1.f)};
+}
+
+glm::mat3 transform2D::inverse_scale_center_rotate_translate3() const
+{
+    const glm::mat2 rmat = inverse_rotation_matrix(rotation);
+    const glm::vec2 translation = (origin - rmat * position) / scale;
+
+    return glm::mat3{glm::vec3(rmat[0] / scale, 0.f), glm::vec3(rmat[1] / scale, 0.f), glm::vec3(translation, 1.f)};
+}
+glm::mat3 transform2D::scale_center_rotate_translate3() const
+{
+    const glm::mat2 rmat = rotation_matrix(rotation);
+    const glm::vec2 translation = position - rmat * origin;
+
+    return glm::mat3{glm::vec3(rmat[0] * scale.x, 0.f), glm::vec3(rmat[1] * scale.y, 0.f), glm::vec3(translation, 1.f)};
+}
+
+glm::mat4 transform2D::center_scale_rotate_translate4() const
 {
     const glm::mat2 scale_matrix = glm::mat2({scale.x, 0.f}, {0.f, scale.y});
     const glm::mat2 linear = rotation_matrix(rotation) * scale_matrix;
@@ -12,7 +44,7 @@ glm::mat4 transform2D::transform() const
     return glm::mat4{glm::vec4(linear[0], 0.f, 0.f), glm::vec4(linear[1], 0.f, 0.f), glm::vec4(0.f, 0.f, 1.f, 0.f),
                      glm::vec4(translation, 0.f, 1.f)};
 }
-glm::mat4 transform2D::inverse() const
+glm::mat4 transform2D::inverse_center_scale_rotate_translate4() const
 {
     const glm::mat2 inverse_scale_matrix = glm::mat2({1.f / scale.x, 0.f}, {0.f, 1.f / scale.y});
     const glm::mat2 linear = inverse_scale_matrix * inverse_rotation_matrix(rotation);
@@ -22,7 +54,7 @@ glm::mat4 transform2D::inverse() const
                      glm::vec4(translation, 0.f, 1.f)};
 }
 
-glm::mat4 transform2D::transform_as_camera() const
+glm::mat4 transform2D::inverse_scale_center_rotate_translate4() const
 {
     const glm::mat2 rmat = inverse_rotation_matrix(rotation);
     const glm::vec2 translation = (origin - rmat * position) / scale;
@@ -30,7 +62,7 @@ glm::mat4 transform2D::transform_as_camera() const
     return glm::mat4{glm::vec4(rmat[0] / scale, 0.f, 0.f), glm::vec4(rmat[1] / scale, 0.f, 0.f),
                      glm::vec4(0.f, 0.f, 1.f, 0.f), glm::vec4(translation, 0.f, 1.f)};
 }
-glm::mat4 transform2D::inverse_as_camera() const
+glm::mat4 transform2D::scale_center_rotate_translate4() const
 {
     const glm::mat2 rmat = rotation_matrix(rotation);
     const glm::vec2 translation = position - rmat * origin;
@@ -72,7 +104,7 @@ glm::mat2 transform2D::inverse_rotation_matrix(const float rotation)
     return rotation_matrix(-rotation);
 }
 
-glm::mat4 transform3D::transform() const
+glm::mat4 transform3D::center_scale_rotate_translate4() const
 {
     const glm::mat3 scale_matrix = glm::mat3({scale.x, 0.f, 0.f}, {0.f, scale.y, 0.f}, {0.f, 0.f, scale.z});
     const glm::mat3 linear = rotation * scale_matrix;
@@ -82,7 +114,7 @@ glm::mat4 transform3D::transform() const
                      glm::vec4(translation, 1.f)};
 }
 
-glm::mat4 transform3D::inverse() const
+glm::mat4 transform3D::inverse_center_scale_rotate_translate4() const
 {
     const glm::mat3 inverse_scale_matrix =
         glm::mat3({1.f / scale.x, 0.f, 0.f}, {0.f, 1.f / scale.y, 0.f}, {0.f, 0.f, 1.f / scale.z});
@@ -93,7 +125,7 @@ glm::mat4 transform3D::inverse() const
                      glm::vec4(translation, 1.f)};
 }
 
-glm::mat4 transform3D::transform_as_camera() const
+glm::mat4 transform3D::inverse_scale_center_rotate_translate4() const
 {
     const glm::mat3 rmat = inverse_rotation();
     const glm::vec3 translation = (origin - rmat * position) / scale;
@@ -101,7 +133,7 @@ glm::mat4 transform3D::transform_as_camera() const
     return glm::mat4{glm::vec4(rmat[0] / scale, 0.f), glm::vec4(rmat[1] / scale, 0.f), glm::vec4(rmat[2] / scale, 0.f),
                      glm::vec4(translation, 1.f)};
 }
-glm::mat4 transform3D::inverse_as_camera() const
+glm::mat4 transform3D::scale_center_rotate_translate4() const
 {
     const glm::vec3 translation = position - rotation * origin;
 
