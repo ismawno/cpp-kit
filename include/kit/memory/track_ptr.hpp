@@ -27,8 +27,9 @@ template <typename T, typename ID = uuid> class const_track_ptr : public identif
     {
         if (!m_vector || m_index == SIZE_T_MAX)
             return false;
-        if ((*m_vector)[m_index].id == this->id)
+        if (m_index < m_vector->size() && (*m_vector)[m_index].id == this->id)
             return true;
+
         for (std::size_t i = 0; i < m_vector->size(); i++)
             if ((*m_vector)[i].id == this->id)
             {
@@ -77,8 +78,9 @@ template <typename T, typename ID = uuid> class track_ptr : public identifiable<
     {
         if (!m_vector || m_index == SIZE_T_MAX)
             return false;
-        if ((*m_vector)[m_index].id == this->id)
+        if (m_index < m_vector->size() && (*m_vector)[m_index].id == this->id)
             return true;
+
         for (std::size_t i = 0; i < m_vector->size(); i++)
             if ((*m_vector)[i].id == this->id)
             {
