@@ -71,12 +71,12 @@ template <typename Container> class track_ptr : public identifiable<typename Con
     }
     auto *operator->() const
     {
-        KIT_ASSERT_ERROR(validate() == validity::VALID, "Cannot dereference an invalid pointer")
+        KIT_ASSERT_ERROR(validate() == validity::VALID, "Cannot dereference a null or shifted pointer")
         return &((*m_container)[m_index]);
     }
     auto &operator*() const
     {
-        KIT_ASSERT_ERROR(validate() == validity::VALID, "Cannot dereference an invalid pointer")
+        KIT_ASSERT_ERROR(validate() == validity::VALID, "Cannot dereference a null or shifted pointer")
         return (*m_container)[m_index];
     }
 
