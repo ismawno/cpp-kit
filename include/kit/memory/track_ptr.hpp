@@ -9,114 +9,100 @@
 
 namespace kit
 {
-template <typename T, typename ID = uuid> class const_track_ptr : public identifiable<ID>
+template <typename Container> class track_ptr : public identifiable<typename Container::value_type::id_type>
 {
-    static_assert(std::is_base_of<identifiable<ID>, T>::value,
-                  "The type of a track_ptr must be identifiable with the ID type");
+    using T = typename Container::value_type;
+    using ID = typename T::id_type;
 
   public:
-    const_track_ptr() = default;
-    const_track_ptr(const std::vector<T> *vector, const std::size_t index = 0)
-        : identifiable<ID>(vector ? (*vector)[index].id : ID()), m_vector(vector), m_index(index)
+    enum class validity
     {
-        KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
-                         "A track ptr cannot have an index greater or equal to the vector size!")
-    }
+        VALID,
+        NOT_VALID,
+        VALID_MUTATED
+    };
 
-    operator bool() const
-    {
-        if (!m_vector || m_index == SIZE_T_MAX)
-            return false;
-        if (m_index < m_vector->size() && (*m_vector)[m_index].id == this->id)
-            return true;
-
-        for (std::size_t i = 0; i < m_vector->size(); i++)
-            if ((*m_vector)[i].id == this->id)
-            {
-                m_index = i;
-                return true;
-            }
-        m_index = SIZE_T_MAX;
-        return false;
-    }
-
-    const T *raw() const
-    {
-        return m_vector ? &((*m_vector)[m_index]) : nullptr;
-    }
-    const T *operator->() const
-    {
-        KIT_ASSERT_ERROR(*this, "Cannot dereference a null pointer")
-        return &((*m_vector)[m_index]);
-    }
-    const T &operator*() const
-    {
-        KIT_ASSERT_ERROR(*this, "Cannot dereference a null pointer")
-        return (*m_vector)[m_index];
-    }
-
-  private:
-    const std::vector<T> *m_vector = nullptr;
-    mutable std::size_t m_index;
-};
-
-template <typename T, typename ID = uuid> class track_ptr : public identifiable<ID>
-{
-    static_assert(std::is_base_of<identifiable<ID>, T>::value,
-                  "The type of a track_ptr must be identifiable with the ID type");
-
-  public:
     track_ptr() = default;
-    track_ptr(std::vector<T> *vector, const std::size_t index = 0)
-        : identifiable<ID>(vector ? (*vector)[index].id : ID()), m_vector(vector), m_index(index)
+    track_ptr(Container *container, const std::size_t index = 0)
+        : identifiable<ID>(container ? (*container)[index].id : ID()), m_container(container), m_index(index)
     {
-        KIT_ASSERT_ERROR(!m_vector || m_index < m_vector->size(),
-                         "A track ptr cannot have an index greater or equal to the vector size!")
+        KIT_ASSERT_ERROR(!m_container || m_index < m_container->size(),
+                         "A track ptr cannot have an index greater or equal to the container size!");
+    }
+
+    template <typename OtherContainer>
+    track_ptr(const track_ptr<OtherContainer> &other) : m_container(other.m_container), m_index(other.m_index)
+    {
+        this->id = other.id;
+    }
+
+    template <typename OtherContainer> track_ptr &operator=(const track_ptr<OtherContainer> &other)
+    {
+        m_container = other.m_container;
+        m_index = other.m_index;
+        this->id = other.id;
+    }
+
+    validity validate() const
+    {
+        if (!m_container || m_index == SIZE_T_MAX)
+            return validity::NOT_VALID;
+        if (m_index < m_container->size() && (*m_container)[m_index].id == this->id)
+            return validity::VALID;
+
+        for (std::size_t i = 0; i < m_container->size(); i++)
+            if ((*m_container)[i].id == this->id)
+            {
+                m_index = i;
+                return validity::VALID_MUTATED;
+            }
+        m_index = SIZE_T_MAX;
+        return validity::NOT_VALID;
     }
 
     operator bool() const
     {
-        if (!m_vector || m_index == SIZE_T_MAX)
-            return false;
-        if (m_index < m_vector->size() && (*m_vector)[m_index].id == this->id)
-            return true;
-
-        for (std::size_t i = 0; i < m_vector->size(); i++)
-            if ((*m_vector)[i].id == this->id)
-            {
-                m_index = i;
-                return true;
-            }
-        m_index = SIZE_T_MAX;
-        return false;
+        return validate() != validity::NOT_VALID;
     }
 
-    T *raw() const
+    auto *raw() const
     {
-        return m_vector ? &((*m_vector)[m_index]) : nullptr;
+        return m_container ? &((*m_container)[m_index]) : nullptr;
     }
-    T *operator->() const
+    auto *operator->() const
     {
-        KIT_ASSERT_ERROR(*this, "Cannot dereference a null pointer")
-        return &((*m_vector)[m_index]);
+        KIT_ASSERT_ERROR(validate() == validity::VALID, "Cannot dereference an invalid pointer")
+        return &((*m_container)[m_index]);
     }
-    T &operator*() const
+    auto &operator*() const
     {
-        KIT_ASSERT_ERROR(*this, "Cannot dereference a null pointer")
-        return (*m_vector)[m_index];
+        KIT_ASSERT_ERROR(validate() == validity::VALID, "Cannot dereference an invalid pointer")
+        return (*m_container)[m_index];
     }
 
-    operator const_track_ptr<T, ID>() const
+    template <typename ConstContainer> operator track_ptr<ConstContainer>()
     {
-        const_track_ptr<T, ID> ptr{m_vector, m_index};
+        static_assert(std::is_same_v<typename std::remove_const<Container>::type,
+                                     typename std::remove_const<ConstContainer>::type>,
+                      "Container must be the same type for a cast to be possible");
+        static_assert(std::is_const_v<ConstContainer>,
+                      "Output track ptr container must be const for a cast to be possible");
+        static_assert(!std::is_const_v<Container>,
+                      "Input track ptr container must not be const for a cast to be possible");
+        track_ptr<ConstContainer> ptr{m_container, m_index};
         ptr.id = this->id;
         return ptr;
     }
 
   private:
-    std::vector<T> *m_vector = nullptr;
+    Container *m_container = nullptr;
     mutable std::size_t m_index;
+
+    template <typename OtherContainer> friend class track_ptr;
 };
+
+template <typename T, class... Args> using vector_ptr = track_ptr<std::vector<T, Args...>>;
+template <typename T, class... Args> using const_vector_ptr = track_ptr<const std::vector<T, Args...>>;
 } // namespace kit
 
 #endif

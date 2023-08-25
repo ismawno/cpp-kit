@@ -8,6 +8,7 @@ namespace kit
 template <typename T = uuid> class identifiable
 {
   public:
+    using id_type = T;
     identifiable() = default;
     identifiable(const T &id) : id(id)
     {

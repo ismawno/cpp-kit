@@ -9,44 +9,44 @@
 
 namespace kit
 {
-template <template <typename...> typename C, typename... Args> class container_view
+template <template <typename...> typename C, class... Args> class container_view
 {
   public:
-    container_view(C<Args...> &vec) : m_vec(vec)
+    container_view(C<Args...> &container) : m_container(container)
     {
     }
     auto begin() const
     {
-        return m_vec.begin();
+        return m_container.begin();
     }
     auto begin()
     {
-        return m_vec.begin();
+        return m_container.begin();
     }
     auto end() const
     {
-        return m_vec.end();
+        return m_container.end();
     }
     auto end()
     {
-        return m_vec.end();
+        return m_container.end();
     }
 
     const auto &operator[](const std::size_t index) const
     {
-        return m_vec[index];
+        return m_container[index];
     }
     auto &operator[](const std::size_t index)
     {
-        return m_vec[index];
+        return m_container[index];
     }
     const C<Args...> &unwrap() const
     {
-        return m_vec;
+        return m_container;
     }
 
   private:
-    C<Args...> &m_vec;
+    C<Args...> &m_container;
 };
 
 template <typename T> using vector_view = container_view<std::vector, T>;

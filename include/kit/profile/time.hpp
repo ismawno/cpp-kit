@@ -17,9 +17,9 @@ class time
 
     template <typename TimeUnit, typename T> T as() const
     {
-        static_assert(std::is_floating_point<T>::value || std::is_integral<T>::value,
+        static_assert(std::is_floating_point_v<T> || std::is_integral_v<T>,
                       "Type T must be either a floating point or an integer type");
-        if constexpr (std::is_floating_point<T>::value)
+        if constexpr (std::is_floating_point_v<T>)
             return std::chrono::duration<T, typename TimeUnit::period>(m_elapsed).count();
         else
         {

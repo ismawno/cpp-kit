@@ -59,11 +59,11 @@ class serializable
 template <typename T> YAML::Emitter &operator<<(YAML::Emitter &out, const T &instance)
 {
     out << YAML::BeginMap;
-    if constexpr (std::is_base_of<serializable, T>::value)
+    if constexpr (std::is_base_of_v<serializable, T>)
         out << instance.encode();
     else
     {
-        static_assert(std::is_base_of<kit::serializer<T>, typename T::serializer>::value,
+        static_assert(std::is_base_of_v<kit::serializer<T>, typename T::serializer>,
                       "Nested serializer class of type T must inherit from serializer<T>");
         const typename T::serializer srz;
         out << srz.encode(instance);
@@ -81,7 +81,7 @@ template <typename T> struct convert
 {
     static Node encode(const T &instance)
     {
-        if constexpr (std::is_base_of<kit::serializable, T>::value)
+        if constexpr (std::is_base_of_v<kit::serializable, T>)
             return instance.encode();
         else
         {
@@ -91,11 +91,11 @@ template <typename T> struct convert
     }
     static bool decode(const Node &node, T &instance)
     {
-        if constexpr (std::is_base_of<kit::serializable, T>::value)
+        if constexpr (std::is_base_of_v<kit::serializable, T>)
             return instance.decode(node);
         else
         {
-            static_assert(std::is_base_of<kit::serializer<T>, typename T::serializer>::value,
+            static_assert(std::is_base_of_v<kit::serializer<T>, typename T::serializer>,
                           "Nested serializer class of type T must inherit from serializer<T>");
             const typename T::serializer srz;
             return srz.decode(node, instance);
