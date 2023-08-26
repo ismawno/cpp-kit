@@ -41,6 +41,7 @@ template <typename Container> class track_ptr : public identifiable<typename Con
         m_container = other.m_container;
         m_index = other.m_index;
         this->id = other.id;
+        return *this;
     }
 
     validity validate() const

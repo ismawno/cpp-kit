@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <string>
 
 namespace kit
 {
@@ -13,6 +14,9 @@ class uuid
     explicit uuid(std::uint64_t id);
 
     operator std::uint64_t() const;
+
+    static const std::string &random_name_from_id(uuid id, std::uint32_t min_characters = 3,
+                                                  std::uint32_t max_characters = 8);
 
   private:
     std::uint64_t m_uuid;
