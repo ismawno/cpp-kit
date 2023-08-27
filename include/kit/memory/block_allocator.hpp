@@ -25,14 +25,19 @@ class block_allocator
         std::unique_ptr<std::byte[]> chunks = nullptr;
         std::size_t chunk_size = 0;
 #ifdef DEBUG
-        chunk *last = nullptr;
-        std::uint32_t alloc_count;
+        std::uint32_t dbg_alloc_count;
+        bool owns_chunk(const chunk *ck)
+        {
+            const std::byte *ck_byte = (std::byte *)ck;
+            const std::byte *first_chunk = chunks.get();
+            const std::size_t chunk_count = BlockSize / chunk_size;
+
+            for (std::size_t i = 0; i < chunk_count; i++)
+                if (ck_byte == (first_chunk + i * chunk_size))
+                    return true;
+            return false;
+        }
 #endif
-        // ~block()
-        // {
-        //     if (chunks)
-        //         delete[] chunks;
-        // }
     };
 
     struct size_index_mapper
@@ -40,20 +45,20 @@ class block_allocator
         size_index_mapper()
         {
             for (std::size_t i = 0; i < SUPPORTED_SIZES_COUNT; i++)
-                supported_sizes[i] = i * SupportedSizesIncrement;
+                supported_chunk_sizes[i] = i * SupportedSizesIncrement;
 
             size_to_index[0] = 0;
             std::size_t mapped_index = 0;
             for (std::size_t size = 1; size <= MaxChunkSize; size++)
             {
-                if (size > supported_sizes[mapped_index])
+                if (size > supported_chunk_sizes[mapped_index])
                     mapped_index++;
                 size_to_index[size] = mapped_index;
             }
         }
 
         std::array<std::size_t, MaxChunkSize + 1> size_to_index;
-        std::array<std::size_t, SUPPORTED_SIZES_COUNT> supported_sizes;
+        std::array<std::size_t, SUPPORTED_SIZES_COUNT> supported_chunk_sizes;
     };
 
     inline static const size_index_mapper s_mapper{};
@@ -65,6 +70,7 @@ class block_allocator
     {
         KIT_DEBUG("Block allocating {0} bytes of data", sizeof(T))
         const std::size_t mapped_index = s_mapper.size_to_index[sizeof(T)];
+
         if (s_free_chunks[mapped_index])
             return next_free_chunk<T>(mapped_index);
         return first_chunk_of_new_block<T>(mapped_index);
@@ -80,10 +86,11 @@ class block_allocator
         KIT_DEBUG("Block deallocating {0} bytes of data", size)
 
         const std::size_t mapped_index = s_mapper.size_to_index[size];
-#ifdef DEBUG
-        make_sure_chunk_belongs_to_allocator(mapped_index, ptr, size);
-#endif
         chunk *ck = (chunk *)ptr;
+#ifdef DEBUG
+        make_sure_chunk_belongs_to_allocator(mapped_index, ck, size);
+#endif
+
         ck->next = s_free_chunks[mapped_index];
         s_free_chunks[mapped_index] = ck;
     }
@@ -104,11 +111,11 @@ class block_allocator
         chunk *ck = s_free_chunks[mapped_index];
         s_free_chunks[mapped_index] = ck->next;
 #ifdef DEBUG
+        const std::size_t chunk_size = s_mapper.supported_chunk_sizes[mapped_index];
         for (block &bk : s_blocks)
-            if (bk.last == ck)
+            if (bk.chunk_size == chunk_size && bk.owns_chunk(ck))
             {
-                bk.alloc_count++;
-                bk.last = ck->next;
+                bk.dbg_alloc_count++;
                 report_block(bk);
                 break;
             }
@@ -118,69 +125,53 @@ class block_allocator
 
     template <typename T> static T *first_chunk_of_new_block(const std::size_t mapped_index)
     {
-        const std::size_t mapped_size = s_mapper.supported_sizes[mapped_index];
+        const std::size_t chunk_size = s_mapper.supported_chunk_sizes[mapped_index];
         KIT_INFO("Creating new block at index {0} with size {1} and {2} bytes per chunk", mapped_index, BlockSize,
-                 mapped_size)
+                 chunk_size)
 
         block &bk = s_blocks.emplace_back();
-        bk.chunk_size = mapped_size;
+        bk.chunk_size = chunk_size;
         bk.chunks = std::unique_ptr<std::byte[]>(new std::byte[BlockSize]);
 
         std::byte *first_chunk = bk.chunks.get();
-        const std::size_t chunk_count = BlockSize / mapped_size;
-        KIT_ASSERT_ERROR(chunk_count * mapped_size <= BlockSize,
+        const std::size_t chunk_count = BlockSize / chunk_size;
+        KIT_ASSERT_ERROR(chunk_count * chunk_size <= BlockSize,
                          "Number of chunks times the size of each chunk is not equal (or less) than the chunk size!")
 
         for (std::size_t i = 0; i < chunk_count - 1; i++)
         {
-            chunk *current = (chunk *)(first_chunk + i * mapped_size);
-            current->next = (chunk *)(first_chunk + (i + 1) * mapped_size);
+            chunk *current = (chunk *)(first_chunk + i * chunk_size);
+            current->next = (chunk *)(first_chunk + (i + 1) * chunk_size);
         }
-        chunk *last = (chunk *)(first_chunk + (chunk_count - 1) * mapped_size);
+        chunk *last = (chunk *)(first_chunk + (chunk_count - 1) * chunk_size);
         last->next = nullptr;
 
         s_free_chunks[mapped_index] = ((chunk *)first_chunk)->next;
 #ifdef DEBUG
-        bk.alloc_count = 1;
-        bk.last = s_free_chunks[mapped_index];
+        bk.dbg_alloc_count = 1;
         report_blocks();
 #endif
         return (T *)first_chunk;
     }
 
 #ifdef DEBUG
-    template <typename T>
-    static void make_sure_chunk_belongs_to_allocator(const std::size_t mapped_index, const T *ptr,
+    static void make_sure_chunk_belongs_to_allocator(const std::size_t mapped_index, const chunk *ck,
                                                      const std::size_t size)
     {
-        const std::size_t mapped_size = s_mapper.supported_sizes[mapped_index];
-        bool found = false;
+        const std::size_t chunk_size = s_mapper.supported_chunk_sizes[mapped_index];
         for (block &bk : s_blocks)
         {
-            const std::byte *ptr_byte = (std::byte *)ptr;
-            const std::byte *chunks = bk.chunks.get();
+            if (bk.chunk_size != chunk_size)
+                continue;
 
-            const bool overlaps_block = (ptr_byte + mapped_size) > chunks && (chunks + BlockSize) > ptr_byte;
-
-            KIT_ASSERT_CRITICAL(!(bk.chunk_size != mapped_size && overlaps_block),
-                                "Pointer {0} with size {1} bytes belongs (or overlaps) the wrong block!", (void *)ptr,
-                                size)
-
-            const bool belongs_to_block = chunks <= ptr_byte && (ptr_byte + mapped_size) <= (chunks + BlockSize);
-
-            KIT_ASSERT_CRITICAL(!(bk.chunk_size != mapped_size && belongs_to_block),
-                                "Pointer {0} with size {1} bytes belongs to the wrong block!", (void *)ptr, size)
-            if (belongs_to_block)
+            if (bk.owns_chunk(ck))
             {
-                found = true;
-                bk.alloc_count--;
-                bk.last = (chunk *)ptr;
+                bk.dbg_alloc_count--;
                 report_block(bk);
-                break;
+                return;
             }
         }
-        KIT_ASSERT_CRITICAL(found, "Pointer {0} with size {1} bytes was not found in any chunk of any blocks!",
-                            (void *)ptr, size)
+        KIT_CRITICAL("Pointer {0} with size {1} bytes was not found in any chunk of any blocks!", (void *)ck, size)
     }
 
     static void report_block(const block &bk)
@@ -195,8 +186,8 @@ class block_allocator
         const std::size_t chunk_count = BlockSize / bk.chunk_size;
 
         KIT_DEBUG("Block {0}: {1} chunks, with {2} bytes per chunk, of which {3} ({4:.1f}%) are occupied ({5} bytes)",
-                  idx++, chunk_count, bk.chunk_size, bk.alloc_count, 100.f * (float)bk.alloc_count / (float)chunk_count,
-                  bk.alloc_count * bk.chunk_size)
+                  idx++, chunk_count, bk.chunk_size, bk.dbg_alloc_count,
+                  100.f * (float)bk.dbg_alloc_count / (float)chunk_count, bk.dbg_alloc_count * bk.chunk_size)
     }
     static void report_blocks()
     {
@@ -209,8 +200,8 @@ class block_allocator
 
             KIT_INFO(
                 "Block {0}: {1} chunks, with {2} bytes per chunk, of which {3} ({4:.1f}%) are occupied ({5} bytes)",
-                idx++, chunk_count, bk.chunk_size, bk.alloc_count, 100.f * (float)bk.alloc_count / (float)chunk_count,
-                bk.alloc_count * bk.chunk_size)
+                idx++, chunk_count, bk.chunk_size, bk.dbg_alloc_count,
+                100.f * (float)bk.dbg_alloc_count / (float)chunk_count, bk.dbg_alloc_count * bk.chunk_size)
         }
     }
 #endif
