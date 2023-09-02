@@ -11,7 +11,8 @@
 namespace kit
 {
 
-template <std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024, std::uint32_t SupportedSizesIncrement = 32>
+template <std::size_t BlockSize = 16 * 1024, std::size_t MaxChunkSize = 1024,
+          std::uint32_t SupportedSizesIncrement = 32>
 class block_allocator
 {
     inline static constexpr std::size_t SUPPORTED_SIZES_COUNT = MaxChunkSize / SupportedSizesIncrement + 1;
@@ -207,13 +208,15 @@ class block_allocator
 #endif
 };
 
-template <typename T, std::size_t BlockSize = 8 * 1024, std::size_t MaxChunkSize = 1024,
+template <typename T, std::size_t BlockSize = 16 * 1024, std::size_t MaxChunkSize = 1024,
           std::uint32_t SupportedSizesIncrement = 32>
 struct block_deleter
 {
     constexpr block_deleter() noexcept : m_allocated_size(sizeof(T)){};
 
-    template <typename U> block_deleter(const block_deleter<U> &bd) noexcept : m_allocated_size(bd.m_allocated_size)
+    template <typename U>
+    block_deleter(const block_deleter<U, BlockSize, MaxChunkSize, SupportedSizesIncrement> &bd) noexcept
+        : m_allocated_size(bd.m_allocated_size)
     {
     }
 
