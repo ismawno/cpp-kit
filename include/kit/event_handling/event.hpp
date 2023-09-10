@@ -1,7 +1,7 @@
 #ifndef KIT_EVENT_HPP
 #define KIT_EVENT_HPP
 
-#include "kit/utility/callback.hpp"
+#include "kit/event_handling/callback.hpp"
 #include <vector>
 
 namespace kit
