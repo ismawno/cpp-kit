@@ -23,7 +23,7 @@ static void compute_mt(It it1, It it2, std::function<void(std::size_t, T &)> fun
 
 } // namespace
 
-template <std::size_t ThreadCount, template <typename...> typename C, typename T>
+template <std::size_t ThreadCount, typename T, template <typename...> typename C>
 void const_for_each_mt(const C<T> &container, const std::function<void(std::size_t, const T &)> &func)
 {
     std::array<std::thread, ThreadCount> threads;
@@ -36,7 +36,7 @@ void const_for_each_mt(const C<T> &container, const std::function<void(std::size
                          size)
 
         threads[i] = std::thread(const_compute_mt<typename C<T>::const_iterator, T>, container.begin() + (long)start,
-                                 container.start() + (long)end, func, i);
+                                 container.begin() + (long)end, func, i);
     }
 
     for (std::thread &th : threads)
@@ -44,7 +44,7 @@ void const_for_each_mt(const C<T> &container, const std::function<void(std::size
             th.join();
 }
 
-template <std::size_t ThreadCount, template <typename...> typename C, typename T>
+template <std::size_t ThreadCount, typename T, template <typename...> typename C>
 void for_each_mt(C<T> &container, const std::function<void(std::size_t, T &)> &func)
 {
     std::array<std::thread, ThreadCount> threads;
@@ -57,7 +57,7 @@ void for_each_mt(C<T> &container, const std::function<void(std::size_t, T &)> &f
                          size)
 
         threads[i] = std::thread(compute_mt<typename C<T>::iterator, T>, container.begin() + (long)start,
-                                 container.start() + (long)end, func, i);
+                                 container.begin() + (long)end, func, i);
     }
 
     for (std::thread &th : threads)
