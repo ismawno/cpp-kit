@@ -51,10 +51,11 @@ void instrumentor::end_measurement(const char *name, long long start, long long 
         return;
 
     measurement measure = std::move(s_current_measurements.top());
+    measure.duration_over_calls = duration;
+
     s_current_measurements.pop();
     if (s_current_measurements.empty())
     {
-        measure.duration_over_calls = duration;
         measure.compute_relative_measurements();
         if (s_smoothness != 0.f)
             measure.smooth_measurements(s_head_measurement, s_smoothness);
@@ -63,18 +64,15 @@ void instrumentor::end_measurement(const char *name, long long start, long long 
     }
 
     measurement &parent = s_current_measurements.top();
-    measurement *equivalent = parent.child(name);
-
-    if (!equivalent)
+    if (parent.children.find(name) == parent.children.end())
     {
-        measure.duration_over_calls = duration;
-        parent.children.push_back(std::move(measure));
+        parent.children.emplace(measure.name, std::move(measure));
         return;
     }
 
-    equivalent->duration_over_calls += duration;
-    equivalent->parent_relative_calls++;
-    equivalent->children = std::move(measure.children);
+    measurement &equivalent = parent.children.at(name);
+    equivalent.parent_relative_calls++;
+    equivalent.absorb(measure);
 }
 
 const measurement &instrumentor::last_measurement()

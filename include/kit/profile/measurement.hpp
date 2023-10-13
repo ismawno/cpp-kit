@@ -3,6 +3,7 @@
 
 #include "kit/interface/nameable.hpp"
 #include "kit/profile/time.hpp"
+#include <unordered_map>
 
 namespace kit
 {
@@ -20,13 +21,12 @@ class measurement : public nameable
     float parent_relative_percent = 1.f;
     float total_percent = 1.f;
 
-    std::vector<measurement> children;
+    std::unordered_map<const char *, measurement> children;
 
     void compute_relative_measurements();
     void smooth_measurements(const measurement &measure, float smoothness);
 
-    const measurement *child(const char *name) const;
-    measurement *child(const char *name);
+    void absorb(measurement &other);
 
   private:
     void compute_relative_measurements(const measurement &parent);
