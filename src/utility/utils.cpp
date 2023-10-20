@@ -3,12 +3,12 @@
 
 namespace kit
 {
-bool approximately(float a, float b)
+bool approximately(const float a, const float b)
 {
     constexpr float epsilon = std::numeric_limits<float>::epsilon();
     return std::abs(a - b) <= epsilon;
 }
-bool approaches_zero(float x)
+bool approaches_zero(const float x)
 {
     constexpr float epsilon = std::numeric_limits<float>::epsilon();
     return std::abs(x) <= epsilon;
