@@ -32,10 +32,11 @@ class instrumentor
     static inline const char *directory_path = "profile-results/";
     static inline std::uint32_t max_mb_per_file = 200;
 
-    static void begin_session(const char *name, std::uint8_t format);
+    static void begin_session(const char *name, std::uint8_t format = output_format::JSON_TRACE);
     static void end_session();
 
-    static const measurement &last_measurement();
+    static bool has_hierarchy_measurement(const char *session);
+    static const measurement &hierarchy_measurement(const char *session);
     static float measurement_smoothness();
     static void measurement_smoothness(float smoothness);
 
@@ -53,7 +54,7 @@ class instrumentor
     static void write_footer();
 
     static inline std::stack<measurement> s_current_measurements{};
-    static inline measurement s_head_measurement{"$NULL$"};
+    static inline std::unordered_map<const char *, measurement> s_head_measurements{};
 
     static inline const char *s_session_name = nullptr;
 

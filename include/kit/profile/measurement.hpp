@@ -10,7 +10,7 @@ namespace kit
 class measurement : public nameable
 {
   public:
-    measurement(const char *name);
+    measurement(const char *name = nullptr);
 
     time duration_per_call;
     time duration_over_calls;

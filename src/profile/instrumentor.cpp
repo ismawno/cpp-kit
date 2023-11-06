@@ -1,5 +1,6 @@
 #include "kit/internal/pch.hpp"
 #include "kit/profile/instrumentor.hpp"
+#include "kit/utility/utils.hpp"
 
 namespace kit
 {
@@ -35,16 +36,20 @@ void instrumentor::end_session()
         close_file();
         s_file_count = 0;
     }
+    s_session_name = nullptr;
 }
 
 void instrumentor::begin_measurement(const char *name)
 {
-    KIT_ASSERT_ERROR(s_session_name, "A session must be active to profile")
+    KIT_ASSERT_ERROR(s_session_name, "A session must be active to begin a measurement")
     s_current_measurements.emplace(name);
 }
 
-void instrumentor::end_measurement(const char *name, long long start, long long end, time duration)
+void instrumentor::end_measurement(const char *name, const long long start, const long long end, const time duration)
 {
+    KIT_ASSERT_ERROR(s_session_name, "A session must be active to end a measurement")
+    KIT_ASSERT_ERROR(!s_current_measurements.empty(), "Must first begin a measurement")
+
     if (s_format & output_format::JSON_TRACE)
         write_measurement(name, start, end);
     if (!(s_format & output_format::HIERARCHY))
@@ -57,9 +62,10 @@ void instrumentor::end_measurement(const char *name, long long start, long long 
     if (s_current_measurements.empty())
     {
         measure.compute_relative_measurements();
-        if (s_smoothness != 0.f)
-            measure.smooth_measurements(s_head_measurement, s_smoothness);
-        s_head_measurement = std::move(measure);
+        if (!approaches_zero(s_smoothness) && has_hierarchy_measurement(s_session_name))
+            measure.smooth_measurements(s_head_measurements.at(s_session_name), s_smoothness);
+
+        s_head_measurements[s_session_name] = std::move(measure);
         return;
     }
 
@@ -75,9 +81,18 @@ void instrumentor::end_measurement(const char *name, long long start, long long 
     equivalent.absorb(measure);
 }
 
-const measurement &instrumentor::last_measurement()
+bool instrumentor::has_hierarchy_measurement(const char *session)
 {
-    return s_head_measurement;
+    return s_head_measurements.find(session) != s_head_measurements.end();
+}
+
+const measurement &instrumentor::hierarchy_measurement(const char *session)
+{
+    KIT_ASSERT_ERROR(has_hierarchy_measurement(session),
+                     "The session %s was not found! Must begin the session with hierarchy format, or end the session "
+                     "at least once before trying to retrieve the last measurement",
+                     session)
+    return s_head_measurements.at(session);
 }
 
 float instrumentor::measurement_smoothness()
