@@ -19,13 +19,14 @@ template <template <typename...> typename C, class... Args> class container_view
     {
         return m_container.begin();
     }
-    auto begin()
-    {
-        return m_container.begin();
-    }
     auto end() const
     {
         return m_container.end();
+    }
+
+    auto begin()
+    {
+        return m_container.begin();
     }
     auto end()
     {
