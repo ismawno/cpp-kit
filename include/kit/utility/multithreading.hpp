@@ -23,8 +23,8 @@ static void compute_mt(It it1, It it2, std::function<void(std::size_t, T &)> fun
 
 } // namespace
 
-template <std::size_t ThreadCount, typename T, template <typename...> typename C>
-void const_for_each_mt(const C<T> &container, const std::function<void(std::size_t, const T &)> &func)
+template <std::size_t ThreadCount, typename T, typename C>
+void const_for_each_mt(const C &container, const std::function<void(std::size_t, const T &)> &func)
 {
     std::array<std::thread, ThreadCount> threads;
     const std::size_t size = container.size();
@@ -35,7 +35,7 @@ void const_for_each_mt(const C<T> &container, const std::function<void(std::size
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
 
-        threads[i] = std::thread(const_compute_mt<typename C<T>::const_iterator, T>, container.begin() + (long)start,
+        threads[i] = std::thread(const_compute_mt<decltype(container.begin()), T>, container.begin() + (long)start,
                                  container.begin() + (long)end, func, i);
     }
 
@@ -44,8 +44,8 @@ void const_for_each_mt(const C<T> &container, const std::function<void(std::size
             th.join();
 }
 
-template <std::size_t ThreadCount, typename T, template <typename...> typename C>
-void for_each_mt(C<T> &container, const std::function<void(std::size_t, T &)> &func)
+template <std::size_t ThreadCount, typename T, typename C>
+void for_each_mt(C &container, const std::function<void(std::size_t, T &)> &func)
 {
     std::array<std::thread, ThreadCount> threads;
     const std::size_t size = container.size();
@@ -56,7 +56,7 @@ void for_each_mt(C<T> &container, const std::function<void(std::size_t, T &)> &f
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
 
-        threads[i] = std::thread(compute_mt<typename C<T>::iterator, T>, container.begin() + (long)start,
+        threads[i] = std::thread(compute_mt<decltype(container.begin()), T>, container.begin() + (long)start,
                                  container.begin() + (long)end, func, i);
     }
 
