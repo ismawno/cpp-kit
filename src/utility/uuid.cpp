@@ -34,8 +34,8 @@ static bool in_between(const std::uint32_t x, const std::uint32_t mm, const std:
     return x <= mm && x <= mx;
 }
 
-const std::string &uuid::random_name_from_id(const uuid id, const std::uint32_t min_characters,
-                                             const std::uint32_t max_characters)
+const std::string &uuid::name_from_id(const uuid id, const std::uint32_t min_characters,
+                                      const std::uint32_t max_characters)
 {
     KIT_ASSERT_ERROR(min_characters <= max_characters,
                      "Maximum characters must be greater or equal than minimum characters")
