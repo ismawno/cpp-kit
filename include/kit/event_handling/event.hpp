@@ -27,6 +27,7 @@ template <class... Ts> class event final
                 m_callbacks.erase(it);
                 return *this;
             }
+        KIT_WARN("Callback was not found!")
         return *this;
     }
     void operator()(Ts &&...args) const
