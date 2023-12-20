@@ -1,5 +1,4 @@
-#ifndef KIT_BLOCK_ALLOCATOR_HPP
-#define KIT_BLOCK_ALLOCATOR_HPP
+#pragma once
 
 #include "kit/debug/log.hpp"
 
@@ -237,5 +236,3 @@ struct block_deleter
     template <typename U, std::size_t BS, std::size_t MCS, std::uint32_t SSI> friend struct block_deleter;
 };
 } // namespace kit
-
-#endif

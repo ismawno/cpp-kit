@@ -1,5 +1,4 @@
-#ifndef KIT_CLOCK_HPP
-#define KIT_CLOCK_HPP
+#pragma once
 
 #include "kit/profile/time.hpp"
 
@@ -21,5 +20,3 @@ class clock
     time_point m_start;
 };
 } // namespace kit
-
-#endif

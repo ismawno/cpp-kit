@@ -1,5 +1,4 @@
-#ifndef KIT_IDENTIFIABLE_HPP
-#define KIT_IDENTIFIABLE_HPP
+#pragma once
 
 #include "kit/utility/uuid.hpp"
 
@@ -38,5 +37,3 @@ template <typename T> struct hash<kit::identifiable<T>>
     }
 };
 } // namespace std
-
-#endif

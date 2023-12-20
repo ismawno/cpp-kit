@@ -1,5 +1,4 @@
-#ifndef KIT_UUID_HPP
-#define KIT_UUID_HPP
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -33,5 +32,3 @@ template <> struct hash<kit::uuid>
     size_t operator()(const kit::uuid &id) const;
 };
 } // namespace std
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef KIT_PERF_HPP
-#define KIT_PERF_HPP
+#pragma once
 
 #include "kit/profile/instrumentor.hpp"
 
@@ -29,6 +28,4 @@
 #define KIT_PERF_PRETTY_FUNCTION()
 #define KIT_PERF_SET_MAX_FILE_MB(size)
 #define KIT_PERF_SET_DIRECTORY_PATH(pth)
-#endif
-
 #endif

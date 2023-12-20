@@ -1,5 +1,4 @@
-#ifndef KIT_NON_COPYABLE_HPP
-#define KIT_NON_COPYABLE_HPP
+#pragma once
 
 namespace kit
 {
@@ -12,4 +11,3 @@ class non_copyable
     non_copyable() = default;
 };
 } // namespace kit
-#endif

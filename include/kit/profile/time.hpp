@@ -1,5 +1,4 @@
-#ifndef KIT_TIME_HPP
-#define KIT_TIME_HPP
+#pragma once
 
 #include <chrono>
 
@@ -79,5 +78,3 @@ template <typename T> time operator*(const T scalar, const time &rhs)
     return rhs * scalar;
 }
 } // namespace kit
-
-#endif

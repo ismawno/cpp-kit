@@ -1,5 +1,4 @@
-#ifndef KIT_LOG_HPP
-#define KIT_LOG_HPP
+#pragma once
 
 #if defined(KIT_LOG) && defined(KIT_USE_SPDLOG)
 #include <signal.h>
@@ -77,5 +76,4 @@
 #define KIT_ASSERT_FATAL(cond, ...)
 
 #define KIT_CHECK_RETURN_VALUE(expression, expected, level, ...) expression;
-#endif
 #endif

@@ -1,5 +1,4 @@
-#ifndef KIT_SERIALIZATION_HPP
-#define KIT_SERIALIZATION_HPP
+#pragma once
 
 #ifdef KIT_USE_YAML_CPP
 #include <yaml-cpp/yaml.h>
@@ -103,6 +102,4 @@ template <typename T> struct convert
     }
 };
 } // namespace YAML
-#endif
-
 #endif

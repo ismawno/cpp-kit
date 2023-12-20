@@ -1,5 +1,4 @@
-#ifndef KIT_TRANSFORM_HPP
-#define KIT_TRANSFORM_HPP
+#pragma once
 
 #include "kit/interface/serialization.hpp"
 
@@ -151,5 +150,3 @@ class transform3D
     static glm::mat3 Z(float rotz);
 };
 } // namespace kit
-
-#endif

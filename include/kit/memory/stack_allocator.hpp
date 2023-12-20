@@ -1,5 +1,4 @@
-#ifndef STACK_ALLOCATOR_HPP
-#define STACK_ALLOCATOR_HPP
+#pragma once
 
 #include <array>
 #include <cstddef>
@@ -93,5 +92,3 @@ template <typename T, std::size_t Capacity, std::uint32_t ID = 0> struct stack_d
     }
 };
 } // namespace kit
-
-#endif

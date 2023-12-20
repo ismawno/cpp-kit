@@ -1,5 +1,4 @@
-#ifndef KIT_UTILS_HPP
-#define KIT_UTILS_HPP
+#pragma once
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -31,5 +30,3 @@ Derived *get_casted_raw_ptr(const SmartPtr<Base> &ptr)
         return dynamic_cast<Derived *>(ptr.get());
 }
 } // namespace kit
-
-#endif

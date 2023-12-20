@@ -1,5 +1,4 @@
-#ifndef KIT_MEASUREMENT_HPP
-#define KIT_MEASUREMENT_HPP
+#pragma once
 
 #include "kit/interface/nameable.hpp"
 #include "kit/profile/time.hpp"
@@ -33,5 +32,3 @@ class measurement : public nameable
 };
 
 } // namespace kit
-
-#endif

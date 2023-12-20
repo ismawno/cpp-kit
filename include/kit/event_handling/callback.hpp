@@ -1,5 +1,4 @@
-#ifndef KIT_CALLBACK_HPP
-#define KIT_CALLBACK_HPP
+#pragma once
 
 #include "kit/interface/identifiable.hpp"
 
@@ -27,5 +26,3 @@ template <typename... Ts> class callback : public identifiable<>
     std::function<void(Ts...)> m_callback;
 };
 } // namespace kit
-
-#endif

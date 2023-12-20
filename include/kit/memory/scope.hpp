@@ -1,5 +1,4 @@
-#ifndef KIT_SCOPE_HPP
-#define KIT_SCOPE_HPP
+#pragma once
 
 #ifdef KIT_USE_CUSTOM_ALLOC
 #include "kit/memory/block_allocator.hpp"
@@ -45,5 +44,3 @@ inline scope<T> make_scope(Args &&...args)
 
 #endif
 } // namespace kit
-
-#endif

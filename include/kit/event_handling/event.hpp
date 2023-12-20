@@ -1,5 +1,4 @@
-#ifndef KIT_EVENT_HPP
-#define KIT_EVENT_HPP
+#pragma once
 
 #include "kit/event_handling/callback.hpp"
 #include <vector>
@@ -45,5 +44,3 @@ template <class... Ts> class event final
     std::vector<callback<Ts...>> m_callbacks;
 };
 } // namespace kit
-
-#endif

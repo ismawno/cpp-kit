@@ -1,5 +1,4 @@
-#ifndef KIT_NAMEABLE_HPP
-#define KIT_NAMEABLE_HPP
+#pragma once
 
 namespace kit
 {
@@ -11,5 +10,3 @@ class nameable
     const char *name;
 };
 } // namespace kit
-
-#endif

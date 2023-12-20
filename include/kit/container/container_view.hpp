@@ -1,5 +1,4 @@
-#ifndef KIT_CONTAINER_VIEW_HPP
-#define KIT_CONTAINER_VIEW_HPP
+#pragma once
 
 #include <map>
 #include <set>
@@ -60,5 +59,3 @@ template <typename T> using unordered_set_view = container_view<std::unordered_s
 
 template <typename T> using set_view = container_view<std::set, T>;
 } // namespace kit
-
-#endif

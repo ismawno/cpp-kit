@@ -1,5 +1,4 @@
-#ifndef KIT_INSTRUMENTOR_HPP
-#define KIT_INSTRUMENTOR_HPP
+#pragma once
 
 #include "kit/interface/nameable.hpp"
 #include "kit/profile/time.hpp"
@@ -65,5 +64,3 @@ class instrumentor
     static inline float s_smoothness = 0.f;
 };
 } // namespace kit
-
-#endif

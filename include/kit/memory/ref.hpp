@@ -1,5 +1,4 @@
-#ifndef KIT_REF_HPP
-#define KIT_REF_HPP
+#pragma once
 
 #ifdef KIT_USE_CUSTOM_ALLOC
 #include "kit/memory/block_allocator.hpp"
@@ -38,5 +37,3 @@ inline ref<T> make_ref(Args &&...args)
 
 #endif
 } // namespace kit
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef KIT_TOGGLEABLE_HPP
-#define KIT_TOGGLEABLE_HPP
+#pragma once
 
 namespace kit
 {
@@ -14,5 +13,3 @@ class toggleable
     void disable();
 };
 } // namespace kit
-
-#endif

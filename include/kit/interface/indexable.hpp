@@ -1,5 +1,4 @@
-#ifndef KIT_INDEXABLE_HPP
-#define KIT_INDEXABLE_HPP
+#pragma once
 
 #include <cstddef>
 
@@ -13,5 +12,3 @@ class indexable
     std::size_t index;
 };
 } // namespace kit
-
-#endif
