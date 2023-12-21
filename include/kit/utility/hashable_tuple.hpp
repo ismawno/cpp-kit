@@ -8,13 +8,13 @@ namespace kit
 {
 enum class hash
 {
-    asymmetric,
-    symmetric
+    non_commutative,
+    commutative
 };
-template <hash HashType, class... Hashable> struct multi_hash
+template <hash HashType, class... Hashable> struct hashable_tuple
 {
-    multi_hash() = default;
-    multi_hash(Hashable &&...hashable) : elms(hashable...)
+    hashable_tuple() = default;
+    hashable_tuple(Hashable &&...hashable) : elms(hashable...)
     {
     }
 
@@ -25,9 +25,9 @@ template <hash HashType, class... Hashable> struct multi_hash
         return (*this)(std::make_integer_sequence<int, sizeof...(Hashable)>{});
     }
 
-    template <class... OtherHashable> bool operator==(const multi_hash<HashType, OtherHashable...> &other) const
+    template <class... OtherHashable> bool operator==(const hashable_tuple<HashType, OtherHashable...> &other) const
     {
-        if constexpr (HashType == hash::asymmetric)
+        if constexpr (HashType == hash::non_commutative)
             return elms == other.elms;
         else if constexpr (sizeof...(Hashable) != sizeof...(OtherHashable))
             return false;
@@ -61,7 +61,7 @@ template <hash HashType, class... Hashable> struct multi_hash
     template <typename T, class... Rest> static void hash_combine(std::size_t &seed, const T &hashable, Rest &&...rest)
     {
         const std::hash<T> hasher;
-        if constexpr (HashType == hash::asymmetric)
+        if constexpr (HashType == hash::non_commutative)
             seed ^= hasher(hashable) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         else
             seed ^= hasher(hashable) + 0x9e3779b9 + (SEED << 6) + (SEED >> 2);
@@ -78,15 +78,15 @@ template <hash HashType, class... Hashable> struct multi_hash
     }
 };
 
-template <class... Hashable> using asymm_multi_hash = multi_hash<hash::asymmetric, Hashable...>;
-template <class... Hashable> using symm_multi_hash = multi_hash<hash::symmetric, Hashable...>;
+template <class... Hashable> using non_commutative_tuple = hashable_tuple<hash::non_commutative, Hashable...>;
+template <class... Hashable> using commutative_tuple = hashable_tuple<hash::commutative, Hashable...>;
 } // namespace kit
 
 namespace std
 {
-template <kit::hash HashType, class... Hashable> struct hash<kit::multi_hash<HashType, Hashable...>>
+template <kit::hash HashType, class... Hashable> struct hash<kit::hashable_tuple<HashType, Hashable...>>
 {
-    size_t operator()(const kit::multi_hash<HashType, Hashable...> &mhash) const
+    size_t operator()(const kit::hashable_tuple<HashType, Hashable...> &mhash) const
     {
         return mhash();
     }
