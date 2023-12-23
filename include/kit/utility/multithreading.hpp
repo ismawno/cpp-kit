@@ -35,8 +35,8 @@ void const_for_each_mt(const C &container, const std::function<void(std::size_t,
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
 
-        threads[i] = std::thread(const_compute_mt<decltype(container.begin()), T>, container.begin() + (long)start,
-                                 container.begin() + (long)end, func, i);
+        threads[i] = std::thread(const_compute_mt<decltype(container.begin()), T>, container.begin() + start,
+                                 container.begin() + end, func, i);
     }
 
     for (std::thread &th : threads)
@@ -56,8 +56,8 @@ void for_each_mt(C &container, const std::function<void(std::size_t, T &)> &func
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
 
-        threads[i] = std::thread(compute_mt<decltype(container.begin()), T>, container.begin() + (long)start,
-                                 container.begin() + (long)end, func, i);
+        threads[i] = std::thread(compute_mt<decltype(container.begin()), T>, container.begin() + start,
+                                 container.begin() + end, func, i);
     }
 
     for (std::thread &th : threads)
