@@ -14,7 +14,7 @@ enum class hash
 template <hash HashType, class... Hashable> struct hashable_tuple
 {
     hashable_tuple() = default;
-    hashable_tuple(Hashable &&...hashable) : elms(hashable...)
+    hashable_tuple(Hashable &&...hashable) : elms(std::forward<Hashable>(hashable)...)
     {
     }
 
@@ -66,7 +66,7 @@ template <hash HashType, class... Hashable> struct hashable_tuple
         else
             seed ^= hasher(hashable) + 0x9e3779b9 + (SEED << 6) + (SEED >> 2);
         if constexpr (sizeof...(rest) != 0)
-            hash_combine(seed, rest...);
+            hash_combine(seed, std::forward<Rest>(rest)...);
     }
 
     template <typename T, typename U> static bool compare(const T &t, const U &u)
