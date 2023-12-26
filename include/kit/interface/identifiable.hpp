@@ -27,13 +27,10 @@ template <typename T> bool operator!=(const identifiable<T> &lhs, const identifi
 }
 } // namespace kit
 
-namespace std
+template <typename T> struct std::hash<kit::identifiable<T>>
 {
-template <typename T> struct hash<kit::identifiable<T>>
-{
-    size_t operator()(const kit::identifiable<T> &id) const
+    std::size_t operator()(const kit::identifiable<T> &id) const
     {
-        return hash<T>()(id.id);
+        return std::hash<T>()(id.id);
     }
 };
-} // namespace std

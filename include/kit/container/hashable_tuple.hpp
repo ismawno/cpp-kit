@@ -82,13 +82,10 @@ template <class... Hashable> using non_commutative_tuple = hashable_tuple<hash::
 template <class... Hashable> using commutative_tuple = hashable_tuple<hash::commutative, Hashable...>;
 } // namespace kit
 
-namespace std
+template <kit::hash HashType, class... Hashable> struct std::hash<kit::hashable_tuple<HashType, Hashable...>>
 {
-template <kit::hash HashType, class... Hashable> struct hash<kit::hashable_tuple<HashType, Hashable...>>
-{
-    size_t operator()(const kit::hashable_tuple<HashType, Hashable...> &mhash) const
+    std::size_t operator()(const kit::hashable_tuple<HashType, Hashable...> &mhash) const
     {
         return mhash();
     }
 };
-} // namespace std

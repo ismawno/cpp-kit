@@ -70,5 +70,4 @@ const std::string &uuid::name_from_id(const uuid id, const std::uint32_t min_cha
 std::size_t std::hash<kit::uuid>::operator()(const kit::uuid &key) const
 {
     return std::hash<uint64_t>()((std::uint64_t)key);
-
-} // namespace std
+}

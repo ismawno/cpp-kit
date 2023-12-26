@@ -25,10 +25,7 @@ bool operator!=(const uuid &id1, const uuid &id2);
 
 } // namespace kit
 
-namespace std
+template <> struct std::hash<kit::uuid>
 {
-template <> struct hash<kit::uuid>
-{
-    size_t operator()(const kit::uuid &id) const;
+    std::size_t operator()(const kit::uuid &id) const;
 };
-} // namespace std
