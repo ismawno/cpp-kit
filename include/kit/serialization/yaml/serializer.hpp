@@ -45,6 +45,7 @@ template <typename T> T deserialize(const std::string &path)
 class serializable : public encodeable
 {
 #ifdef KIT_USE_YAML_CPP
+  public:
     void serialize(const std::string &path) const
     {
         kit::yaml::serialize(*this, path);
@@ -55,6 +56,7 @@ class serializable : public encodeable
 class deserializable : public decodeable
 {
 #ifdef KIT_USE_YAML_CPP
+  public:
     void deserialize(const std::string &path)
     {
         kit::yaml::deserialize(*this, path);
