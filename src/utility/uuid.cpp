@@ -41,8 +41,9 @@ const std::string &uuid::name_from_id(const uuid id, const std::uint32_t min_cha
                      "Maximum characters must be greater or equal than minimum characters")
 
     thread_local static std::unordered_map<uuid, std::string> names;
-    if (names.find(id) != names.end() && in_between((std::uint32_t)names.at(id).size(), min_characters, max_characters))
-        return names.at(id);
+    const auto existing = names.find(id);
+    if (existing != names.end() && in_between((std::uint32_t)names.at(id).size(), min_characters, max_characters))
+        return existing->second;
 
     srand((std::uint32_t)id);
     static constexpr const char syllables[6] = "aieou";

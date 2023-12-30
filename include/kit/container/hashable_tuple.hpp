@@ -14,7 +14,8 @@ enum class hash
 template <hash HashType, class... Hashable> struct hashable_tuple
 {
     hashable_tuple() = default;
-    hashable_tuple(Hashable &&...hashable) : elms(std::forward<Hashable>(hashable)...)
+
+    template <class... TupleArgs> hashable_tuple(TupleArgs &&...args) : elms(std::forward<TupleArgs>(args)...)
     {
     }
 

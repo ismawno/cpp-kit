@@ -70,13 +70,14 @@ void instrumentor::end_measurement(const char *name, const long long start, cons
     }
 
     measurement &parent = s_current_measurements.top();
-    if (parent.children.find(name) == parent.children.end())
+    const auto child = parent.children.find(name);
+    if (child == parent.children.end())
     {
         parent.children.emplace(measure.name, std::move(measure));
         return;
     }
 
-    measurement &equivalent = parent.children.at(name);
+    measurement &equivalent = child->second;
     equivalent.parent_relative_calls++;
     equivalent.absorb(measure);
 }

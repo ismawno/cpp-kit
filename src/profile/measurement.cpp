@@ -39,8 +39,11 @@ void measurement::smooth_measurements(const measurement &measure, const float sm
     total_percent = smoothness * measure.total_percent + (1.f - smoothness) * total_percent;
 
     for (auto &[name, child] : children)
-        if (measure.children.find(name) != measure.children.end())
-            child.smooth_measurements(measure.children.at(name), smoothness);
+    {
+        const auto equivalent = measure.children.find(name);
+        if (equivalent != measure.children.end())
+            child.smooth_measurements(equivalent->second, smoothness);
+    }
 }
 
 void measurement::absorb(measurement &other)
@@ -48,9 +51,12 @@ void measurement::absorb(measurement &other)
     duration_over_calls += other.duration_over_calls;
     total_calls += other.total_calls;
     for (auto &[name, other_child] : other.children)
-        if (children.find(name) == children.end())
+    {
+        const auto grandchild = children.find(name);
+        if (grandchild == children.end())
             children.emplace(name, std::move(other_child));
         else
-            children.at(name).absorb(other_child);
+            grandchild->second.absorb(other_child);
+    }
 }
 } // namespace kit
