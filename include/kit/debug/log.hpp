@@ -6,7 +6,7 @@
 
 #ifdef __clang__
 #define KIT_BREAK() __builtin_debugtrap();
-#elif defined(_MSVC_VER)
+#elif defined(_MSC_VER)
 #include <intrin.h>
 #define KIT_BREAK() __debugbreak();
 #elif defined(SIGTRAP)
