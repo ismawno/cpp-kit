@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 namespace kit
 {
 template <typename T, typename F, T... Seq>

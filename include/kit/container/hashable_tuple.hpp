@@ -40,8 +40,8 @@ template <hash HashType, class... Hashable> struct hashable_tuple
                 bool any_equal1 = false;
                 bool any_equal2 = false;
                 kit::static_for_each<sizeof...(Hashable)>([&i, &any_equal1, &any_equal2, &other, this](auto j) {
-                    any_equal1 |= compare(std::get<i>(elms), std::get<j>(other.elms));
-                    any_equal2 |= compare(std::get<i>(other.elms), std::get<j>(elms));
+                    any_equal1 |= compare(std::get<i.value>(elms), std::get<j.value>(other.elms));
+                    any_equal2 |= compare(std::get<i.value>(other.elms), std::get<j.value>(elms));
                 });
                 are_equal1 &= any_equal1;
                 are_equal2 &= any_equal2;
