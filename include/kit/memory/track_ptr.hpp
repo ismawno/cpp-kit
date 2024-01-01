@@ -45,7 +45,7 @@ template <typename Container> class track_ptr : public identifiable<typename Con
 
     validity validate() const
     {
-        if (!m_container || m_index == SIZE_T_MAX)
+        if (!m_container || m_index == SIZE_MAX)
             return validity::NOT_VALID;
         if (m_index < m_container->size() && (*m_container)[m_index].id == this->id)
             return validity::VALID;
@@ -56,7 +56,7 @@ template <typename Container> class track_ptr : public identifiable<typename Con
                 m_index = i;
                 return validity::VALID_MUTATED;
             }
-        m_index = SIZE_T_MAX;
+        m_index = SIZE_MAX;
         return validity::NOT_VALID;
     }
 
