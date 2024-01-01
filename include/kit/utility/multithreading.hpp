@@ -40,8 +40,7 @@ void const_for_each_mt(const C &container, const std::function<void(std::size_t,
     }
 
     for (std::thread &th : threads)
-        if (th.joinable())
-            th.join();
+        th.join();
 }
 
 template <std::size_t ThreadCount, typename T, typename C>
@@ -61,7 +60,6 @@ void for_each_mt(C &container, const std::function<void(std::size_t, T &)> &func
     }
 
     for (std::thread &th : threads)
-        if (th.joinable())
-            th.join();
+        th.join();
 }
 } // namespace kit
