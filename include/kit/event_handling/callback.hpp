@@ -9,23 +9,23 @@ namespace kit
 template <typename... Args> class callback : public identifiable<>
 {
   public:
-    using task = std::function<void(Args...)>;
-    callback(const task &tk = nullptr) : m_task(tk)
+    using fun = std::function<void(Args...)>;
+    callback(const fun &fn = nullptr) : m_fun(fn)
     {
     }
 
     void operator()(Args &&...args) const
     {
-        KIT_ASSERT_ERROR(m_task, "The task must not be null")
-        m_task(std::forward<Args>(args)...);
+        KIT_ASSERT_ERROR(m_fun, "The callback must not be null")
+        m_fun(std::forward<Args>(args)...);
     }
 
     operator bool()
     {
-        return m_task != nullptr;
+        return m_fun != nullptr;
     }
 
   private:
-    task m_task;
+    fun m_fun;
 };
 } // namespace kit
