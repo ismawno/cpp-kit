@@ -6,25 +6,15 @@ namespace kit
 {
 namespace
 {
-template <typename It, typename T>
-static void const_compute_mt(It it1, It it2, std::function<void(std::size_t, const T &)> func,
-                             const std::size_t thread_idx)
+template <typename It, typename Fun> static void compute_mt(It it1, It it2, Fun fun, const std::size_t thread_idx)
 {
     for (auto it = it1; it != it2; ++it)
-        func(thread_idx, *it);
-}
-
-template <typename It, typename T>
-static void compute_mt(It it1, It it2, std::function<void(std::size_t, T &)> func, const std::size_t thread_idx)
-{
-    for (auto it = it1; it != it2; ++it)
-        func(thread_idx, *it);
+        fun(thread_idx, *it);
 }
 
 } // namespace
 
-template <std::size_t ThreadCount, typename T, typename C>
-void const_for_each_mt(const C &container, const std::function<void(std::size_t, const T &)> &func)
+template <std::size_t ThreadCount, typename C, typename Fun> void for_each_mt(C &container, Fun fun)
 {
     std::array<std::thread, ThreadCount> threads;
     const std::size_t size = container.size();
@@ -35,28 +25,8 @@ void const_for_each_mt(const C &container, const std::function<void(std::size_t,
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
 
-        threads[i] = std::thread(const_compute_mt<decltype(container.begin()), T>, container.begin() + start,
-                                 container.begin() + end, func, i);
-    }
-
-    for (std::thread &th : threads)
-        th.join();
-}
-
-template <std::size_t ThreadCount, typename T, typename C>
-void for_each_mt(C &container, const std::function<void(std::size_t, T &)> &func)
-{
-    std::array<std::thread, ThreadCount> threads;
-    const std::size_t size = container.size();
-    for (std::size_t i = 0; i < ThreadCount; i++)
-    {
-        const std::size_t start = i * size / ThreadCount;
-        const std::size_t end = (i + 1) * size / ThreadCount;
-        KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
-                         size)
-
-        threads[i] = std::thread(compute_mt<decltype(container.begin()), T>, container.begin() + start,
-                                 container.begin() + end, func, i);
+        threads[i] = std::thread(compute_mt<decltype(container.begin()), Fun>, container.begin() + start,
+                                 container.begin() + end, fun, i);
     }
 
     for (std::thread &th : threads)

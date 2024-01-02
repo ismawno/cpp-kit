@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kit/utility/static_for.hpp"
+#include "kit/utility/static_for_each.hpp"
 #include <tuple>
 #include <functional>
 
