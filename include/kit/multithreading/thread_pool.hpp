@@ -62,7 +62,7 @@ template <class... Args> class thread_pool
         m_idle_threads.reserve(thread_count);
 
         for (std::size_t i = 0; i < thread_count; i++)
-            const std::thread &th = m_threads.emplace_back(worker);
+            m_threads.emplace_back(worker);
     }
 
     ~thread_pool()

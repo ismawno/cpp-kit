@@ -1,6 +1,7 @@
+#include "kit/debug/log.hpp"
+#include "kit/multithreading/thread_pool.hpp"
 #include <thread>
 #include <functional>
-#include "kit/debug/log.hpp"
 
 namespace kit::mt
 {
@@ -10,14 +11,16 @@ template <typename It, typename Fun> void _for_each_worker(It it1, It it2, Fun f
         fun(thread_idx, *it);
 }
 
-template <std::size_t ThreadCount, typename C, typename Fun> void for_each(C &container, Fun fun)
+template <typename C, typename Fun> void for_each(C &container, Fun fun, const std::size_t thread_count)
 {
-    std::array<std::thread, ThreadCount> threads;
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+
     const std::size_t size = container.size();
-    for (std::size_t i = 0; i < ThreadCount; i++)
+    for (std::size_t i = 0; i < thread_count; i++)
     {
-        const std::size_t start = i * size / ThreadCount;
-        const std::size_t end = (i + 1) * size / ThreadCount;
+        const std::size_t start = i * size / thread_count;
+        const std::size_t end = (i + 1) * size / thread_count;
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
 
