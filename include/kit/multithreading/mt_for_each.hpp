@@ -10,7 +10,7 @@ template <typename It, typename Fun> void _for_each_worker(It it1, It it2, Fun f
         fun(thread_idx, *it);
 }
 
-template <std::size_t ThreadCount, typename C, typename Fun> void for_each_mt(C &container, Fun fun)
+template <std::size_t ThreadCount, typename C, typename Fun> void for_each(C &container, Fun fun)
 {
     std::array<std::thread, ThreadCount> threads;
     const std::size_t size = container.size();
