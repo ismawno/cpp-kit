@@ -6,23 +6,26 @@
 
 namespace kit
 {
-template <typename... Ts> class callback : public identifiable<>
+template <typename... Args> class callback : public identifiable<>
 {
   public:
-    callback(std::function<void(Ts...)> &&cb) : m_callback(cb)
-    {
-    }
-    callback(const std::function<void(Ts...)> &cb = nullptr) : m_callback(cb)
+    using task = std::function<void(Args...)>;
+    callback(const task &tk = nullptr) : m_task(tk)
     {
     }
 
-    void operator()(Ts &&...args) const
+    void operator()(Args &&...args) const
     {
-        KIT_ASSERT_ERROR(m_callback, "The callback must not be null")
-        m_callback(std::forward<Ts>(args)...);
+        KIT_ASSERT_ERROR(m_task, "The task must not be null")
+        m_task(std::forward<Args>(args)...);
+    }
+
+    operator bool()
+    {
+        return m_task != nullptr;
     }
 
   private:
-    std::function<void(Ts...)> m_callback;
+    task m_task;
 };
 } // namespace kit

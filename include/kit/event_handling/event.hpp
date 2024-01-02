@@ -5,7 +5,7 @@
 
 namespace kit
 {
-template <class... Ts> class event final
+template <class... Args> class event final
 {
   public:
     event()
@@ -13,12 +13,12 @@ template <class... Ts> class event final
         m_callbacks.reserve(10);
     }
 
-    event &operator+=(const callback<Ts...> &cb)
+    event &operator+=(const callback<Args...> &cb)
     {
         m_callbacks.push_back(cb);
         return *this;
     }
-    event &operator-=(const callback<Ts...> &cb)
+    event &operator-=(const callback<Args...> &cb)
     {
         for (auto it = m_callbacks.begin(); it != m_callbacks.end(); ++it)
             if (*it == cb)
@@ -29,18 +29,18 @@ template <class... Ts> class event final
         KIT_WARN("Callback was not found!")
         return *this;
     }
-    void operator()(Ts &&...args) const
+    void operator()(Args &&...args) const
     {
         for (std::size_t i = m_callbacks.size() - 1; i < m_callbacks.size(); i--)
-            m_callbacks[i](std::forward<Ts>(args)...);
+            m_callbacks[i](std::forward<Args>(args)...);
     }
 
-    const std::vector<callback<Ts...>> &callbacks() const
+    const std::vector<callback<Args...>> &callbacks() const
     {
         return m_callbacks;
     }
 
   private:
-    std::vector<callback<Ts...>> m_callbacks;
+    std::vector<callback<Args...>> m_callbacks;
 };
 } // namespace kit
