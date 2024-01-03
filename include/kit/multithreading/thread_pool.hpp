@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kit/debug/log.hpp"
+// #include "kit/debug/log.hpp"
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <tuple>
 #include <unordered_map>
+#include <atomic>
 
 namespace kit::mt
 {
@@ -16,7 +17,7 @@ template <class... Args> class task
 {
   public:
     using fun = std::function<void(Args...)>;
-    task(const fun &fn, Args &&...args) : m_fun(fn), m_args(std::forward<Args>(args)...)
+    task(const fun &fn, Args... args) : m_fun(fn), m_args(std::forward<Args>(args)...)
     {
     }
 
@@ -44,22 +45,22 @@ template <class... Args> class thread_pool
             for (;;)
             {
                 std::unique_lock<std::mutex> lock{m_mutex};
-                m_idle_threads[std::this_thread::get_id()] = 1;
 
-                m_condition.wait(lock, [this]() { return !m_tasks.empty() || m_termination_signal; });
+                m_check_task.wait(lock, [this]() { return !m_tasks.empty() || m_termination_signal; });
                 if (m_tasks.empty())
                     break;
-                m_idle_threads[std::this_thread::get_id()] = 0;
 
                 const task<Args...> tsk = m_tasks.front();
                 m_tasks.pop();
                 lock.unlock();
 
                 tsk();
+                lock.lock();
+                --m_pending_tasks;
+                m_check_idle.notify_one();
             }
         };
         m_threads.reserve(thread_count);
-        m_idle_threads.reserve(thread_count);
 
         for (std::size_t i = 0; i < thread_count; i++)
             m_threads.emplace_back(worker);
@@ -71,7 +72,7 @@ template <class... Args> class thread_pool
         {
             std::scoped_lock<std::mutex> lock{m_mutex};
             m_termination_signal = true;
-            m_condition.notify_all();
+            m_check_task.notify_all();
         }
         for (std::thread &th : m_threads)
         {
@@ -80,13 +81,12 @@ template <class... Args> class thread_pool
         }
     }
 
-    void submit(const typename task<Args...>::fun &fn, Args &&...args)
+    void submit(const typename task<Args...>::fun &fn, Args... args)
     {
-        {
-            std::scoped_lock<std::mutex> lock{m_mutex};
-            m_tasks.emplace(fn, std::forward<Args>(args)...);
-        }
-        m_condition.notify_one();
+        std::scoped_lock<std::mutex> lock{m_mutex};
+        ++m_pending_tasks;
+        m_tasks.emplace(fn, std::forward<Args>(args)...);
+        m_check_task.notify_one();
     }
 
     std::size_t size() const
@@ -99,33 +99,27 @@ template <class... Args> class thread_pool
     }
     std::size_t pending_tasks() const
     {
-        std::size_t sum = 0;
-        for (const auto &[id, idle] : m_idle_threads)
-            sum += idle;
-        return sum;
+        return m_pending_tasks.load();
     }
     bool idle() const
     {
-        for (const auto &[id, idle] : m_idle_threads)
-            if (!idle)
-                return false;
-        return true;
+        return m_pending_tasks.load() == 0;
     }
-    void await_pending() const
+    void await_pending()
     {
-        while (!m_tasks.empty())
-            ;
-        while (!idle())
-            ;
+        std::unique_lock<std::mutex> lock{m_mutex};
+        m_check_idle.wait(lock, [this]() { return m_pending_tasks.load() == 0; });
     }
 
   private:
     std::vector<std::thread> m_threads;
-    std::unordered_map<std::thread::id, std::uint8_t> m_idle_threads;
+    std::atomic<std::size_t> m_pending_tasks{0};
 
     std::queue<task<Args...>> m_tasks;
     std::mutex m_mutex;
-    std::condition_variable m_condition;
+
+    std::condition_variable m_check_task;
+    std::condition_variable m_check_idle;
     bool m_termination_signal = false;
 
     thread_pool(const thread_pool &) = delete;

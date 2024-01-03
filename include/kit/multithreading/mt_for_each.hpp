@@ -11,7 +11,7 @@ template <typename It, typename Fun> void _for_each_worker(It it1, It it2, Fun f
         fun(thread_idx, *it);
 }
 
-template <typename C, typename Fun, std::size_t PoolSize> void for_each(C &container, Fun fun)
+template <std::size_t PoolSize, typename C, typename Fun> void for_each(C &container, Fun fun)
 {
     static thread_pool<decltype(container.begin()), decltype(container.begin()), Fun, std::size_t> pool{PoolSize};
 
