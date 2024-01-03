@@ -9,7 +9,6 @@
 #include <condition_variable>
 #include <tuple>
 #include <unordered_map>
-#include <atomic>
 
 namespace kit::mt
 {
@@ -52,12 +51,13 @@ template <class... Args> class thread_pool
 
                 const task<Args...> tsk = m_tasks.front();
                 m_tasks.pop();
-                lock.unlock();
 
+                lock.unlock();
                 tsk();
                 lock.lock();
-                --m_pending_tasks;
-                m_check_idle.notify_one();
+
+                if (--m_pending_tasks == 0)
+                    m_check_idle.notify_one();
             }
         };
         m_threads.reserve(thread_count);
@@ -84,7 +84,7 @@ template <class... Args> class thread_pool
     void submit(const typename task<Args...>::fun &fn, Args... args)
     {
         std::scoped_lock<std::mutex> lock{m_mutex};
-        ++m_pending_tasks;
+        m_pending_tasks++;
         m_tasks.emplace(fn, std::forward<Args>(args)...);
         m_check_task.notify_one();
     }
@@ -99,21 +99,21 @@ template <class... Args> class thread_pool
     }
     std::size_t pending_tasks() const
     {
-        return m_pending_tasks.load();
+        return m_pending_tasks;
     }
     bool idle() const
     {
-        return m_pending_tasks.load() == 0;
+        return m_pending_tasks == 0;
     }
     void await_pending()
     {
         std::unique_lock<std::mutex> lock{m_mutex};
-        m_check_idle.wait(lock, [this]() { return m_pending_tasks.load() == 0; });
+        m_check_idle.wait(lock, [this]() { return m_pending_tasks == 0; });
     }
 
   private:
     std::vector<std::thread> m_threads;
-    std::atomic<std::size_t> m_pending_tasks{0};
+    std::size_t m_pending_tasks = 0;
 
     std::queue<task<Args...>> m_tasks;
     std::mutex m_mutex;
