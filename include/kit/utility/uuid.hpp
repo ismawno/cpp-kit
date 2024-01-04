@@ -9,11 +9,12 @@ namespace kit
 class uuid
 {
   public:
-    uuid();
+    uuid() = default;
     explicit uuid(std::uint64_t id);
 
     operator std::uint64_t() const;
 
+    static uuid random();
     static const std::string &name_from_id(uuid id, std::uint32_t min_characters = 3, std::uint32_t max_characters = 8);
 
   private:
