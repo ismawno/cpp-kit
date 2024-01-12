@@ -1,7 +1,7 @@
 #pragma once
 
-// #include "kit/debug/log.hpp"
-#include <vector>
+#include "kit/debug/log.hpp"
+#include <array>
 #include <thread>
 #include <mutex>
 #include <functional>
@@ -35,10 +35,10 @@ template <class... Args> class task
         m_fun(std::get<Seq>(m_args)...);
     }
 };
-template <class... Args> class thread_pool
+template <std::size_t PoolSize, class... Args> class thread_pool
 {
   public:
-    thread_pool(const std::size_t thread_count)
+    thread_pool()
     {
         const auto worker = [this]() {
             for (;;)
@@ -60,10 +60,8 @@ template <class... Args> class thread_pool
                     m_check_idle.notify_one();
             }
         };
-        m_threads.reserve(thread_count);
-
-        for (std::size_t i = 0; i < thread_count; i++)
-            m_threads.emplace_back(worker);
+        for (std::size_t i = 0; i < PoolSize; i++)
+            m_threads[i] = std::thread(worker);
     }
 
     ~thread_pool()
@@ -89,9 +87,9 @@ template <class... Args> class thread_pool
         m_check_task.notify_one();
     }
 
-    std::size_t size() const
+    constexpr std::size_t size() const
     {
-        return m_threads.size();
+        return PoolSize;
     }
     std::size_t unattended_tasks() const
     {
@@ -112,7 +110,7 @@ template <class... Args> class thread_pool
     }
 
   private:
-    std::vector<std::thread> m_threads;
+    std::array<std::thread, PoolSize> m_threads;
     std::size_t m_pending_tasks = 0;
 
     std::queue<task<Args...>> m_tasks;

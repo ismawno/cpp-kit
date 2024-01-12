@@ -13,7 +13,7 @@ template <typename It, typename Fun> void _for_each_worker(It it1, It it2, Fun f
 
 template <std::size_t PoolSize, typename C, typename Fun> void for_each(C &container, Fun fun)
 {
-    static thread_pool<decltype(container.begin()), decltype(container.begin()), Fun, std::size_t> pool{PoolSize};
+    static thread_pool<PoolSize, decltype(container.begin()), decltype(container.begin()), Fun, std::size_t> pool;
 
     const std::size_t size = container.size();
     for (std::size_t i = 0; i < PoolSize; i++)

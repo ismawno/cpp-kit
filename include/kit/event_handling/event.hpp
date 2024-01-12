@@ -1,18 +1,14 @@
 #pragma once
 
+#include "kit/debug/log.hpp"
 #include "kit/event_handling/callback.hpp"
 #include <vector>
 
 namespace kit
 {
-template <class... Args> class event final
+template <class... Args> class event
 {
   public:
-    event()
-    {
-        m_callbacks.reserve(10);
-    }
-
     event &operator+=(const callback<Args...> &cb)
     {
         m_callbacks.push_back(cb);
@@ -35,9 +31,36 @@ template <class... Args> class event final
             m_callbacks[i](std::forward<Args>(args)...);
     }
 
-    const std::vector<callback<Args...>> &callbacks() const
+    const callback<Args...> &operator[](const std::size_t index)
     {
-        return m_callbacks;
+        KIT_ASSERT_ERROR(index < m_callbacks.size(), "Index exceeds container size: {0}", index)
+        return m_callbacks[index];
+    }
+    std::size_t size() const
+    {
+        return m_callbacks.size();
+    }
+    bool empty() const
+    {
+        return m_callbacks.empty();
+    }
+
+    auto begin() const
+    {
+        return m_callbacks.begin();
+    }
+    auto end() const
+    {
+        return m_callbacks.end();
+    }
+
+    auto begin()
+    {
+        return m_callbacks.begin();
+    }
+    auto end()
+    {
+        return m_callbacks.end();
     }
 
   private:

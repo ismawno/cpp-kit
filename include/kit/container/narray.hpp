@@ -1,5 +1,6 @@
 #pragma once
 
+#include "kit/debug/log.hpp"
 #include <array>
 
 namespace kit
@@ -12,10 +13,12 @@ template <typename T, std::size_t Size> class _narray_impl
     }
     const T &operator[](const std::size_t index) const noexcept
     {
+        KIT_ASSERT_ERROR(index < m_data.size(), "Index exceeds container size: {0}", index)
         return m_data[index];
     }
     T &operator[](const std::size_t index) noexcept
     {
+        KIT_ASSERT_ERROR(index < m_data.size(), "Index exceeds container size: {0}", index)
         return m_data[index];
     }
 
