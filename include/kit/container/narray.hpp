@@ -103,11 +103,12 @@ template <typename T, std::size_t Size> class _narray_impl
     std::array<T, Size> m_data;
 };
 
-template <typename T, std::size_t Size, std::size_t... Dim> class narray : public _narray_impl<narray<T, Dim...>, Size>
+template <typename T, std::size_t Size, std::size_t... Shape>
+class narray : public _narray_impl<narray<T, Shape...>, Size>
 {
   public:
     template <class... ArrayArgs>
-    narray(ArrayArgs &&...args) : _narray_impl<narray<T, Dim...>, Size>(std::forward<ArrayArgs>(args)...)
+    narray(ArrayArgs &&...args) : _narray_impl<narray<T, Shape...>, Size>(std::forward<ArrayArgs>(args)...)
     {
     }
 };
