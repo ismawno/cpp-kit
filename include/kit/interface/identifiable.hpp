@@ -1,16 +1,10 @@
 #pragma once
 
 #include "kit/utility/uuid.hpp"
+#include "kit/utility/type_constraints.hpp"
 
 namespace kit
 {
-template <typename T>
-concept Hashable = requires(T a) {
-    {
-        std::hash<T>()(a)
-    } -> std::convertible_to<std::size_t>;
-};
-
 template <Hashable T = uuid> class identifiable
 {
   public:

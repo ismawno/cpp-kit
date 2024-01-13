@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kit/utility/static_for_each.hpp"
-#include "kit/interface/identifiable.hpp"
+#include "kit/utility/type_constraints.hpp"
 #include <tuple>
 #include <functional>
 

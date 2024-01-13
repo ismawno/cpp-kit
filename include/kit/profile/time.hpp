@@ -1,11 +1,11 @@
 #pragma once
 
+#include "kit/utility/type_constraints.hpp"
 #include <chrono>
 
 namespace kit
 {
-template <typename T>
-concept Numeric = std::is_arithmetic_v<T>;
+
 class time
 {
   public:
