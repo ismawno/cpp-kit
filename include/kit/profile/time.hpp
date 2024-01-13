@@ -4,6 +4,8 @@
 
 namespace kit
 {
+template <typename T>
+concept Numeric = std::is_arithmetic_v<T>;
 class time
 {
   public:
@@ -14,10 +16,8 @@ class time
 
     explicit time(nanoseconds elapsed = nanoseconds::zero());
 
-    template <typename TimeUnit, typename T> T as() const
+    template <typename TimeUnit, Numeric T> T as() const
     {
-        static_assert(std::is_floating_point_v<T> || std::is_integral_v<T>,
-                      "Type T must be either a floating point or an integer type");
         if constexpr (std::is_floating_point_v<T>)
             return std::chrono::duration<T, typename TimeUnit::period>(m_elapsed).count();
         else
@@ -29,7 +29,7 @@ class time
 
     static void sleep(time tm);
 
-    template <typename TimeUnit, typename T> static time from(T elapsed)
+    template <typename TimeUnit, Numeric T> static time from(T elapsed)
     {
         return time(std::chrono::round<nanoseconds>(std::chrono::duration<T, typename TimeUnit::period>(elapsed)));
     }

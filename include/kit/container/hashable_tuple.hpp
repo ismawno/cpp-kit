@@ -1,17 +1,19 @@
 #pragma once
 
 #include "kit/utility/static_for_each.hpp"
+#include "kit/interface/identifiable.hpp"
 #include <tuple>
 #include <functional>
 
 namespace kit
 {
-enum class hash
+enum class hash_property
 {
     non_commutative,
     commutative
 };
-template <hash HashType, class... Hashable> struct hashable_tuple
+
+template <hash_property Property, Hashable... HT> struct hashable_tuple
 {
     hashable_tuple() = default;
 
@@ -19,27 +21,27 @@ template <hash HashType, class... Hashable> struct hashable_tuple
     {
     }
 
-    std::tuple<Hashable...> elms;
+    std::tuple<HT...> elms;
 
     std::size_t operator()() const
     {
-        return (*this)(std::make_integer_sequence<int, sizeof...(Hashable)>{});
+        return (*this)(std::make_integer_sequence<int, sizeof...(HT)>{});
     }
 
-    template <class... OtherHashable> bool operator==(const hashable_tuple<HashType, OtherHashable...> &other) const
+    template <class... OtherHashable> bool operator==(const hashable_tuple<Property, OtherHashable...> &other) const
     {
-        if constexpr (HashType == hash::non_commutative)
+        if constexpr (Property == hash_property::non_commutative)
             return elms == other.elms;
-        else if constexpr (sizeof...(Hashable) != sizeof...(OtherHashable))
+        else if constexpr (sizeof...(HT) != sizeof...(OtherHashable))
             return false;
         else
         {
             bool are_equal1 = true;
             bool are_equal2 = true;
-            kit::static_for_each<sizeof...(Hashable)>([&are_equal1, &are_equal2, &other, this](auto i) {
+            kit::static_for_each<sizeof...(HT)>([&are_equal1, &are_equal2, &other, this](auto i) {
                 bool any_equal1 = false;
                 bool any_equal2 = false;
-                kit::static_for_each<sizeof...(Hashable)>([&i, &any_equal1, &any_equal2, &other, this](auto j) {
+                kit::static_for_each<sizeof...(HT)>([&i, &any_equal1, &any_equal2, &other, this](auto j) {
                     any_equal1 |= compare(std::get<i.value>(elms), std::get<j.value>(other.elms));
                     any_equal2 |= compare(std::get<i.value>(other.elms), std::get<j.value>(elms));
                 });
@@ -62,7 +64,7 @@ template <hash HashType, class... Hashable> struct hashable_tuple
     template <typename T, class... Rest> static void hash_combine(std::size_t &seed, const T &hashable, Rest &&...rest)
     {
         const std::hash<T> hasher;
-        if constexpr (HashType == hash::non_commutative)
+        if constexpr (Property == hash_property::non_commutative)
             seed ^= hasher(hashable) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         else
             seed ^= hasher(hashable) + 0x9e3779b9 + (SEED << 6) + (SEED >> 2);
@@ -79,13 +81,13 @@ template <hash HashType, class... Hashable> struct hashable_tuple
     }
 };
 
-template <class... Hashable> using non_commutative_tuple = hashable_tuple<hash::non_commutative, Hashable...>;
-template <class... Hashable> using commutative_tuple = hashable_tuple<hash::commutative, Hashable...>;
+template <class... HT> using non_commutative_tuple = hashable_tuple<hash_property::non_commutative, HT...>;
+template <class... HT> using commutative_tuple = hashable_tuple<hash_property::commutative, HT...>;
 } // namespace kit
 
-template <kit::hash HashType, class... Hashable> struct std::hash<kit::hashable_tuple<HashType, Hashable...>>
+template <kit::hash_property Property, class... HT> struct std::hash<kit::hashable_tuple<Property, HT...>>
 {
-    std::size_t operator()(const kit::hashable_tuple<HashType, Hashable...> &mhash) const
+    std::size_t operator()(const kit::hashable_tuple<Property, HT...> &mhash) const
     {
         return mhash();
     }

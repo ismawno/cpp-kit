@@ -8,7 +8,26 @@
 
 namespace kit
 {
-template <typename Container> class track_ptr : public identifiable<typename Container::value_type::id_type>
+template <typename Container>
+concept IDContainer = requires(Container a) {
+    typename Container::value_type;
+    typename Container::value_type::id_type;
+    std::is_base_of_v<kit::identifiable<typename Container::value_type::id_type>, typename Container::value_type>;
+    {
+        a.size()
+    } -> std::convertible_to<std::size_t>;
+    {
+        a[0]
+    } -> std::convertible_to<const typename Container::value_type &>;
+};
+
+template <typename From, typename To>
+concept ConstConvertibleContainer =
+    IDContainer<From> && IDContainer<To> &&
+    std::is_same_v<typename std::remove_const_t<From>::value_type, typename std::remove_const_t<To>::value_type> &&
+    !(std::is_const_v<From> && !std::is_const_v<To>);
+
+template <IDContainer Container> class track_ptr : public identifiable<typename Container::value_type::id_type>
 {
     using T = typename Container::value_type;
     using ID = typename T::id_type;
@@ -30,6 +49,7 @@ template <typename Container> class track_ptr : public identifiable<typename Con
     }
 
     template <typename OtherContainer>
+        requires ConstConvertibleContainer<OtherContainer, Container>
     track_ptr(const track_ptr<OtherContainer> &other) : m_container(other.m_container), m_index(other.m_index)
     {
         this->id = other.id;
@@ -80,16 +100,11 @@ template <typename Container> class track_ptr : public identifiable<typename Con
         return (*m_container)[m_index];
     }
 
-    template <typename ConstContainer> operator track_ptr<ConstContainer>()
+    template <typename OtherContainer>
+    operator track_ptr<OtherContainer>()
+        requires ConstConvertibleContainer<Container, OtherContainer>
     {
-        static_assert(std::is_same_v<typename std::remove_const<Container>::type,
-                                     typename std::remove_const<ConstContainer>::type>,
-                      "Container must be the same type for a cast to be possible");
-        static_assert(std::is_const_v<ConstContainer>,
-                      "Output track ptr container must be const for a cast to be possible");
-        static_assert(!std::is_const_v<Container>,
-                      "Input track ptr container must not be const for a cast to be possible");
-        track_ptr<ConstContainer> ptr{m_container, m_index};
+        track_ptr<OtherContainer> ptr{m_container, m_index};
         ptr.id = this->id;
         return ptr;
     }
@@ -98,7 +113,7 @@ template <typename Container> class track_ptr : public identifiable<typename Con
     Container *m_container = nullptr;
     mutable std::size_t m_index;
 
-    template <typename OtherContainer> friend class track_ptr;
+    template <IDContainer OtherContainer> friend class track_ptr;
 };
 
 template <typename T, class... Args> using vector_ptr = track_ptr<std::vector<T, Args...>>;

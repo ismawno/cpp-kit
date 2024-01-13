@@ -4,7 +4,14 @@
 
 namespace kit
 {
-template <typename T = uuid> class identifiable
+template <typename T>
+concept Hashable = requires(T a) {
+    {
+        std::hash<T>()(a)
+    } -> std::convertible_to<std::size_t>;
+};
+
+template <Hashable T = uuid> class identifiable
 {
   public:
     using id_type = T;
