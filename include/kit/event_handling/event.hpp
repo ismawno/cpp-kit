@@ -25,10 +25,10 @@ template <class... Args> class event
         KIT_WARN("Callback was not found!")
         return *this;
     }
-    void operator()(Args &&...args) const
+    void operator()(Args... args) const
     {
         for (std::size_t i = m_callbacks.size() - 1; i < m_callbacks.size(); i--)
-            m_callbacks[i](std::forward<Args>(args)...);
+            m_callbacks[i](args...);
     }
 
     const callback<Args...> &operator[](const std::size_t index)

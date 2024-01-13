@@ -14,10 +14,10 @@ template <typename... Args> class callback : public identifiable<>
     {
     }
 
-    void operator()(Args &&...args) const
+    void operator()(Args... args) const
     {
         KIT_ASSERT_ERROR(m_fun, "The callback must not be null")
-        m_fun(std::forward<Args>(args)...);
+        m_fun(args...);
     }
 
     operator bool()
