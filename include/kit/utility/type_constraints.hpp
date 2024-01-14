@@ -19,4 +19,14 @@ concept Numeric = std::is_arithmetic_v<T>;
 
 template <typename T>
 concept FloatingPoint = std::is_floating_point_v<T>;
+
+template <typename It, typename T>
+concept Iterator = requires(It it, T t) {
+    {
+        *it
+    } -> std::convertible_to<T>;
+    {
+        ++it
+    } -> std::same_as<It>;
+};
 } // namespace kit
