@@ -1,12 +1,13 @@
 #pragma once
 #ifdef KIT_USE_YAML_CPP
 #include "kit/serialization/yaml/codec.hpp"
+#include "kit/utility/type_constraints.hpp"
 
-#include "glm/vec2.hpp"
-#include "glm/vec3.hpp"
-#include "glm/vec4.hpp"
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 
-template <typename Float> struct kit::yaml::codec<glm::vec<2, Float>>
+template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<2, Float>>
 {
     static YAML::Node encode(const glm::vec<2, Float> &v)
     {
@@ -28,7 +29,7 @@ template <typename Float> struct kit::yaml::codec<glm::vec<2, Float>>
     }
 };
 
-template <typename Float> struct kit::yaml::codec<glm::vec<3, Float>>
+template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<3, Float>>
 {
     static YAML::Node encode(const glm::vec<3, Float> &v)
     {
@@ -52,7 +53,7 @@ template <typename Float> struct kit::yaml::codec<glm::vec<3, Float>>
     }
 };
 
-template <typename Float> struct kit::yaml::codec<glm::vec<4, Float>>
+template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<4, Float>>
 {
     static YAML::Node encode(const glm::vec<4, Float> &v)
     {

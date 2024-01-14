@@ -16,4 +16,7 @@ concept Hashable = requires(T a) {
 
 template <typename T>
 concept Numeric = std::is_arithmetic_v<T>;
+
+template <typename T>
+concept FloatingPoint = std::is_floating_point_v<T>;
 } // namespace kit

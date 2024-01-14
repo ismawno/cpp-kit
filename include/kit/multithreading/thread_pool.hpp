@@ -35,7 +35,9 @@ template <class... Args> class task
         m_fun(std::get<Seq>(m_args)...);
     }
 };
-template <std::size_t PoolSize, class... Args> class thread_pool
+template <std::size_t PoolSize, class... Args>
+    requires(PoolSize > 1)
+class thread_pool
 {
   public:
     thread_pool()

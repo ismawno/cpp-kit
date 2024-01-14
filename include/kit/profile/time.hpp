@@ -49,21 +49,21 @@ class time
     time &operator+=(const time &other);
     time &operator-=(const time &other);
 
-    template <typename T> time operator*(const T scalar) const
+    template <Numeric T> time operator*(const T scalar) const
     {
         return time(std::chrono::round<nanoseconds>(m_elapsed * scalar));
     }
-    template <typename T> time operator/(const T scalar) const
+    template <Numeric T> time operator/(const T scalar) const
     {
         return time(std::chrono::round<nanoseconds>(m_elapsed / scalar));
     }
 
-    template <typename T> time &operator*=(const T scalar)
+    template <Numeric T> time &operator*=(const T scalar)
     {
         m_elapsed *= scalar;
         return *this;
     }
-    template <typename T> time &operator/=(const T scalar)
+    template <Numeric T> time &operator/=(const T scalar)
     {
         m_elapsed /= scalar;
         return *this;
@@ -73,7 +73,7 @@ class time
     nanoseconds m_elapsed;
 };
 
-template <typename T> time operator*(const T scalar, const time &rhs)
+template <Numeric T> time operator*(const T scalar, const time &rhs)
 {
     return rhs * scalar;
 }

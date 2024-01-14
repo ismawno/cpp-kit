@@ -5,7 +5,7 @@
 #include "kit/serialization/yaml/glm.hpp"
 #include "kit/utility/transform.hpp"
 
-template <typename Float> struct kit::yaml::codec<kit::transform2D<Float>>
+template <kit::FloatingPoint Float> struct kit::yaml::codec<kit::transform2D<Float>>
 {
     static YAML::Node encode(const kit::transform2D<Float> &transform)
     {
@@ -29,7 +29,7 @@ template <typename Float> struct kit::yaml::codec<kit::transform2D<Float>>
     }
 };
 
-template <typename Float> struct kit::yaml::codec<kit::transform3D<Float>>
+template <kit::FloatingPoint Float> struct kit::yaml::codec<kit::transform3D<Float>>
 {
     static YAML::Node encode(const kit::transform3D<Float> &transform)
     {
