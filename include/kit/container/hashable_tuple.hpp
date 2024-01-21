@@ -17,7 +17,9 @@ template <hash_property Property, Hashable... HT> struct hashable_tuple
 {
     hashable_tuple() = default;
 
-    template <class... TupleArgs> hashable_tuple(TupleArgs &&...args) : elms(std::forward<TupleArgs>(args)...)
+    template <class... TupleArgs>
+        requires NoCopyCtorOverride<hashable_tuple, TupleArgs...>
+    hashable_tuple(TupleArgs &&...args) : elms(std::forward<TupleArgs>(args)...)
     {
     }
 

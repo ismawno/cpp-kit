@@ -29,4 +29,8 @@ concept Iterator = requires(It it, T t) {
         ++it
     } -> std::same_as<It>;
 };
+
+template <typename T, class... Args>
+concept NoCopyCtorOverride =
+    (!std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<Args>> && ...) || sizeof...(Args) != 1;
 } // namespace kit

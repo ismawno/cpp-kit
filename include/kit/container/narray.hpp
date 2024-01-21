@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kit/debug/log.hpp"
+#include "kit/utility/type_constraints.hpp"
 #include <array>
 
 namespace kit
@@ -8,7 +9,9 @@ namespace kit
 template <typename T, std::size_t Size> class _narray_impl
 {
   public:
-    template <class... ArrayArgs> _narray_impl(ArrayArgs &&...args) : m_data({std::forward<ArrayArgs>(args)...})
+    template <class... ArrayArgs>
+        requires NoCopyCtorOverride<_narray_impl, ArrayArgs...>
+    _narray_impl(ArrayArgs &&...args) : m_data({std::forward<ArrayArgs>(args)...})
     {
     }
     const T &operator[](const std::size_t index) const noexcept
@@ -108,6 +111,7 @@ class narray : public _narray_impl<narray<T, Shape...>, Size>
 {
   public:
     template <class... ArrayArgs>
+        requires NoCopyCtorOverride<_narray_impl, ArrayArgs...>
     narray(ArrayArgs &&...args) : _narray_impl<narray<T, Shape...>, Size>(std::forward<ArrayArgs>(args)...)
     {
     }
@@ -116,7 +120,9 @@ class narray : public _narray_impl<narray<T, Shape...>, Size>
 template <typename T, std::size_t Size> class narray<T, Size> : public _narray_impl<T, Size>
 {
   public:
-    template <class... ArrayArgs> narray(ArrayArgs &&...args) : _narray_impl<T, Size>(std::forward<ArrayArgs>(args)...)
+    template <class... ArrayArgs>
+        requires NoCopyCtorOverride<_narray_impl, ArrayArgs...>
+    narray(ArrayArgs &&...args) : _narray_impl<T, Size>(std::forward<ArrayArgs>(args)...)
     {
     }
 };

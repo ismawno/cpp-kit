@@ -23,8 +23,7 @@ concept IDContainer = requires(Container a) {
 
 template <typename From, typename To>
 concept ConstConvertibleContainer =
-    IDContainer<From> && IDContainer<To> &&
-    std::is_same_v<typename std::remove_const_t<From>::value_type, typename std::remove_const_t<To>::value_type> &&
+    IDContainer<From> && IDContainer<To> && std::is_same_v<std::remove_const_t<From>, std::remove_const_t<To>> &&
     !(std::is_const_v<From> && !std::is_const_v<To>);
 
 template <IDContainer Container> class track_ptr : public identifiable<typename Container::value_type::id_type>
