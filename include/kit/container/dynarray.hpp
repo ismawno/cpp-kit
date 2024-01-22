@@ -27,8 +27,14 @@ template <typename T, std::size_t Capacity> class dynarray
         std::fill(begin(), end(), value);
     }
 
+    template <Iterator<value_type> It> dynarray(It begin, It end) : m_size(std::distance(begin, end))
+    {
+        KIT_ASSERT_ERROR(m_size <= Capacity, "Data size must not exceed capacity");
+        std::copy(begin, end, m_data.begin());
+    }
+
     template <size_type Size>
-    dynarray(const std::array<value_type, Size> &data)
+    dynarray(const dynarray<value_type, Size> &data)
         requires(Size <= Capacity)
         : m_size(Size)
     {
@@ -41,16 +47,17 @@ template <typename T, std::size_t Capacity> class dynarray
         std::copy(data.begin(), data.end(), m_data.begin());
     }
 
-    dynarray(const std::vector<value_type> &data) : m_size(data.size())
+    template <size_type Size>
+    dynarray &operator=(const dynarray<value_type, Size> &data)
+        requires(Size <= Capacity)
     {
-        KIT_ASSERT_ERROR(data.size() <= Capacity, "Data size must not exceed capacity");
+        m_size = data.size();
         std::copy(data.begin(), data.end(), m_data.begin());
+        return *this;
     }
-
-    template <Iterator<value_type> It> dynarray(It begin, It end) : m_size(std::distance(begin, end))
+    operator const std::array<value_type, Capacity> &() const
     {
-        KIT_ASSERT_ERROR(m_size <= Capacity, "Data size must not exceed capacity");
-        std::copy(begin, end, m_data.begin());
+        return m_data;
     }
 
     void push_back(const_reference elem)
