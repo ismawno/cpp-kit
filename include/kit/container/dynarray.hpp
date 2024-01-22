@@ -33,10 +33,10 @@ template <typename T, std::size_t Capacity> class dynarray
         std::copy(begin, end, m_data.begin());
     }
 
-    template <size_type Size>
-    dynarray(const dynarray<value_type, Size> &data)
-        requires(Size <= Capacity)
-        : m_size(Size)
+    template <size_type OtherCapacity>
+    dynarray(const dynarray<value_type, OtherCapacity> &data)
+        requires(OtherCapacity <= Capacity)
+        : m_size(data.size())
     {
         std::copy(data.begin(), data.end(), m_data.begin());
     }
@@ -47,9 +47,9 @@ template <typename T, std::size_t Capacity> class dynarray
         std::copy(data.begin(), data.end(), m_data.begin());
     }
 
-    template <size_type Size>
-    dynarray &operator=(const dynarray<value_type, Size> &data)
-        requires(Size <= Capacity)
+    template <size_type OtherCapacity>
+    dynarray &operator=(const dynarray<value_type, OtherCapacity> &data)
+        requires(OtherCapacity <= Capacity)
     {
         m_size = data.size();
         std::copy(data.begin(), data.end(), m_data.begin());
@@ -76,7 +76,11 @@ template <typename T, std::size_t Capacity> class dynarray
     {
         m_size = 0;
     }
-
+    void resize(const size_type size)
+    {
+        KIT_ASSERT_ERROR(size <= Capacity, "Data size must not exceed capacity");
+        m_size = size;
+    }
     size_type size() const
     {
         return m_size;
