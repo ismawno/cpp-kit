@@ -35,10 +35,9 @@ template <typename T, std::size_t Capacity> class dynarray
         std::copy(data.begin(), data.end(), m_data.begin());
     }
 
-    dynarray(const std::initializer_list<value_type> &data)
-        requires(data.size() <= Capacity)
-        : m_size(data.size())
+    dynarray(std::initializer_list<value_type> data) : m_size(data.size())
     {
+        KIT_ASSERT_ERROR(data.size() <= Capacity, "Data size must not exceed capacity");
         std::copy(data.begin(), data.end(), m_data.begin());
     }
 
