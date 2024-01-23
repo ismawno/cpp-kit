@@ -3,7 +3,6 @@
 #include "kit/utility/uuid.hpp"
 #include "kit/interface/identifiable.hpp"
 #include "kit/debug/log.hpp"
-#include <vector>
 #include <cstddef>
 
 namespace kit
@@ -114,7 +113,4 @@ template <IDContainer Container> class track_ptr : public identifiable<typename 
 
     template <IDContainer OtherContainer> friend class track_ptr;
 };
-
-template <typename T, class... Args> using vector_ptr = track_ptr<std::vector<T, Args...>>;
-template <typename T, class... Args> using const_vector_ptr = track_ptr<const std::vector<T, Args...>>;
 } // namespace kit
