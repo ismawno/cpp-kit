@@ -6,6 +6,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/mat2x2.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
@@ -15,6 +16,8 @@ namespace kit
 template <FloatingPoint Float> struct transform2D
 {
     using vec2 = glm::vec<2, Float>;
+    using vec3 = glm::vec<3, Float>;
+    using vec4 = glm::vec<4, Float>;
     using mat2 = glm::mat<2, 2, Float>;
     using mat3 = glm::mat<3, 3, Float>;
     using mat4 = glm::mat<4, 4, Float>;
@@ -41,6 +44,7 @@ template <FloatingPoint Float> struct transform2D
     vec2 scale{1.f};
     vec2 origin{0.f};
     Float rotation = 0.f;
+    transform2D *parent = nullptr;
 
     mat3 center_scale_rotate_translate3() const;
     mat3 inverse_center_scale_rotate_translate3() const;
@@ -69,6 +73,7 @@ template <FloatingPoint Float> struct transform2D
 template <FloatingPoint Float> struct transform3D
 {
     using vec3 = glm::vec<3, Float>;
+    using vec4 = glm::vec<4, Float>;
     using mat3 = glm::mat<3, 3, Float>;
     using mat4 = glm::mat<4, 4, Float>;
 
@@ -104,6 +109,7 @@ template <FloatingPoint Float> struct transform3D
     vec3 scale{1.f};
     vec3 origin{0.f};
     mat3 rotation{1.f};
+    transform3D *parent = nullptr;
 
     mat4 center_scale_rotate_translate4() const;
     mat4 inverse_center_scale_rotate_translate4() const;
