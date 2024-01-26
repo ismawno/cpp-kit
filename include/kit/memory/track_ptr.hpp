@@ -10,8 +10,7 @@ namespace kit
 template <typename Container>
 concept IDContainer = requires(Container a) {
     typename Container::value_type;
-    typename Container::value_type::id_type;
-    std::is_base_of_v<kit::identifiable<typename Container::value_type::id_type>, typename Container::value_type>;
+    Identifiable<typename Container::value_type>;
     {
         a.size()
     } -> std::convertible_to<std::size_t>;
