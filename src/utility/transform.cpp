@@ -133,12 +133,12 @@ template <FloatingPoint Float> void transform2D<Float>::translate_local(const ve
     const vec2 v{s, c};
     position += vec2(glm::dot(u, dpos), glm::dot(v, dpos));
 }
-template <FloatingPoint Float> void transform2D<Float>::xtranslate_local(Float dx)
+template <FloatingPoint Float> void transform2D<Float>::xtranslate_local(const Float dx)
 {
     const auto [c, s] = trigonometric_functions(rotation);
     position += vec2(c * dx, s * dx);
 }
-template <FloatingPoint Float> void transform2D<Float>::ytranslate_local(Float dy)
+template <FloatingPoint Float> void transform2D<Float>::ytranslate_local(const Float dy)
 {
     const auto [c, s] = trigonometric_functions(rotation);
     position += vec2(-s * dy, c * dy);

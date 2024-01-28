@@ -13,10 +13,5 @@ class indexable
 };
 
 template <typename T>
-concept Indexable = requires(T a) {
-    std::is_base_of_v<kit::indexable, T>;
-    {
-        a.index
-    } -> std::convertible_to<std::size_t>;
-};
+concept Indexable = std::is_base_of_v<kit::indexable, T>;
 } // namespace kit

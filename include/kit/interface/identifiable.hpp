@@ -28,22 +28,13 @@ template <typename T> bool operator!=(const identifiable<T> &lhs, const identifi
 }
 
 template <typename T>
-concept Identifiable = requires(T a, T b) {
+concept Identifiable = requires() {
     typename T::id_type;
     std::is_base_of_v<kit::identifiable<typename T::id_type>, T>;
-    {
-        a.id
-    } -> std::convertible_to<typename T::id_type>;
-    {
-        a.id == b.id
-    } -> std::convertible_to<bool>;
-    {
-        a.id != b.id
-    } -> std::convertible_to<bool>;
 };
 } // namespace kit
 
-template <typename T> struct std::hash<kit::identifiable<T>>
+template <kit::Identifiable T> struct std::hash<kit::identifiable<T>>
 {
     std::size_t operator()(const kit::identifiable<T> &id) const
     {
