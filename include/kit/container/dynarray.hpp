@@ -1,3 +1,5 @@
+#pragma once
+
 #include "kit/debug/log.hpp"
 #include "kit/utility/type_constraints.hpp"
 #include <initializer_list>

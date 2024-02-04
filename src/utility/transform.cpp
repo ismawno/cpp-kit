@@ -37,6 +37,12 @@ const typename transform2D<Float>::builder &transform2D<Float>::builder::rotatio
     s_transform.rotation = rotation;
     return *this;
 }
+template <FloatingPoint Float>
+const typename transform2D<Float>::builder &transform2D<Float>::builder::parent(const transform2D *parent) const
+{
+    s_transform.parent = parent;
+    return *this;
+}
 template <FloatingPoint Float> transform2D<Float> transform2D<Float>::builder::build() const
 {
     return s_transform;

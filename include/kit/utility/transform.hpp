@@ -31,6 +31,7 @@ template <FloatingPoint Float> struct transform2D
         const builder &scale(const vec2 &scale) const;
         const builder &origin(const vec2 &origin) const;
         const builder &rotation(Float rotation) const;
+        const builder &parent(const transform2D *parent) const;
         transform2D build() const;
     };
 
@@ -44,7 +45,7 @@ template <FloatingPoint Float> struct transform2D
     vec2 scale{1.f};
     vec2 origin{0.f};
     Float rotation = 0.f;
-    transform2D *parent = nullptr;
+    const transform2D *parent = nullptr;
 
     mat3 center_scale_rotate_translate3() const;
     mat3 inverse_center_scale_rotate_translate3() const;
@@ -109,7 +110,7 @@ template <FloatingPoint Float> struct transform3D
     vec3 scale{1.f};
     vec3 origin{0.f};
     mat3 rotation{1.f};
-    transform3D *parent = nullptr;
+    const transform3D *parent = nullptr;
 
     mat4 center_scale_rotate_translate4() const;
     mat4 inverse_center_scale_rotate_translate4() const;

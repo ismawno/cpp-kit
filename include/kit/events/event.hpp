@@ -1,7 +1,7 @@
 #pragma once
 
 #include "kit/debug/log.hpp"
-#include "kit/event_handling/callback.hpp"
+#include "kit/events/callback.hpp"
 #include <vector>
 
 namespace kit
@@ -25,6 +25,16 @@ template <class... Args> class event
         KIT_WARN("Callback was not found!")
         return *this;
     }
+
+    event &operator+=(const std::function<void(Args...)> &fn)
+    {
+        return *this += callback<Args...>(fn);
+    }
+    event &operator-=(const std::function<void(Args...)> &fn)
+    {
+        return *this -= callback<Args...>(fn);
+    }
+
     void operator()(Args... args) const
     {
         for (std::size_t i = m_callbacks.size() - 1; i < m_callbacks.size(); i--)
