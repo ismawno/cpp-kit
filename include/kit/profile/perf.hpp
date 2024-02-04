@@ -1,8 +1,8 @@
 #pragma once
 
-#include "kit/profile/instrumentor.hpp"
-
 #ifdef KIT_PROFILE
+
+#include "kit/profile/instrumentor.hpp"
 
 #ifndef KIT_AKNOWLEDGE_PROFILE_THREAD_UNSAFETY
 #pragma message(                                                                                                       \
