@@ -31,6 +31,9 @@ template <typename T>
 concept Identifiable = requires() {
     typename T::id_type;
     std::is_base_of_v<kit::identifiable<typename T::id_type>, T>;
+    {
+        std::hash<typename T::id_type>()(typename T::id_type())
+    } -> std::convertible_to<std::size_t>;
 };
 } // namespace kit
 

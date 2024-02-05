@@ -113,3 +113,11 @@ template <IDContainer Container> class track_ptr : public identifiable<typename 
     template <IDContainer OtherContainer> friend class track_ptr;
 };
 } // namespace kit
+
+template <kit::IDContainer Container> struct std::hash<kit::track_ptr<Container>>
+{
+    std::size_t operator()(const kit::track_ptr<Container> &ptr) const
+    {
+        return std::hash<kit::uuid>()(ptr.id);
+    }
+};
