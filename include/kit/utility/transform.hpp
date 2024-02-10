@@ -47,17 +47,17 @@ template <FloatingPoint Float> struct transform2D
     Float rotation = 0.f;
     const transform2D *parent = nullptr;
 
-    mat3 center_scale_rotate_translate3() const;
-    mat3 inverse_center_scale_rotate_translate3() const;
+    mat3 center_scale_rotate_translate3(bool local = false) const;
+    mat3 inverse_center_scale_rotate_translate3(bool local = false) const;
 
-    mat3 inverse_scale_center_rotate_translate3() const;
-    mat3 scale_center_rotate_translate3() const;
+    mat3 inverse_scale_center_rotate_translate3(bool local = false) const;
+    mat3 scale_center_rotate_translate3(bool local = false) const;
 
-    mat4 center_scale_rotate_translate4() const;
-    mat4 inverse_center_scale_rotate_translate4() const;
+    mat4 center_scale_rotate_translate4(bool local = false) const;
+    mat4 inverse_center_scale_rotate_translate4(bool local = false) const;
 
-    mat4 inverse_scale_center_rotate_translate4() const;
-    mat4 scale_center_rotate_translate4() const;
+    mat4 inverse_scale_center_rotate_translate4(bool local = false) const;
+    mat4 scale_center_rotate_translate4(bool local = false) const;
 
     void ltranslate(const vec2 &dpos);
     void lxtranslate(Float dx);
@@ -112,11 +112,11 @@ template <FloatingPoint Float> struct transform3D
     mat3 rotation{1.f};
     const transform3D *parent = nullptr;
 
-    mat4 center_scale_rotate_translate4() const;
-    mat4 inverse_center_scale_rotate_translate4() const;
+    mat4 center_scale_rotate_translate4(bool local = false) const;
+    mat4 inverse_center_scale_rotate_translate4(bool local = false) const;
 
-    mat4 inverse_scale_center_rotate_translate4() const;
-    mat4 scale_center_rotate_translate4() const;
+    mat4 inverse_scale_center_rotate_translate4(bool local = false) const;
+    mat4 scale_center_rotate_translate4(bool local = false) const;
 
     mat3 inverse_rotation() const;
 

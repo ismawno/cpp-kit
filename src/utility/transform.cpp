@@ -49,47 +49,47 @@ template <FloatingPoint Float> transform2D<Float> transform2D<Float>::builder::b
 }
 
 template <FloatingPoint Float>
-typename transform2D<Float>::mat3 transform2D<Float>::center_scale_rotate_translate3() const
+typename transform2D<Float>::mat3 transform2D<Float>::center_scale_rotate_translate3(const bool local) const
 {
     const mat2 scale_matrix = mat2({scale.x, 0.f}, {0.f, scale.y});
     const mat2 linear = rotation_matrix(rotation) * scale_matrix;
     const vec2 translation = position - linear * origin;
 
     const mat3 result = mat3{vec3(linear[0], 0.f), vec3(linear[1], 0.f), vec3(translation, 1.f)};
-    return parent ? parent->center_scale_rotate_translate3() * result : result;
+    return parent && !local ? parent->center_scale_rotate_translate3() * result : result;
 }
 template <FloatingPoint Float>
-typename transform2D<Float>::mat3 transform2D<Float>::inverse_center_scale_rotate_translate3() const
+typename transform2D<Float>::mat3 transform2D<Float>::inverse_center_scale_rotate_translate3(const bool local) const
 {
     const mat2 inverse_scale_matrix = mat2({1.f / scale.x, 0.f}, {0.f, 1.f / scale.y});
     const mat2 linear = inverse_scale_matrix * inverse_rotation_matrix(rotation);
     const vec2 translation = origin - linear * position;
 
     const mat3 result = mat3{vec3(linear[0], 0.f), vec3(linear[1], 0.f), vec3(translation, 1.f)};
-    return parent ? result * parent->inverse_center_scale_rotate_translate3() : result;
+    return parent && !local ? result * parent->inverse_center_scale_rotate_translate3() : result;
 }
 
 template <FloatingPoint Float>
-typename transform2D<Float>::mat3 transform2D<Float>::inverse_scale_center_rotate_translate3() const
+typename transform2D<Float>::mat3 transform2D<Float>::inverse_scale_center_rotate_translate3(const bool local) const
 {
     const mat2 rmat = inverse_rotation_matrix(rotation);
     const vec2 translation = (origin - rmat * position) / scale;
 
     const mat3 result = mat3{vec3(rmat[0] / scale, 0.f), vec3(rmat[1] / scale, 0.f), vec3(translation, 1.f)};
-    return parent ? result * parent->inverse_scale_center_rotate_translate3() : result;
+    return parent && !local ? result * parent->inverse_scale_center_rotate_translate3() : result;
 }
 template <FloatingPoint Float>
-typename transform2D<Float>::mat3 transform2D<Float>::scale_center_rotate_translate3() const
+typename transform2D<Float>::mat3 transform2D<Float>::scale_center_rotate_translate3(const bool local) const
 {
     const mat2 rmat = rotation_matrix(rotation);
     const vec2 translation = position - rmat * origin;
 
     const mat3 result = mat3{vec3(rmat[0] * scale.x, 0.f), vec3(rmat[1] * scale.y, 0.f), vec3(translation, 1.f)};
-    return parent ? parent->scale_center_rotate_translate3() * result : result;
+    return parent && !local ? parent->scale_center_rotate_translate3() * result : result;
 }
 
 template <FloatingPoint Float>
-typename transform2D<Float>::mat4 transform2D<Float>::center_scale_rotate_translate4() const
+typename transform2D<Float>::mat4 transform2D<Float>::center_scale_rotate_translate4(const bool local) const
 {
     const mat2 scale_matrix = mat2({scale.x, 0.f}, {0.f, scale.y});
     const mat2 linear = rotation_matrix(rotation) * scale_matrix;
@@ -97,10 +97,10 @@ typename transform2D<Float>::mat4 transform2D<Float>::center_scale_rotate_transl
 
     const mat4 result = mat4{vec4(linear[0], 0.f, 0.f), vec4(linear[1], 0.f, 0.f), vec4(0.f, 0.f, 1.f, 0.f),
                              vec4(translation, 0.f, 1.f)};
-    return parent ? parent->center_scale_rotate_translate4() * result : result;
+    return parent && !local ? parent->center_scale_rotate_translate4() * result : result;
 }
 template <FloatingPoint Float>
-typename transform2D<Float>::mat4 transform2D<Float>::inverse_center_scale_rotate_translate4() const
+typename transform2D<Float>::mat4 transform2D<Float>::inverse_center_scale_rotate_translate4(const bool local) const
 {
     const mat2 inverse_scale_matrix = mat2({1.f / scale.x, 0.f}, {0.f, 1.f / scale.y});
     const mat2 linear = inverse_scale_matrix * inverse_rotation_matrix(rotation);
@@ -108,28 +108,28 @@ typename transform2D<Float>::mat4 transform2D<Float>::inverse_center_scale_rotat
 
     const mat4 result = mat4{vec4(linear[0], 0.f, 0.f), vec4(linear[1], 0.f, 0.f), vec4(0.f, 0.f, 1.f, 0.f),
                              vec4(translation, 0.f, 1.f)};
-    return parent ? result * parent->inverse_center_scale_rotate_translate4() : result;
+    return parent && !local ? result * parent->inverse_center_scale_rotate_translate4() : result;
 }
 
 template <FloatingPoint Float>
-typename transform2D<Float>::mat4 transform2D<Float>::inverse_scale_center_rotate_translate4() const
+typename transform2D<Float>::mat4 transform2D<Float>::inverse_scale_center_rotate_translate4(const bool local) const
 {
     const mat2 rmat = inverse_rotation_matrix(rotation);
     const vec2 translation = (origin - rmat * position) / scale;
 
     const mat4 result = mat4{vec4(rmat[0] / scale, 0.f, 0.f), vec4(rmat[1] / scale, 0.f, 0.f), vec4(0.f, 0.f, 1.f, 0.f),
                              vec4(translation, 0.f, 1.f)};
-    return parent ? result * parent->inverse_scale_center_rotate_translate4() : result;
+    return parent && !local ? result * parent->inverse_scale_center_rotate_translate4() : result;
 }
 template <FloatingPoint Float>
-typename transform2D<Float>::mat4 transform2D<Float>::scale_center_rotate_translate4() const
+typename transform2D<Float>::mat4 transform2D<Float>::scale_center_rotate_translate4(const bool local) const
 {
     const mat2 rmat = rotation_matrix(rotation);
     const vec2 translation = position - rmat * origin;
 
     const mat4 result = mat4{vec4(rmat[0] * scale.x, 0.f, 0.f), vec4(rmat[1] * scale.y, 0.f, 0.f),
                              vec4(0.f, 0.f, 1.f, 0.f), vec4(translation, 0.f, 1.f)};
-    return parent ? parent->scale_center_rotate_translate4() * result : result;
+    return parent && !local ? parent->scale_center_rotate_translate4() * result : result;
 }
 
 template <FloatingPoint Float> void transform2D<Float>::ltranslate(const vec2 &dpos)
@@ -208,18 +208,18 @@ template <FloatingPoint Float> transform3D<Float> transform3D<Float>::builder::b
 }
 
 template <FloatingPoint Float>
-typename transform3D<Float>::mat4 transform3D<Float>::center_scale_rotate_translate4() const
+typename transform3D<Float>::mat4 transform3D<Float>::center_scale_rotate_translate4(const bool local) const
 {
     const mat3 scale_matrix = mat3({scale.x, 0.f, 0.f}, {0.f, scale.y, 0.f}, {0.f, 0.f, scale.z});
     const mat3 linear = rotation * scale_matrix;
     const vec3 translation = position - linear * origin;
 
     const mat4 result = mat4{vec4(linear[0], 0.f), vec4(linear[1], 0.f), vec4(linear[2], 0.f), vec4(translation, 1.f)};
-    return parent ? parent->center_scale_rotate_translate4() * result : result;
+    return parent && !local ? parent->center_scale_rotate_translate4() * result : result;
 }
 
 template <FloatingPoint Float>
-typename transform3D<Float>::mat4 transform3D<Float>::inverse_center_scale_rotate_translate4() const
+typename transform3D<Float>::mat4 transform3D<Float>::inverse_center_scale_rotate_translate4(const bool local) const
 {
     const mat3 inverse_scale_matrix =
         mat3({1.f / scale.x, 0.f, 0.f}, {0.f, 1.f / scale.y, 0.f}, {0.f, 0.f, 1.f / scale.z});
@@ -227,26 +227,26 @@ typename transform3D<Float>::mat4 transform3D<Float>::inverse_center_scale_rotat
     const vec3 translation = origin - linear * position;
 
     const mat4 result = mat4{vec4(linear[0], 0.f), vec4(linear[1], 0.f), vec4(linear[2], 0.f), vec4(translation, 1.f)};
-    return parent ? result * parent->inverse_center_scale_rotate_translate4() : result;
+    return parent && !local ? result * parent->inverse_center_scale_rotate_translate4() : result;
 }
 
 template <FloatingPoint Float>
-typename transform3D<Float>::mat4 transform3D<Float>::inverse_scale_center_rotate_translate4() const
+typename transform3D<Float>::mat4 transform3D<Float>::inverse_scale_center_rotate_translate4(const bool local) const
 {
     const mat3 rmat = inverse_rotation();
     const vec3 translation = (origin - rmat * position) / scale;
 
     const mat4 result = mat4{vec4(rmat[0] / scale, 0.f), vec4(rmat[1] / scale, 0.f), vec4(rmat[2] / scale, 0.f),
                              vec4(translation, 1.f)};
-    return parent ? result * parent->inverse_scale_center_rotate_translate4() : result;
+    return parent && !local ? result * parent->inverse_scale_center_rotate_translate4() : result;
 }
 template <FloatingPoint Float>
-typename transform3D<Float>::mat4 transform3D<Float>::scale_center_rotate_translate4() const
+typename transform3D<Float>::mat4 transform3D<Float>::scale_center_rotate_translate4(const bool local) const
 {
     const vec3 translation = position - rotation * origin;
     const mat4 result = mat4{vec4(rotation[0] * scale.x, 0.f), vec4(rotation[1] * scale.y, 0.f),
                              vec4(rotation[2] * scale.z, 0.f), vec4(translation, 1.f)};
-    return parent ? parent->scale_center_rotate_translate4() * result : result;
+    return parent && !local ? parent->scale_center_rotate_translate4() * result : result;
 }
 
 template <FloatingPoint Float> typename transform3D<Float>::mat3 transform3D<Float>::inverse_rotation() const
