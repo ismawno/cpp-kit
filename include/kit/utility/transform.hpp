@@ -59,9 +59,9 @@ template <FloatingPoint Float> struct transform2D
     mat4 inverse_scale_center_rotate_translate4() const;
     mat4 scale_center_rotate_translate4() const;
 
-    void translate_local(const vec2 &dpos);
-    void xtranslate_local(Float dx);
-    void ytranslate_local(Float dy);
+    void ltranslate(const vec2 &dpos);
+    void lxtranslate(Float dx);
+    void lytranslate(Float dy);
 
     static trigonometry trigonometric_functions(Float rotation);
     static mat2 rotation_matrix(Float rotation);
@@ -120,13 +120,13 @@ template <FloatingPoint Float> struct transform3D
 
     mat3 inverse_rotation() const;
 
-    void translate_local(const vec3 &dpos);
-    void xtranslate_local(Float dx);
-    void ytranslate_local(Float dy);
-    void ztranslate_local(Float dz);
+    void ltranslate(const vec3 &dpos);
+    void lxtranslate(Float dx);
+    void lytranslate(Float dy);
+    void lztranslate(Float dz);
 
-    void rotate_local(const mat3 &rotmat);
-    void rotate_global(const mat3 &rotmat);
+    void lrotate(const mat3 &rotmat);
+    void grotate(const mat3 &rotmat);
 
     static trigonometry trigonometric_functions(const vec3 &rotation);
 

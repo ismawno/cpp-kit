@@ -132,19 +132,19 @@ typename transform2D<Float>::mat4 transform2D<Float>::scale_center_rotate_transl
     return parent ? parent->scale_center_rotate_translate4() * result : result;
 }
 
-template <FloatingPoint Float> void transform2D<Float>::translate_local(const vec2 &dpos)
+template <FloatingPoint Float> void transform2D<Float>::ltranslate(const vec2 &dpos)
 {
     const auto [c, s] = trigonometric_functions(rotation); // CHANGE THIS MULTIPLY BY ROTMAT
     const vec2 u{c, -s};
     const vec2 v{s, c};
     position += vec2(glm::dot(u, dpos), glm::dot(v, dpos));
 }
-template <FloatingPoint Float> void transform2D<Float>::xtranslate_local(const Float dx)
+template <FloatingPoint Float> void transform2D<Float>::lxtranslate(const Float dx)
 {
     const auto [c, s] = trigonometric_functions(rotation);
     position += vec2(c * dx, s * dx);
 }
-template <FloatingPoint Float> void transform2D<Float>::ytranslate_local(const Float dy)
+template <FloatingPoint Float> void transform2D<Float>::lytranslate(const Float dy)
 {
     const auto [c, s] = trigonometric_functions(rotation);
     position += vec2(-s * dy, c * dy);
@@ -254,28 +254,28 @@ template <FloatingPoint Float> typename transform3D<Float>::mat3 transform3D<Flo
     return glm::transpose(rotation);
 }
 
-template <FloatingPoint Float> void transform3D<Float>::translate_local(const vec3 &dpos)
+template <FloatingPoint Float> void transform3D<Float>::ltranslate(const vec3 &dpos)
 {
     position += rotation * dpos;
 }
-template <FloatingPoint Float> void transform3D<Float>::xtranslate_local(Float dx)
+template <FloatingPoint Float> void transform3D<Float>::lxtranslate(Float dx)
 {
     position += rotation[0] * dx;
 }
-template <FloatingPoint Float> void transform3D<Float>::ytranslate_local(Float dy)
+template <FloatingPoint Float> void transform3D<Float>::lytranslate(Float dy)
 {
     position += rotation[1] * dy;
 }
-template <FloatingPoint Float> void transform3D<Float>::ztranslate_local(Float dz)
+template <FloatingPoint Float> void transform3D<Float>::lztranslate(Float dz)
 {
     position += rotation[2] * dz;
 }
 
-template <FloatingPoint Float> void transform3D<Float>::rotate_local(const mat3 &rotmat)
+template <FloatingPoint Float> void transform3D<Float>::lrotate(const mat3 &rotmat)
 {
     rotation *= rotmat;
 }
-template <FloatingPoint Float> void transform3D<Float>::rotate_global(const mat3 &rotmat)
+template <FloatingPoint Float> void transform3D<Float>::grotate(const mat3 &rotmat)
 {
     rotation = rotmat * rotation;
 }
