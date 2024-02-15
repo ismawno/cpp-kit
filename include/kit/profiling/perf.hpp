@@ -11,10 +11,10 @@
 
 #define KIT_PERF_BEGIN_SESSION(name, export_format) kit::perf::instrumentor::begin_session(name, export_format);
 #define KIT_PERF_END_SESSION() kit::perf::instrumentor::end_session();
-#define KIT_PERF_SCOPE(name) kit::perf::instrumentor::timer tm##__LINE__(name);
-#define KIT_PERF_FUNCTION() kit::perf::instrumentor::timer tm##__LINE__(__FUNCTION__);
+#define KIT_PERF_SCOPE(name) kit::perf::instrumentor::scoped_measurement sm##__LINE__(name);
+#define KIT_PERF_FUNCTION() kit::perf::instrumentor::scoped_measurement sm##__LINE__(__FUNCTION__);
 #ifdef __PRETTY_FUNCTION__
-#define KIT_PERF_PRETTY_FUNCTION() kit::perf::instrumentor::timer tm##__LINE__(__PRETTY_FUNCTION__);
+#define KIT_PERF_PRETTY_FUNCTION() kit::perf::instrumentor::scoped_measurement sm##__LINE__(__PRETTY_FUNCTION__);
 #else
 #define KIT_PERF_PRETTY_FUNCTION() KIT_PERF_FUNCTION()
 #endif

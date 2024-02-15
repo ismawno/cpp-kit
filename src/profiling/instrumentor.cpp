@@ -50,6 +50,16 @@ const char *instrumentor::current_session()
     return s_session_name;
 }
 
+instrumentor::scoped_measurement::scoped_measurement(const char *name)
+{
+    instrumentor::begin_measurement(name);
+}
+
+instrumentor::scoped_measurement::~scoped_measurement()
+{
+    instrumentor::end_measurement();
+}
+
 static void write_header(std::stringstream &stream)
 {
     stream << "{\n\t\"otherData\": {},\"traceEvents\":\n\t[\n";
