@@ -1,7 +1,7 @@
 #include "kit/internal/pch.hpp"
-#include "kit/profile/time.hpp"
+#include "kit/profiling/time.hpp"
 
-namespace kit
+namespace kit::perf
 {
 time::time(const std::chrono::nanoseconds elapsed) : m_elapsed(elapsed)
 {
@@ -58,4 +58,4 @@ time &time::operator-=(const time &other)
     m_elapsed -= other.m_elapsed;
     return *this;
 }
-} // namespace kit
+} // namespace kit::perf

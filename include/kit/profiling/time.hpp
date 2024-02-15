@@ -3,9 +3,8 @@
 #include "kit/utility/type_constraints.hpp"
 #include <chrono>
 
-namespace kit
+namespace kit::perf
 {
-
 class time
 {
   public:
@@ -77,4 +76,4 @@ template <Numeric T> time operator*(const T scalar, const time &rhs)
 {
     return rhs * scalar;
 }
-} // namespace kit
+} // namespace kit::perf

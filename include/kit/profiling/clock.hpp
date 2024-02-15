@@ -1,8 +1,8 @@
 #pragma once
 
-#include "kit/profile/time.hpp"
+#include "kit/profiling/time.hpp"
 
-namespace kit
+namespace kit::perf
 {
 class clock
 {
@@ -19,4 +19,4 @@ class clock
   private:
     time_point m_start;
 };
-} // namespace kit
+} // namespace kit::perf

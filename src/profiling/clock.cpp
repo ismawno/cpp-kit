@@ -1,7 +1,7 @@
 #include "kit/internal/pch.hpp"
-#include "kit/profile/clock.hpp"
+#include "kit/profiling/clock.hpp"
 
-namespace kit
+namespace kit::perf
 {
 static clock::time_point now()
 {
@@ -35,4 +35,4 @@ time clock::restart()
     m_start = now();
     return tm;
 }
-} // namespace kit
+} // namespace kit::perf
