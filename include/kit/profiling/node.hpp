@@ -23,6 +23,7 @@ class node
     time total_elapsed_time() const;
 
     node parent() const;
+    std::unordered_set<std::string> children() const;
 
     auto begin() const
     {

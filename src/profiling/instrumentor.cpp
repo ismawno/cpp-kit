@@ -21,6 +21,13 @@ void instrumentor::end_session()
 void instrumentor::begin_measurement(const char *name)
 {
     KIT_ASSERT_ERROR(s_session_name, "A session must be active to begin a measurement")
+    KIT_ASSERT_ERROR(name, "Measurement name must not be null")
+#ifdef DEBUG
+    for (const char *c = name; *c; ++c)
+    {
+        KIT_ASSERT_ERROR(*c != '$', "The character '$' is not allowed in measurement names")
+    }
+#endif
     const std::string name_hash =
         s_ongoing_measurements.empty() ? name : s_ongoing_measurements.top().name_hash + "$" + name;
     s_ongoing_measurements.emplace(ongoing_measurement{name, name_hash, clock{}});

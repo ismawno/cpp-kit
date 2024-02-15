@@ -30,6 +30,20 @@ node node::parent() const
                      m_name_hash);
     return node{m_name_hash.substr(0, last_dollar), m_global_measurements, m_cache};
 }
+std::unordered_set<std::string> node::children() const
+{
+    std::unordered_set<std::string> result;
+    const std::size_t pcount = std::count(m_name_hash.begin(), m_name_hash.end(), '$');
+    for (const auto &[name_hash, _] : *m_global_measurements)
+    {
+        const std::size_t count = std::count(name_hash.begin(), name_hash.end(), '$');
+        if (pcount != count + 1)
+            continue;
+        const auto last_dollar = name_hash.find_last_of('$');
+        result.insert(name_hash.substr(last_dollar + 1));
+    }
+    return result;
+}
 
 bool node::exists() const
 {
