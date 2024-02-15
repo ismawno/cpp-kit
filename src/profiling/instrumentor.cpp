@@ -49,7 +49,7 @@ const char *instrumentor::current_session()
 {
     return s_session_name;
 }
-// clear
+
 void instrumentor::clear_measurements(const char *session)
 {
     s_measurements[session].clear();

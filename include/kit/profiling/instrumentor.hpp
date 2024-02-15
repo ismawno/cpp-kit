@@ -26,7 +26,7 @@ class instrumentor
     static void end_measurement();
 
     static const char *current_session();
-    void clear_measurements(const char *session);
+    static void clear_measurements(const char *session);
 
     static std::stringstream strstream(const char *session);
     static std::string str(const char *session);
