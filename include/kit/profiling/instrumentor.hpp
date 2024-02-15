@@ -26,6 +26,7 @@ class instrumentor
     static void end_measurement();
 
     static const char *current_session();
+    void clear_measurements(const char *session);
 
     static std::stringstream strstream(const char *session);
     static std::string str(const char *session);
@@ -41,6 +42,7 @@ class instrumentor
 
     static inline std::stack<ongoing_measurement> s_ongoing_measurements{};
     static inline std::unordered_map<const char *, ms_container> s_measurements{};
+    static inline std::unordered_map<const char *, metrics_cache> s_metrics_cache{};
 
     static inline const char *s_session_name = nullptr;
 };

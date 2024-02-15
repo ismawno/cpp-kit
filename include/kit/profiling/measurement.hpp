@@ -9,6 +9,13 @@ namespace kit::perf
 class measurement : public nameable
 {
   public:
+    struct metrics
+    {
+        time elapsed;
+        float relative_percent = 0.f;
+        float total_percent = 0.f;
+    };
+
     using nameable::nameable;
 
     std::size_t parent_index;

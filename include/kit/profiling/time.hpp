@@ -13,7 +13,7 @@ class time
     using milliseconds = std::chrono::milliseconds;
     using seconds = std::chrono::seconds;
 
-    explicit time(nanoseconds elapsed = nanoseconds::zero());
+    time(nanoseconds elapsed = nanoseconds::zero());
 
     template <typename TimeUnit, Numeric T> T as() const
     {

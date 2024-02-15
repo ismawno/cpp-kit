@@ -49,6 +49,12 @@ const char *instrumentor::current_session()
 {
     return s_session_name;
 }
+// clear
+void instrumentor::clear_measurements(const char *session)
+{
+    s_measurements[session].clear();
+    s_metrics_cache[session].clear();
+}
 
 instrumentor::scoped_measurement::scoped_measurement(const char *name)
 {
