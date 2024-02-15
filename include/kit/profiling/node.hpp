@@ -40,7 +40,8 @@ class node
 
   private:
     std::string m_name_hash;
-    const ms_container *m_measurements;
+    const ms_container *m_global_measurements;
+    const std::vector<measurement> *m_measurements;
     metrics_cache *m_cache;
 
     bool exists() const;

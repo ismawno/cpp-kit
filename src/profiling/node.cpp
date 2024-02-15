@@ -4,22 +4,23 @@
 namespace kit::perf
 {
 node::node(const std::string &name_hash, const ms_container *measurements, metrics_cache *cache)
-    : m_name_hash(name_hash), m_measurements(measurements), m_cache(cache)
+    : m_name_hash(name_hash), m_global_measurements(measurements), m_measurements(&measurements->at(name_hash)),
+      m_cache(cache)
 {
 }
 
 node node::operator[](const std::string &name) const
 {
     const std::string name_hash = m_name_hash + "$" + name;
-    const node n = node{name_hash, m_measurements, m_cache};
+    const node n = node{name_hash, m_global_measurements, m_cache};
     KIT_ASSERT_ERROR(n.exists(), "The node with name {0} does not exist", name);
     return n;
 }
 
 const measurement &node::operator[](std::size_t index) const
 {
-    KIT_ASSERT_ERROR(index < m_measurements->at(m_name_hash).size(), "Index {0} out of bounds", index);
-    return m_measurements->at(m_name_hash)[index];
+    KIT_ASSERT_ERROR(index < m_measurements->size(), "Index {0} out of bounds", index);
+    return m_measurements->at(index);
 }
 
 node node::parent() const
@@ -27,12 +28,12 @@ node node::parent() const
     const auto last_dollar = m_name_hash.find_last_of('$');
     KIT_ASSERT_ERROR(last_dollar != std::string::npos, "The node with name hash {0} does not have a parent",
                      m_name_hash);
-    return node{m_name_hash.substr(0, last_dollar), m_measurements, m_cache};
+    return node{m_name_hash.substr(0, last_dollar), m_global_measurements, m_cache};
 }
 
 bool node::exists() const
 {
-    return m_measurements->find(m_name_hash) != m_measurements->end();
+    return m_measurements != nullptr;
 }
 bool node::has_parent() const
 {
@@ -47,7 +48,7 @@ const measurement::metrics &node::compute_metrics(const std::size_t index) const
         return it->second;
 
     measurement::metrics &result = m_cache->emplace(key, measurement::metrics{}).first->second;
-    const measurement &ms = m_measurements->at(m_name_hash)[index];
+    const measurement &ms = m_measurements->at(index);
 
     result.elapsed = ms.elapsed;
     if (!has_parent())
@@ -61,14 +62,39 @@ const measurement::metrics &node::compute_metrics(const std::size_t index) const
     return result;
 }
 
+measurement::metrics node::average_metrics() const
+{
+    measurement::metrics result = compute_metrics(0);
+    for (std::size_t i = 1; i < size(); ++i)
+    {
+        const measurement::metrics &ms = compute_metrics(i);
+        result.elapsed += ms.elapsed;
+        result.relative_percent += ms.relative_percent;
+        result.total_percent += ms.total_percent;
+    }
+    const std::size_t sz = size();
+    result.elapsed /= sz;
+    result.relative_percent /= sz;
+    result.total_percent /= sz;
+    return result;
+}
+
+time node::total_elapsed_time() const
+{
+    time result{};
+    for (const measurement &ms : *m_measurements)
+        result += ms.elapsed;
+    return result;
+}
+
 std::size_t node::size() const
 {
-    return exists() ? m_measurements->at(m_name_hash).size() : 0;
+    return exists() ? m_measurements->size() : 0;
 }
 
 node::operator const std::vector<measurement> &() const
 {
-    return m_measurements->at(m_name_hash);
+    return *m_measurements;
 }
 
 } // namespace kit::perf
