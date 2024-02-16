@@ -21,6 +21,8 @@ class node
     measurement::metrics average_metrics() const;
 
     time total_elapsed_time() const;
+    const char *name() const;
+    const std::string &name_hash() const;
 
     node parent() const;
     std::unordered_set<std::string> children() const;

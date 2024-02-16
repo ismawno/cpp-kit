@@ -26,7 +26,8 @@ class instrumentor
     static void end_measurement();
 
     static const char *current_session();
-    static void clear_measurements(const char *session);
+    static bool has_measurements(const char *session);
+    static node head_node(const char *session);
 
     static std::stringstream strstream(const char *session);
     static std::string str(const char *session);
@@ -41,6 +42,9 @@ class instrumentor
     instrumentor() = delete;
 
     static inline std::stack<ongoing_measurement> s_ongoing_measurements{};
+    static inline ms_container s_current_measurements{};
+
+    static inline std::unordered_map<const char *, const char *> s_head_node_names{};
     static inline std::unordered_map<const char *, ms_container> s_measurements{};
     static inline std::unordered_map<const char *, metrics_cache> s_metrics_cache{};
 

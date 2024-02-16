@@ -51,7 +51,7 @@ bool node::exists() const
 }
 bool node::has_parent() const
 {
-    return m_name_hash.find('$') != std::string::npos;
+    return m_measurements->front().parent_index != SIZE_MAX;
 }
 
 const measurement::metrics &node::compute_metrics(const std::size_t index) const
@@ -99,6 +99,14 @@ time node::total_elapsed_time() const
     for (const measurement &ms : *m_measurements)
         result += ms.elapsed;
     return result;
+}
+const char *node::name() const
+{
+    return m_measurements->front().name;
+}
+const std::string &node::name_hash() const
+{
+    return m_name_hash;
 }
 
 std::size_t node::size() const

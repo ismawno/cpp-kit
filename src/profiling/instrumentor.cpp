@@ -30,6 +30,10 @@ void instrumentor::begin_measurement(const char *name)
 #endif
     const std::string name_hash =
         s_ongoing_measurements.empty() ? name : s_ongoing_measurements.top().name_hash + "$" + name;
+
+    if (s_ongoing_measurements.empty())
+        s_head_node_names[s_session_name] = name;
+
     s_ongoing_measurements.emplace(ongoing_measurement{name, name_hash, clock{}});
 }
 
@@ -48,19 +52,30 @@ void instrumentor::end_measurement()
     ms.start = start;
     ms.end = end;
     ms.elapsed = elapsed;
-    ms.parent_index = s_ongoing_measurements.empty() ? SIZE_MAX : s_measurements[s_session_name].size();
-    s_measurements[s_session_name][ongoing.name_hash].push_back(ms);
+    ms.parent_index = s_ongoing_measurements.empty()
+                          ? SIZE_MAX
+                          : s_current_measurements[s_ongoing_measurements.top().name_hash].size();
+    s_current_measurements[ongoing.name_hash].push_back(ms);
+    if (s_ongoing_measurements.empty())
+    {
+        s_measurements[s_session_name] = s_current_measurements;
+        s_metrics_cache[s_session_name].clear();
+        s_current_measurements.clear();
+    }
 }
 
 const char *instrumentor::current_session()
 {
     return s_session_name;
 }
-
-void instrumentor::clear_measurements(const char *session)
+bool instrumentor::has_measurements(const char *session)
 {
-    s_measurements[session].clear();
-    s_metrics_cache[session].clear();
+    return s_measurements.find(session) != s_measurements.end();
+}
+node instrumentor::head_node(const char *session)
+{
+    KIT_ASSERT_ERROR(has_measurements(session), "No measurements for session {0}", session)
+    return node{s_head_node_names[session], &s_measurements[session], &s_metrics_cache[session]};
 }
 
 instrumentor::scoped_measurement::scoped_measurement(const char *name)
