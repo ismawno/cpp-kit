@@ -80,11 +80,19 @@ node instrumentor::head_node(const char *session)
     return node{s_head_node_names[session], &s_measurements[session], &s_metrics_cache[session]};
 }
 
+instrumentor::scoped_session::scoped_session(const char *name)
+{
+    instrumentor::begin_session(name);
+}
+instrumentor::scoped_session::~scoped_session()
+{
+    instrumentor::end_session();
+}
+
 instrumentor::scoped_measurement::scoped_measurement(const char *name)
 {
     instrumentor::begin_measurement(name);
 }
-
 instrumentor::scoped_measurement::~scoped_measurement()
 {
     instrumentor::end_measurement();

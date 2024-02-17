@@ -12,9 +12,13 @@ namespace kit::perf
 class instrumentor
 {
   public:
-    class scoped_measurement
+    struct scoped_session
     {
-      public:
+        scoped_session(const char *name);
+        ~scoped_session();
+    };
+    struct scoped_measurement
+    {
         scoped_measurement(const char *name);
         ~scoped_measurement();
     };
