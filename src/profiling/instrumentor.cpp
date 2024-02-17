@@ -29,7 +29,7 @@ void instrumentor::begin_measurement(const char *name)
     }
 #endif
     const std::string name_hash =
-        s_ongoing_measurements.empty() ? name : s_ongoing_measurements.top().name_hash + "$" + name;
+        s_ongoing_measurements.empty() ? name : s_ongoing_measurements.top().name_hash + "$" + std::string(name);
 
     if (s_ongoing_measurements.empty())
         s_head_node_names[s_session_name] = name;
@@ -46,16 +46,18 @@ void instrumentor::end_measurement()
     const long long end = ongoing.clk.current_time();
     const long long start = ongoing.clk.start_time();
     const time elapsed = ongoing.clk.elapsed();
-    s_ongoing_measurements.pop();
 
     measurement ms{ongoing.name};
     ms.start = start;
     ms.end = end;
     ms.elapsed = elapsed;
+    const std::string name_hash = ongoing.name_hash;
+
+    s_ongoing_measurements.pop();
     ms.parent_index = s_ongoing_measurements.empty()
                           ? SIZE_MAX
                           : s_current_measurements[s_ongoing_measurements.top().name_hash].size();
-    s_current_measurements[ongoing.name_hash].push_back(ms);
+    s_current_measurements[name_hash].push_back(ms);
     if (s_ongoing_measurements.empty())
     {
         s_measurements[s_session_name] = s_current_measurements;

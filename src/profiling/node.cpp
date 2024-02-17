@@ -12,9 +12,9 @@ node::node(const std::string &name_hash, const ms_container *measurements, metri
 node node::operator[](const std::string &name) const
 {
     const std::string name_hash = m_name_hash + "$" + name;
-    const node n = node{name_hash, m_global_measurements, m_cache};
-    KIT_ASSERT_ERROR(n.exists(), "The node with name {0} does not exist", name);
-    return n;
+    KIT_ASSERT_ERROR(m_global_measurements->find(name_hash) != m_global_measurements->end(),
+                     "The node with name {0} does not exist", name)
+    return node{name_hash, m_global_measurements, m_cache};
 }
 
 const measurement &node::operator[](std::size_t index) const
@@ -37,18 +37,15 @@ std::unordered_set<std::string> node::children() const
     for (const auto &[name_hash, _] : *m_global_measurements)
     {
         const std::size_t count = std::count(name_hash.begin(), name_hash.end(), '$');
-        if (pcount != count + 1)
+        if (pcount + 1 != count)
             continue;
         const auto last_dollar = name_hash.find_last_of('$');
-        result.insert(name_hash.substr(last_dollar + 1));
+        if (name_hash.substr(0, last_dollar) == m_name_hash)
+            result.insert(name_hash.substr(last_dollar + 1));
     }
     return result;
 }
 
-bool node::exists() const
-{
-    return m_measurements != nullptr;
-}
 bool node::has_parent() const
 {
     return m_measurements->front().parent_index != SIZE_MAX;
@@ -111,7 +108,7 @@ const std::string &node::name_hash() const
 
 std::size_t node::size() const
 {
-    return exists() ? m_measurements->size() : 0;
+    return m_measurements->size();
 }
 
 node::operator const std::vector<measurement> &() const

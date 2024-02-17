@@ -3,6 +3,7 @@
 #include "kit/profiling/measurement.hpp"
 #include "kit/container/hashable_tuple.hpp"
 #include <unordered_map>
+#include <unordered_set>
 #include <string>
 
 namespace kit::perf
@@ -46,7 +47,5 @@ class node
     const ms_container *m_global_measurements;
     const std::vector<measurement> *m_measurements;
     metrics_cache *m_cache;
-
-    bool exists() const;
 };
 } // namespace kit::perf
