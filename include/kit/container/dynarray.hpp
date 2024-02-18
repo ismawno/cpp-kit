@@ -132,12 +132,20 @@ template <typename T, std::size_t Capacity> class dynarray
     {
         return m_data.begin() + m_size;
     }
+    const_iterator cbegin() const
+    {
+        return m_data.cbegin();
+    }
+    const_iterator cend() const
+    {
+        return m_data.cbegin() + m_size;
+    }
 
     iterator erase(const_iterator pos)
     {
-        KIT_ASSERT_ERROR(pos >= begin() && pos < end(), "Iterator must be within range");
-        const difference_type offset = std::distance(begin(), pos);
-        std::copy(pos + 1, end(), pos);
+        KIT_ASSERT_ERROR(pos >= cbegin() && pos < cend(), "Iterator must be within range");
+        const difference_type offset = std::distance(cbegin(), pos);
+        std::copy(pos + 1, cend(), begin() + offset);
         --m_size;
 
         return begin() + offset;
