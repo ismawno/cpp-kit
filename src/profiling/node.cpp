@@ -33,6 +33,8 @@ node node::parent() const
 std::unordered_set<std::string> node::children() const
 {
     std::unordered_set<std::string> result;
+    result.reserve(8);
+
     const std::size_t pcount = std::count(m_name_hash.begin(), m_name_hash.end(), '$');
     for (const auto &[name_hash, _] : *m_global_measurements)
     {
