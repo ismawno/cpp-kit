@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <concepts>
 #include <string>
 #include <fstream>
 #include <vector>

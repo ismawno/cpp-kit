@@ -7,7 +7,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
-template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<2, Float>>
+template <std::floating_point Float> struct kit::yaml::codec<glm::vec<2, Float>>
 {
     static YAML::Node encode(const glm::vec<2, Float> &v)
     {
@@ -29,7 +29,7 @@ template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<2, Float>>
     }
 };
 
-template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<3, Float>>
+template <std::floating_point Float> struct kit::yaml::codec<glm::vec<3, Float>>
 {
     static YAML::Node encode(const glm::vec<3, Float> &v)
     {
@@ -53,7 +53,7 @@ template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<3, Float>>
     }
 };
 
-template <kit::FloatingPoint Float> struct kit::yaml::codec<glm::vec<4, Float>>
+template <std::floating_point Float> struct kit::yaml::codec<glm::vec<4, Float>>
 {
     static YAML::Node encode(const glm::vec<4, Float> &v)
     {

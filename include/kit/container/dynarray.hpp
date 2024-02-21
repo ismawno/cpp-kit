@@ -78,6 +78,10 @@ template <typename T, std::size_t Capacity> class dynarray
     {
         m_size = 0;
     }
+    bool empty() const
+    {
+        return m_size == 0;
+    }
     void resize(const size_type size)
     {
         KIT_ASSERT_ERROR(size <= Capacity, "Data size must not exceed capacity");

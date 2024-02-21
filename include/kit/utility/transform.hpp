@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kit/utility/type_constraints.hpp"
+#include <concepts>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -13,7 +13,7 @@
 
 namespace kit
 {
-template <FloatingPoint Float> struct transform2D
+template <std::floating_point Float> struct transform2D
 {
     using vec2 = glm::vec<2, Float>;
     using vec3 = glm::vec<3, Float>;
@@ -71,7 +71,7 @@ template <FloatingPoint Float> struct transform2D
     static transform2D s_transform;
 };
 
-template <FloatingPoint Float> struct transform3D
+template <std::floating_point Float> struct transform3D
 {
     using vec3 = glm::vec<3, Float>;
     using vec4 = glm::vec<4, Float>;

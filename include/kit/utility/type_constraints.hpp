@@ -17,19 +17,6 @@ concept Hashable = requires(T a) {
 template <typename T>
 concept Numeric = std::is_arithmetic_v<T>;
 
-template <typename T>
-concept FloatingPoint = std::is_floating_point_v<T>;
-
-template <typename It, typename T>
-concept Iterator = requires(It it, T t) {
-    {
-        *it
-    } -> std::convertible_to<T>;
-    {
-        ++it
-    } -> std::same_as<It>;
-};
-
 template <typename T, class... Args>
 concept NoCopyCtorOverride =
     (!std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<Args>> && ...) || sizeof...(Args) != 1;
