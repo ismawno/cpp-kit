@@ -1,6 +1,7 @@
 #pragma once
 
 #include <concepts>
+#include <iterator>
 
 namespace kit
 {
@@ -16,6 +17,27 @@ concept Hashable = requires(T a) {
 
 template <typename T>
 concept Numeric = std::is_arithmetic_v<T>;
+
+template <typename T>
+concept RandomAccessContainer = requires(T a) {
+    {
+        a.begin()
+    } -> std::random_access_iterator;
+    {
+        a.end()
+    } -> std::random_access_iterator;
+
+    {
+        a.size()
+    } -> std::convertible_to<std::size_t>;
+    {
+        a.empty()
+    } -> std::convertible_to<bool>;
+
+    {
+        a[std::declval<std::size_t>()]
+    } -> std::same_as<typename T::value_type &>;
+};
 
 template <typename T, class... Args>
 concept NoCopyCtorOverride =

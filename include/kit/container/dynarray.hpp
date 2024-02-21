@@ -20,6 +20,8 @@ template <typename T, std::size_t Capacity> class dynarray
     using const_pointer = const value_type *;
     using iterator = pointer;
     using const_iterator = const_pointer;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     dynarray(const size_type size = 0) : m_size(size)
     {
@@ -66,6 +68,18 @@ template <typename T, std::size_t Capacity> class dynarray
     {
         KIT_ASSERT_ERROR(m_size < Capacity, "Data size must not exceed capacity");
         m_data[m_size++] = elem;
+    }
+    void insert(const_iterator pos, const_reference elem)
+    {
+        KIT_ASSERT_ERROR(m_size < Capacity, "Data size must not exceed capacity");
+        const difference_type offset = std::distance(cbegin(), pos);
+        std::copy_backward(begin() + offset, end(), end() + 1);
+        m_data[offset] = elem;
+        ++m_size;
+    }
+    void push_front(const_reference elem)
+    {
+        insert(begin(), elem);
     }
 
     void pop_back()
@@ -119,7 +133,6 @@ template <typename T, std::size_t Capacity> class dynarray
         return m_data[m_size - 1];
     }
 
-    // begin and end methods
     iterator begin()
     {
         return m_data.begin();
@@ -143,6 +156,22 @@ template <typename T, std::size_t Capacity> class dynarray
     const_iterator cend() const
     {
         return m_data.cbegin() + m_size;
+    }
+    reverse_iterator rbegin() const
+    {
+        return m_data.rbegin();
+    }
+    reverse_iterator rend() const
+    {
+        return m_data.rbegin() + m_size;
+    }
+    const_reverse_iterator crbegin() const
+    {
+        return m_data.crbegin();
+    }
+    const_reverse_iterator crend() const
+    {
+        return m_data.crbegin() + m_size;
     }
 
     iterator erase(const_iterator pos)
@@ -172,6 +201,17 @@ template <typename T, std::size_t Capacity> class dynarray
         return m_data[index];
     }
     const_reference operator[](const size_type index) const
+    {
+        KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
+        return m_data[index];
+    }
+
+    reference at(const size_type index)
+    {
+        KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
+        return m_data[index];
+    }
+    const_reference at(const size_type index) const
     {
         KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
         return m_data[index];
