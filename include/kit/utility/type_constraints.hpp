@@ -33,10 +33,6 @@ concept RandomAccessContainer = requires(T a) {
     {
         a.empty()
     } -> std::convertible_to<bool>;
-
-    {
-        a[std::declval<std::size_t>()]
-    } -> std::same_as<typename T::value_type &>;
 };
 
 template <typename T, class... Args>

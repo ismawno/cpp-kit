@@ -35,12 +35,10 @@ template <class... Args> class task
         m_fun(std::get<Seq>(m_args)...);
     }
 };
-template <std::size_t PoolSize, class... Args>
-    requires(PoolSize > 1)
-class thread_pool
+template <class... Args> class thread_pool
 {
   public:
-    thread_pool()
+    thread_pool(const std::size_t pool_size)
     {
         const auto worker = [this]() {
             for (;;)
@@ -62,8 +60,8 @@ class thread_pool
                     m_check_idle.notify_one();
             }
         };
-        for (std::size_t i = 0; i < PoolSize; i++)
-            m_threads[i] = std::thread(worker);
+        for (std::size_t i = 0; i < pool_size; i++)
+            m_threads.emplace_back(worker);
     }
 
     ~thread_pool()
@@ -89,9 +87,9 @@ class thread_pool
         m_check_task.notify_one();
     }
 
-    constexpr std::size_t size() const
+    std::size_t size() const
     {
-        return PoolSize;
+        return m_threads.size();
     }
     std::size_t unattended_tasks() const
     {
@@ -112,7 +110,7 @@ class thread_pool
     }
 
   private:
-    std::array<std::thread, PoolSize> m_threads;
+    std::vector<std::thread> m_threads;
     std::size_t m_pending_tasks = 0;
 
     std::queue<task<Args...>> m_tasks;
