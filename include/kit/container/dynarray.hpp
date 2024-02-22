@@ -31,7 +31,7 @@ template <typename T, std::size_t Capacity> class dynarray
         std::fill(begin(), end(), value);
     }
 
-    template <Iterator<value_type> It> dynarray(It begin, It end) : m_size(std::distance(begin, end))
+    template <std::input_iterator It> dynarray(It begin, It end) : m_size(std::distance(begin, end))
     {
         KIT_ASSERT_ERROR(m_size <= Capacity, "Data size must not exceed capacity");
         std::copy(begin, end, m_data.begin());
