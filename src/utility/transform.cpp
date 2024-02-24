@@ -153,7 +153,7 @@ template <std::floating_point Float> void transform2D<Float>::lytranslate(const 
 template <std::floating_point Float>
 typename transform2D<Float>::trigonometry transform2D<Float>::trigonometric_functions(const Float rotation)
 {
-    return {cos(rotation), sin(rotation)};
+    return {glm::cos(rotation), glm::sin(rotation)};
 }
 
 template <std::floating_point Float>
@@ -283,7 +283,8 @@ template <std::floating_point Float> void transform3D<Float>::grotate(const mat3
 template <std::floating_point Float>
 typename transform3D<Float>::trigonometry transform3D<Float>::trigonometric_functions(const vec3 &rotation)
 {
-    return {cos(rotation.x), sin(rotation.x), cos(rotation.y), sin(rotation.y), cos(rotation.z), sin(rotation.z)};
+    return {glm::cos(rotation.x), glm::sin(rotation.x), glm::cos(rotation.y),
+            glm::sin(rotation.y), glm::cos(rotation.z), glm::sin(rotation.z)};
 }
 
 template <std::floating_point Float> typename transform3D<Float>::mat3 transform3D<Float>::XYZ(const vec3 &rotation)
