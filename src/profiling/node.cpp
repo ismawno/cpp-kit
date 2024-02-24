@@ -12,8 +12,7 @@ node::node(const std::string &name_hash, const ms_container *measurements, metri
 node node::operator[](const std::string &name) const
 {
     const std::string name_hash = m_name_hash + "$" + name;
-    KIT_ASSERT_ERROR(m_global_measurements->find(name_hash) != m_global_measurements->end(),
-                     "The node with name {0} does not exist", name)
+    KIT_ASSERT_ERROR(m_global_measurements->contains(name_hash), "The node with name {0} does not exist", name)
     return node{name_hash, m_global_measurements, m_cache};
 }
 

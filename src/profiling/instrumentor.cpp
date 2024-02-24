@@ -72,7 +72,7 @@ const char *instrumentor::current_session()
 }
 bool instrumentor::has_measurements(const char *session)
 {
-    return s_measurements.find(session) != s_measurements.end();
+    return s_measurements.contains(session);
 }
 node instrumentor::head_node(const char *session)
 {
