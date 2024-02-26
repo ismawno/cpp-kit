@@ -77,17 +77,16 @@ const measurement::metrics &node::compute_metrics(const std::size_t index) const
 measurement::metrics node::average_metrics() const
 {
     measurement::metrics result = compute_metrics(0);
-    for (std::size_t i = 1; i < size(); ++i)
+    const std::size_t sz = size();
+    for (std::size_t i = 1; i < sz; ++i)
     {
         const measurement::metrics &ms = compute_metrics(i);
         result.elapsed += ms.elapsed;
         result.relative_percent += ms.relative_percent;
         result.total_percent += ms.total_percent;
     }
-    const std::size_t sz = size();
+
     result.elapsed /= sz;
-    result.relative_percent /= sz;
-    result.total_percent /= sz;
     return result;
 }
 
