@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kit/debug/log.hpp"
+#include "kit/utility/type_constraints.hpp"
 #include <array>
 #include <thread>
 #include <mutex>
@@ -12,11 +13,12 @@
 
 namespace kit::mt
 {
-template <class... Args> class task
+template <typename F, class... Args>
+    requires Callable<F, Args...>
+class task
 {
   public:
-    using fun = std::function<void(Args...)>;
-    task(const fun &fn, Args... args) : m_fun(fn), m_args(std::forward<Args>(args)...)
+    task(F fn, Args... args) : m_fun(fn), m_args(std::forward<Args>(args)...)
     {
     }
 
@@ -27,7 +29,7 @@ template <class... Args> class task
     }
 
   private:
-    fun m_fun;
+    F m_fun;
     std::tuple<Args...> m_args;
 
     template <int... Seq> void operator()(std::integer_sequence<int, Seq...> seq) const
@@ -35,7 +37,9 @@ template <class... Args> class task
         m_fun(std::get<Seq>(m_args)...);
     }
 };
-template <class... Args> class thread_pool
+template <typename F, class... Args>
+    requires Callable<F, Args...>
+class thread_pool
 {
   public:
     thread_pool(const std::size_t pool_size)
@@ -49,7 +53,7 @@ template <class... Args> class thread_pool
                 if (m_tasks.empty())
                     break;
 
-                const task<Args...> tsk = m_tasks.front();
+                const task<F, Args...> tsk = m_tasks.front();
                 m_tasks.pop();
 
                 lock.unlock();
@@ -79,7 +83,7 @@ template <class... Args> class thread_pool
         }
     }
 
-    void submit(const typename task<Args...>::fun &fn, Args... args)
+    void submit(F fn, Args... args)
     {
         std::scoped_lock<std::mutex> lock{m_mutex};
         m_pending_tasks++;
@@ -113,7 +117,7 @@ template <class... Args> class thread_pool
     std::vector<std::thread> m_threads;
     std::size_t m_pending_tasks = 0;
 
-    std::queue<task<Args...>> m_tasks;
+    std::queue<task<F, Args...>> m_tasks;
     std::mutex m_mutex;
 
     std::condition_variable m_check_task;
@@ -123,4 +127,6 @@ template <class... Args> class thread_pool
     thread_pool(const thread_pool &) = delete;
     thread_pool &operator=(const thread_pool &) = delete;
 };
+
+template <class... Args> using dyn_thread_pool = thread_pool<std::function<void(Args...)>, Args...>;
 } // namespace kit::mt
