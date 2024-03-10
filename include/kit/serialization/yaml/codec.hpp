@@ -17,6 +17,7 @@ class encodeable
 {
 #ifdef KIT_USE_YAML_CPP
   public:
+    virtual ~encodeable() = default;
     virtual YAML::Node encode() const = 0;
 #endif
 };
@@ -25,12 +26,17 @@ class decodeable
 {
 #ifdef KIT_USE_YAML_CPP
   public:
+    virtual ~decodeable() = default;
     virtual bool decode(const YAML::Node &node) = 0;
 #endif
 };
 
 class codecable : public encodeable, public decodeable
 {
+#ifdef KIT_USE_YAML_CPP
+  public:
+    virtual ~codecable() = default;
+#endif
 };
 
 #ifdef KIT_USE_YAML_CPP

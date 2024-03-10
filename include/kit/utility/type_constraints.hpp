@@ -38,4 +38,13 @@ concept RandomAccessContainer = requires(T a) {
 template <typename T, class... Args>
 concept NoCopyCtorOverride =
     (!std::is_same_v<std::remove_cvref_t<T>, std::remove_cvref_t<Args>> && ...) || sizeof...(Args) != 1;
+
+template <typename F, class... Args>
+concept Callable = std::invocable<F, Args...>;
+
+template <typename F, typename R, class... Args>
+concept RetCallable = std::invocable<F, Args...> && std::convertible_to<std::invoke_result_t<F, Args...>, R>;
+
+template <typename F, class... Args>
+concept VoidCallable = std::invocable<F, Args...> && std::same_as<std::invoke_result_t<F, Args...>, void>;
 } // namespace kit
