@@ -197,23 +197,23 @@ template <typename T, std::size_t Capacity> class dynarray
 
     reference operator[](const size_type index)
     {
-        KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
+        KIT_ASSERT_ERROR(index < m_size, "Index exceeds container size: {0}", index);
         return m_data[index];
     }
     const_reference operator[](const size_type index) const
     {
-        KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
+        KIT_ASSERT_ERROR(index < m_size, "Index exceeds container size: {0}", index);
         return m_data[index];
     }
 
     reference at(const size_type index)
     {
-        KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
+        KIT_ASSERT_ERROR(index < m_size, "Index exceeds container size: {0}", index);
         return m_data[index];
     }
     const_reference at(const size_type index) const
     {
-        KIT_ASSERT_ERROR(index < m_size, "Index must be less than size");
+        KIT_ASSERT_ERROR(index < m_size, "Index exceeds container size: {0}", index);
         return m_data[index];
     }
 

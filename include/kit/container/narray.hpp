@@ -25,6 +25,17 @@ template <typename T, std::size_t Size> class _narray_impl
         return m_data[index];
     }
 
+    const T &at(const std::size_t index) const
+    {
+        KIT_ASSERT_ERROR(index < m_data.size(), "Index exceeds container size: {0}", index)
+        return m_data.at(index);
+    }
+    T &at(const std::size_t index)
+    {
+        KIT_ASSERT_ERROR(index < m_data.size(), "Index exceeds container size: {0}", index)
+        return m_data.at(index);
+    }
+
     const T *data() const noexcept
     {
         return m_data.data();
