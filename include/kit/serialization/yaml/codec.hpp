@@ -4,13 +4,8 @@
 
 namespace kit::yaml
 {
-template <typename T> struct dependent_false : std::false_type
-{
-};
-
 template <typename T> struct codec
 {
-    static_assert(dependent_false<T>::value, "The codec struct must be specialized");
 };
 
 class encodeable
@@ -40,6 +35,23 @@ class codecable : public encodeable, public decodeable
 };
 
 #ifdef KIT_USE_YAML_CPP
+template <typename T>
+concept Encodeable = std::is_base_of_v<encodeable, T> || requires(T t) {
+    {
+        codec<T>::encode(t)
+    } -> std::convertible_to<YAML::Node>;
+};
+
+template <typename T>
+concept Decodeable = std::is_base_of_v<decodeable, T> || requires(T t, const YAML::Node &node) {
+    {
+        codec<T>::decode(node, t)
+    } -> std::convertible_to<bool>;
+};
+
+template <typename T>
+concept Codecable = Encodeable<T> && Decodeable<T>;
+
 template <typename T> YAML::Emitter &operator<<(YAML::Emitter &out, const T &instance)
 {
     out << YAML::BeginMap;
