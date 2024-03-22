@@ -66,6 +66,11 @@ template <IDContainer Container> class track_ptr : public identifiable<typename 
             return validity::NOT_VALID;
         if (m_index < m_container->size() && (*m_container)[m_index].id == this->id)
             return validity::VALID;
+        if (m_index > 0 && (*m_container)[m_index - 1].id == this->id) // More likely to be shifted
+        {
+            m_index--;
+            return validity::VALID_MUTATED;
+        }
 
         for (std::size_t i = 0; i < m_container->size(); i++)
             if ((*m_container)[i].id == this->id)
