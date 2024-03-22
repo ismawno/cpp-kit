@@ -12,17 +12,24 @@
 
 namespace kit
 {
-template <typename T> class quad_tree
+template <typename T, std::size_t MaxDepth = 5> class quad_tree
 {
-    struct properties;
-    struct node;
+    static constexpr std::size_t compute_node_count()
+    {
+        std::size_t total_nodes = 1;
+        for (std::size_t i = 0; i < MaxDepth; ++i)
+            total_nodes += 1 << (2 * (i + 1));
+        return total_nodes;
+    }
+    static inline constexpr std::size_t NODE_COUNT = compute_node_count();
 
   public:
+    struct properties;
+    struct node;
     using partition = std::vector<T>;
 
-    quad_tree(const std::size_t elements_per_quad = 12, const std::uint32_t max_depth = 12,
-              const float min_quad_size = 14.f)
-        : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
+    quad_tree(const std::size_t elements_per_quad = 12, const float min_quad_size = 14.f)
+        : m_props(kit::make_scope<properties>(elements_per_quad, min_quad_size)), m_root(m_props.get())
     {
     }
 
@@ -100,12 +107,12 @@ template <typename T> class quad_tree
         return *this;
     }
 
-  private:
     struct node
     {
-        node(properties *props) : props(props)
+        node(properties *props = nullptr) : props(props)
         {
-            elements.reserve(props->elements_per_quad);
+            if (props)
+                elements.reserve(props->elements_per_quad);
         }
 
         properties *props;
@@ -148,10 +155,10 @@ template <typename T> class quad_tree
             if (children[0] == SIZE_MAX)
                 for (std::size_t i = 0; i < 4; ++i)
                 {
-                    children[i] = props->m_nodes.size();
-                    props->m_nodes.emplace_back(props);
+                    props->m_nodes[props->m_size].props = props;
+                    children[i] = props->m_size++;
                 }
-            std::array<node *, 4> cinstances = quads();
+            const std::array<node *, 4> cinstances = quads();
             for (node *c : cinstances)
             {
                 c->depth = depth + 1;
@@ -159,12 +166,15 @@ template <typename T> class quad_tree
                 c->elements.clear();
             }
 
-            const glm::vec2 &mm = aabb.min, &mx = aabb.max;
-            const glm::vec2 mid_point = 0.5f * (mm + mx), hdim = 0.5f * (mx - mm);
-            cinstances[0]->aabb = geo::aabb2D(glm::vec2(mm.x, mm.y + hdim.y), glm::vec2(mx.x - hdim.x, mx.y));
+            const glm::vec2 &mm = aabb.min;
+            const glm::vec2 &mx = aabb.max;
+
+            const glm::vec2 mid_point = 0.5f * (mm + mx);
+
+            cinstances[0]->aabb = geo::aabb2D(glm::vec2(mm.x, mid_point.y), glm::vec2(mid_point.x, mx.y));
             cinstances[1]->aabb = geo::aabb2D(mid_point, mx);
             cinstances[2]->aabb = geo::aabb2D(mm, mid_point);
-            cinstances[3]->aabb = geo::aabb2D(glm::vec2(mm.x + hdim.x, mm.y), glm::vec2(mx.x, mx.y - hdim.y));
+            cinstances[3]->aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
             for (T &element : elements)
                 insert_into_children(element, getter);
             elements.clear();
@@ -180,7 +190,7 @@ template <typename T> class quad_tree
 
         bool can_subdivide() const
         {
-            if (depth >= props->max_depth)
+            if (depth >= MaxDepth)
                 return false;
             const glm::vec2 dim = aabb.dimension();
             return dim.x * dim.y >= props->min_quad_size * props->min_quad_size;
@@ -198,17 +208,17 @@ template <typename T> class quad_tree
 
     struct properties
     {
-        properties(const std::size_t elements_per_quad, const std::uint32_t max_depth, const float min_quad_size)
-            : elements_per_quad(elements_per_quad), max_depth(max_depth), min_quad_size(min_quad_size)
+        properties(const std::size_t elements_per_quad, const float min_quad_size)
+            : elements_per_quad(elements_per_quad), min_quad_size(min_quad_size)
         {
         }
 
         std::size_t elements_per_quad;
-        std::uint32_t max_depth;
         float min_quad_size;
 
       private:
-        std::vector<node> m_nodes;
+        std::array<node, NODE_COUNT> m_nodes;
+        std::size_t m_size = 0;
 
         properties(const properties &other) = default;
         properties(properties &&other) = default;
@@ -220,6 +230,7 @@ template <typename T> class quad_tree
         friend class quad_tree;
     };
 
+  private:
     kit::scope<properties> m_props;
     node m_root;
 };
