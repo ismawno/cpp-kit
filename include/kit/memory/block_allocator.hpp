@@ -43,12 +43,19 @@ template <typename T> class block_allocator
     void deallocate(T *ptr)
     {
         KIT_ASSERT_ERROR(ptr, "Cannot deallocate a null pointer");
-#ifdef DEBUG
-        make_sure_ptr_belongs_to_allocator(ptr);
-#endif
+        KIT_ASSERT_ERROR(owns(ptr), "The pointer {0} does not belong to this allocator", (void *)ptr);
+
         chunk *current = (chunk *)ptr;
         current->next = m_next_free_chunk;
         m_next_free_chunk = current;
+    }
+
+    bool owns(const T *ptr) const
+    {
+        for (T *block : m_blocks)
+            if (ptr >= block && ptr < block + m_block_obj_count)
+                return true;
+        return false;
     }
 
   private:
@@ -89,14 +96,6 @@ template <typename T> class block_allocator
         chunk *current = m_next_free_chunk;
         m_next_free_chunk = current->next;
         return (T *)(current);
-    }
-
-    void make_sure_ptr_belongs_to_allocator(T *ptr)
-    {
-        for (T *block : m_blocks)
-            if (ptr >= block && ptr < block + m_block_obj_count)
-                return;
-        KIT_CRITICAL("The pointer {0} does not belong to this allocator", (void *)ptr);
     }
 
     static inline constexpr std::size_t alignment()

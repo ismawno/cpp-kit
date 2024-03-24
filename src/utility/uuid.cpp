@@ -35,6 +35,12 @@ static bool in_between(const std::uint32_t x, const std::uint32_t mm, const std:
     return x <= mm && x <= mx;
 }
 
+const std::string &uuid::name_from_ptr(const void *ptr, const std::uint32_t min_characters,
+                                       const std::uint32_t max_characters)
+{
+    return name_from_id(uuid((std::uint64_t)ptr), min_characters, max_characters);
+}
+
 const std::string &uuid::name_from_id(const uuid id, const std::uint32_t min_characters,
                                       const std::uint32_t max_characters)
 {
