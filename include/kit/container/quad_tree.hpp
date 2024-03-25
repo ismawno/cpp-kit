@@ -2,6 +2,7 @@
 
 #include "geo/algorithm/intersection.hpp"
 #include "kit/memory/scope.hpp"
+#include "kit/memory/block_allocator.hpp"
 #include "kit/utility/type_constraints.hpp"
 #include "kit/debug/log.hpp"
 
@@ -12,25 +13,49 @@
 
 namespace kit
 {
-template <typename T, std::size_t MaxDepth = 5> class quad_tree
+template <typename T> class quad_tree
 {
-    static constexpr std::size_t compute_node_count()
-    {
-        std::size_t total_nodes = 1;
-        for (std::size_t i = 0; i < MaxDepth; ++i)
-            total_nodes += 1 << (2 * (i + 1));
-        return total_nodes;
-    }
-    static inline constexpr std::size_t NODE_COUNT = compute_node_count();
-
   public:
     struct properties;
     struct node;
     using partition = std::vector<T>;
 
-    quad_tree(const std::size_t elements_per_quad = 12, const float min_quad_size = 14.f)
-        : m_props(kit::make_scope<properties>(elements_per_quad, min_quad_size)), m_root(m_props.get())
+    quad_tree(const std::size_t elements_per_quad = 12, std::uint32_t max_depth = 12, const float min_quad_size = 14.f)
+        : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
     {
+    }
+
+    quad_tree(const quad_tree &other)
+        : m_props(kit::make_scope<properties>(other.m_props->elements_per_squad, other.m_props->max_depth,
+                                              other.m_props->min_quad_size)),
+          m_root(m_props.get())
+    {
+        const auto partitions = other.collect_partitions();
+        for (const partition *p : partitions)
+            for (const T &element : *p)
+                insert_and_grow(element);
+    }
+    quad_tree(quad_tree &&other) : m_props(std::move(other.m_props)), m_root(std::move(other.m_root))
+    {
+    }
+
+    quad_tree &operator=(const quad_tree &other)
+    {
+        m_props = kit::make_scope<properties>(other.m_props->elements_per_squad, other.m_props->max_depth,
+                                              other.m_props->min_quad_size);
+
+        m_root = node(m_props.get());
+        const auto partitions = other.collect_partitions();
+        for (const partition *p : partitions)
+            for (const T &element : *p)
+                insert_and_grow(element);
+        return *this;
+    }
+    quad_tree &operator=(quad_tree &&other)
+    {
+        m_props = std::move(other.m_props);
+        m_root = std::move(other.m_root);
+        return *this;
     }
 
     template <RetCallable<geo::aabb2D, T> BoundGetter> bool insert(const T &element, BoundGetter getter)
@@ -60,7 +85,7 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
     std::vector<const partition *> collect_partitions() const
     {
         std::vector<const partition *> partitions;
-        partitions.reserve(m_props->m_nodes.size());
+        partitions.reserve(32);
         m_root.collect_partitions(partitions);
         return partitions;
     }
@@ -117,7 +142,7 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
 
         properties *props;
         partition elements;
-        std::array<std::size_t, 4> children = {SIZE_MAX, SIZE_MAX, SIZE_MAX, SIZE_MAX};
+        std::array<node *, 4> children = {nullptr, nullptr, nullptr, nullptr};
         geo::aabb2D aabb;
 
         std::uint32_t depth = 0;
@@ -134,32 +159,14 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
                 elements.push_back(element);
         }
 
-        std::array<const node *, 4> quads() const
-        {
-            KIT_ASSERT_ERROR(partitioned, "Node is not partitioned")
-            std::array<const node *, 4> cinstances = {&props->m_nodes[children[0]], &props->m_nodes[children[1]],
-                                                      &props->m_nodes[children[2]], &props->m_nodes[children[3]]};
-            return cinstances;
-        }
-        std::array<node *, 4> quads()
-        {
-            KIT_ASSERT_ERROR(partitioned, "Node is not partitioned")
-            std::array<node *, 4> cinstances = {&props->m_nodes[children[0]], &props->m_nodes[children[1]],
-                                                &props->m_nodes[children[2]], &props->m_nodes[children[3]]};
-            return cinstances;
-        }
-
         template <RetCallable<geo::aabb2D, T> BoundGetter> void subdivide(BoundGetter getter)
         {
             partitioned = true;
-            if (children[0] == SIZE_MAX)
+            if (!children[0])
                 for (std::size_t i = 0; i < 4; ++i)
-                {
-                    props->m_nodes[props->m_size].props = props;
-                    children[i] = props->m_size++;
-                }
-            const std::array<node *, 4> cinstances = quads();
-            for (node *c : cinstances)
+                    children[i] = props->m_allocator.create(props);
+
+            for (node *c : children)
             {
                 c->depth = depth + 1;
                 c->partitioned = false;
@@ -171,10 +178,10 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
 
             const glm::vec2 mid_point = 0.5f * (mm + mx);
 
-            cinstances[0]->aabb = geo::aabb2D(glm::vec2(mm.x, mid_point.y), glm::vec2(mid_point.x, mx.y));
-            cinstances[1]->aabb = geo::aabb2D(mid_point, mx);
-            cinstances[2]->aabb = geo::aabb2D(mm, mid_point);
-            cinstances[3]->aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
+            children[0]->aabb = geo::aabb2D(glm::vec2(mm.x, mid_point.y), glm::vec2(mid_point.x, mx.y));
+            children[1]->aabb = geo::aabb2D(mid_point, mx);
+            children[2]->aabb = geo::aabb2D(mm, mid_point);
+            children[3]->aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
             for (T &element : elements)
                 insert_into_children(element, getter);
             elements.clear();
@@ -183,14 +190,14 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
         template <RetCallable<geo::aabb2D, T> BoundGetter>
         void insert_into_children(const T &element, BoundGetter getter)
         {
-            for (std::size_t index : children)
-                if (geo::intersects(props->m_nodes[index].aabb, getter(element)))
-                    props->m_nodes[index].insert(element, getter);
+            for (node *child : children)
+                if (geo::intersects(child->aabb, getter(element)))
+                    child->insert(element, getter);
         }
 
         bool can_subdivide() const
         {
-            if (depth >= MaxDepth)
+            if (depth >= props->max_depth)
                 return false;
             const glm::vec2 dim = aabb.dimension();
             return dim.x * dim.y >= props->min_quad_size * props->min_quad_size;
@@ -199,8 +206,8 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
         void collect_partitions(std::vector<const partition *> &partitions) const
         {
             if (partitioned)
-                for (std::size_t index : children)
-                    props->m_nodes[index].collect_partitions(partitions);
+                for (node *child : children)
+                    child->collect_partitions(partitions);
             else
                 partitions.push_back(&elements);
         }
@@ -208,17 +215,17 @@ template <typename T, std::size_t MaxDepth = 5> class quad_tree
 
     struct properties
     {
-        properties(const std::size_t elements_per_quad, const float min_quad_size)
-            : elements_per_quad(elements_per_quad), min_quad_size(min_quad_size)
+        properties(const std::size_t elements_per_quad, const std::uint32_t max_depth, const float min_quad_size)
+            : elements_per_quad(elements_per_quad), max_depth(max_depth), min_quad_size(min_quad_size)
         {
         }
 
         std::size_t elements_per_quad;
+        std::uint32_t max_depth;
         float min_quad_size;
 
       private:
-        std::array<node, NODE_COUNT> m_nodes;
-        std::size_t m_size = 0;
+        block_allocator<node> m_allocator;
 
         properties(const properties &other) = default;
         properties(properties &&other) = default;
