@@ -13,6 +13,30 @@ template <typename T> class block_allocator
         : m_block_obj_count(block_obj_count), m_block_capacity(aligned_capacity(block_obj_count * object_size()))
     {
     }
+    block_allocator(block_allocator &&other)
+        : m_blocks(std::move(other.m_blocks)), m_block_obj_count(other.m_block_obj_count),
+          m_block_capacity(other.m_block_capacity), m_next_free_chunk(other.m_next_free_chunk)
+    {
+        other.m_next_free_chunk = nullptr;
+        other.m_blocks.clear();
+    }
+
+    block_allocator &operator=(block_allocator &&other)
+    {
+        if (this == &other)
+            return *this;
+        for (T *block : m_blocks)
+            std::free(block);
+        m_blocks = std::move(other.m_blocks);
+        m_block_obj_count = other.m_block_obj_count;
+        m_block_capacity = other.m_block_capacity;
+        m_next_free_chunk = other.m_next_free_chunk;
+        other.m_next_free_chunk = nullptr;
+        other.m_blocks.clear();
+
+        return *this;
+    }
+
     ~block_allocator()
     {
         for (T *block : m_blocks)
@@ -115,5 +139,8 @@ template <typename T> class block_allocator
             return capacity;
         return capacity + align - remainder;
     }
+
+    block_allocator(const block_allocator &) = delete;
+    block_allocator &operator=(const block_allocator &) = delete;
 };
 } // namespace kit
