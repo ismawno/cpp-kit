@@ -112,26 +112,6 @@ template <typename T> class quad_tree
         return *m_props;
     }
 
-    quad_tree(const quad_tree &other)
-    {
-        m_props = kit::make_scope<properties>(*other.m_props);
-    }
-    quad_tree(quad_tree &&other) noexcept
-    {
-        m_props = std::move(other.m_props);
-    }
-
-    quad_tree &operator=(const quad_tree &other)
-    {
-        m_props = kit::make_scope<properties>(*other.m_props);
-        return *this;
-    }
-    quad_tree &operator=(quad_tree &&other) noexcept
-    {
-        m_props = std::move(other.m_props);
-        return *this;
-    }
-
     struct node
     {
         node(properties *props = nullptr) : props(props)
