@@ -20,7 +20,7 @@ template <typename T> class quad_tree
     struct node;
     using partition = std::vector<T>;
 
-    quad_tree(const std::size_t elements_per_quad = 12, std::uint32_t max_depth = 12, const float min_quad_size = 14.f)
+    quad_tree(const std::size_t elements_per_quad = 12, std::uint32_t max_depth = 12, const float min_quad_size = 10.f)
         : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
     {
     }
@@ -188,7 +188,7 @@ template <typename T> class quad_tree
             if (partitioned)
                 for (node *child : children)
                     child->collect_partitions(partitions);
-            else
+            else if (!elements.empty())
                 partitions.push_back(&elements);
         }
     };
