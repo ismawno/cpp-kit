@@ -99,7 +99,11 @@ template <typename T> class block_allocator
     {
         constexpr std::size_t align = alignment();
         constexpr std::size_t size = object_size();
+#ifdef _MSC_VER
+        std::byte *data = (std::byte *)_aligned_malloc(m_block_capacity, align);
+#else
         std::byte *data = (std::byte *)std::aligned_alloc(align, m_block_capacity);
+#endif
         KIT_ASSERT_ERROR(data, "Failed to allocate memory for block");
 
         m_next_free_chunk = (chunk *)(data + size);
