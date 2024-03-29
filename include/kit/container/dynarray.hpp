@@ -11,6 +11,8 @@ namespace kit
 template <typename T, std::size_t Capacity> class dynarray
 {
   public:
+    static inline constexpr std::size_t CAPACITY = Capacity;
+
     using value_type = T;
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
