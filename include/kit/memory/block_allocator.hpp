@@ -40,7 +40,11 @@ template <typename T> class block_allocator
     ~block_allocator()
     {
         for (T *block : m_blocks)
+#ifdef _MSC_VER
+            _aligned_free(block);
+#else
             std::free(block);
+#endif
     }
 
     T *allocate()
