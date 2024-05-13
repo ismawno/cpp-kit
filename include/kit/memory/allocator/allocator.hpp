@@ -21,12 +21,12 @@ class allocator : non_copyable
         ptr->~T();
     }
 
-    template <typename T, class... Args> static void nconstruct(T *ptr, std::size_t count, Args &&...args)
+    template <typename T, class... Args> static void nconstruct(T *ptr, const std::size_t count, Args &&...args)
     {
         for (std::size_t i = 0; i < count; ++i)
             construct(ptr + i, std::forward<Args>(args)...);
     }
-    template <typename T> static void ndeconstruct(T *ptr, std::size_t count)
+    template <typename T> static void ndeconstruct(T *ptr, const std::size_t count)
     {
         for (std::size_t i = 0; i < count; ++i)
             deconstruct(ptr + i);

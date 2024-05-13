@@ -122,8 +122,5 @@ template <typename T> class block_allocator final : public discrete_allocator<T>
         constexpr std::size_t align = alignment();
         return aligned_size(capacity, align);
     }
-
-    block_allocator(const block_allocator &) = delete;
-    block_allocator &operator=(const block_allocator &) = delete;
 };
 } // namespace kit

@@ -18,8 +18,11 @@ template <typename T> class vanilla_allocator final : continuous_allocator<T>
 
     T *nallocate(const std::size_t count) override
     {
-        T *ptr = (T *)std::malloc(count * sizeof(T));
-        KIT_ASSERT_ERROR(ptr, "Failed to allocate {0} bytes", count * sizeof(T));
+        constexpr std::size_t align = alignof(T);
+        constexpr std::size_t size = aligned_size(count * sizeof(T), align);
+
+        T *ptr = (T *)platform_aware_aligned_alloc(size, align);
+        KIT_ASSERT_ERROR(ptr, "Failed to allocate {0} bytes", size);
         m_allocated.insert(ptr);
         return ptr;
     }
@@ -28,7 +31,7 @@ template <typename T> class vanilla_allocator final : continuous_allocator<T>
         KIT_ASSERT_ERROR(ptr, "Cannot deallocate a null pointer");
         KIT_ASSERT_ERROR(owns(ptr), "The pointer {0} does not belong to this allocator", (void *)ptr);
         m_allocated.erase(ptr);
-        std::free(ptr);
+        platform_aware_aligned_dealloc(ptr);
     }
 
     bool owns(const T *ptr) const override
