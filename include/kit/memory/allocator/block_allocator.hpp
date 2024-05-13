@@ -1,12 +1,11 @@
 #pragma once
 
-#include "kit/debug/log.hpp"
+#include "kit/memory/allocator/allocator.hpp"
 #include <vector>
-#include <cstdlib>
 
 namespace kit
 {
-template <typename T> class block_allocator
+template <typename T> class block_allocator final : public discrete_allocator<T>
 {
   public:
     block_allocator(const std::size_t block_obj_count = 256)
@@ -26,7 +25,7 @@ template <typename T> class block_allocator
         if (this == &other)
             return *this;
         for (T *block : m_blocks)
-            std::free(block);
+            platform_aware_aligned_dealloc(block);
         m_blocks = std::move(other.m_blocks);
         m_block_obj_count = other.m_block_obj_count;
         m_block_capacity = other.m_block_capacity;
@@ -40,35 +39,17 @@ template <typename T> class block_allocator
     ~block_allocator()
     {
         for (T *block : m_blocks)
-#ifdef _MSC_VER
-            _aligned_free(block);
-#else
-            std::free(block);
-#endif
+            platform_aware_aligned_dealloc(block);
     }
 
-    T *allocate()
+    T *allocate() override
     {
         if (m_next_free_chunk)
             return from_next_free_chunk();
         return from_first_chunk_of_new_block();
     }
 
-    template <class... Args> T *create(Args &&...args)
-    {
-        T *ptr = allocate();
-        new (ptr) T(std::forward<Args>(args)...);
-        return ptr;
-    }
-
-    void destroy(T *ptr)
-    {
-        KIT_ASSERT_ERROR(ptr, "Cannot destroy a null pointer");
-        ptr->~T();
-        deallocate(ptr);
-    }
-
-    void deallocate(T *ptr)
+    void deallocate(T *ptr) override
     {
         KIT_ASSERT_ERROR(ptr, "Cannot deallocate a null pointer");
         KIT_ASSERT_ERROR(owns(ptr), "The pointer {0} does not belong to this allocator", (void *)ptr);
@@ -78,7 +59,7 @@ template <typename T> class block_allocator
         m_next_free_chunk = current;
     }
 
-    bool owns(const T *ptr) const
+    bool owns(const T *ptr) const override
     {
         for (T *block : m_blocks)
             if (ptr >= block && ptr < block + m_block_obj_count)
@@ -103,11 +84,8 @@ template <typename T> class block_allocator
     {
         constexpr std::size_t align = alignment();
         constexpr std::size_t size = object_size();
-#ifdef _MSC_VER
-        std::byte *data = (std::byte *)_aligned_malloc(m_block_capacity, align);
-#else
-        std::byte *data = (std::byte *)std::aligned_alloc(align, m_block_capacity);
-#endif
+        std::byte *data = (std::byte *)platform_aware_aligned_alloc(m_block_capacity, align);
+
         KIT_ASSERT_ERROR(data, "Failed to allocate memory for block");
 
         m_next_free_chunk = (chunk *)(data + size);
@@ -142,10 +120,7 @@ template <typename T> class block_allocator
     static inline constexpr std::size_t aligned_capacity(const std::size_t capacity)
     {
         constexpr std::size_t align = alignment();
-        const std::size_t remainder = capacity % align;
-        if (remainder == 0)
-            return capacity;
-        return capacity + align - remainder;
+        return aligned_size(capacity, align);
     }
 
     block_allocator(const block_allocator &) = delete;
