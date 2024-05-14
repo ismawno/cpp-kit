@@ -7,7 +7,7 @@
 
 namespace kit
 {
-template <typename T> class vanilla_allocator final : continuous_allocator<T>
+template <typename T> class vanilla_allocator final : public continuous_allocator<T>
 {
   public:
     ~vanilla_allocator()
@@ -19,7 +19,7 @@ template <typename T> class vanilla_allocator final : continuous_allocator<T>
     T *nallocate(const std::size_t count) override
     {
         constexpr std::size_t align = alignof(T);
-        const std::size_t size = aligned_size(count * sizeof(T), align);
+        const std::size_t size = continuous_allocator<T>::aligned_size(count * sizeof(T), align);
 
         T *ptr = (T *)continuous_allocator<T>::platform_aware_aligned_alloc(size, align);
         m_allocated.insert(ptr);
