@@ -8,7 +8,7 @@ namespace kit
 template <typename T> class block_allocator final : public discrete_allocator<T>
 {
   public:
-    block_allocator(const std::size_t block_obj_count = 256)
+    block_allocator(const std::size_t block_obj_count = 1024)
         : m_block_obj_count(block_obj_count), m_block_capacity(aligned_capacity(block_obj_count * object_size()))
     {
     }
