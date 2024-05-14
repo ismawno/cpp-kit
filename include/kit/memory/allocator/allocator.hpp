@@ -36,10 +36,12 @@ class allocator : non_copyable
     static void *platform_aware_aligned_alloc(const std::size_t size, const std::size_t align)
     {
 #ifdef _MSC_VER
-        return _aligned_malloc(size, align);
+        void *ptr = _aligned_malloc(size, align);
 #else
-        return std::aligned_alloc(align, size);
+        void *ptr = std::aligned_alloc(align, size);
 #endif
+        KIT_ASSERT_ERROR(ptr, "Failed to allocate {0} bytes", size);
+        return ptr;
     }
 
     static void platform_aware_aligned_dealloc(void *ptr)

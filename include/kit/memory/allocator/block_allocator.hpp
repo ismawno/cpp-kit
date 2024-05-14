@@ -86,8 +86,6 @@ template <typename T> class block_allocator final : public discrete_allocator<T>
         constexpr std::size_t size = object_size();
         std::byte *data = (std::byte *)platform_aware_aligned_alloc(m_block_capacity, align);
 
-        KIT_ASSERT_ERROR(data, "Failed to allocate memory for block");
-
         m_next_free_chunk = (chunk *)(data + size);
         for (std::size_t i = 0; i < m_block_obj_count - 1; i++)
         {

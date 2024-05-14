@@ -19,10 +19,9 @@ template <typename T> class vanilla_allocator final : continuous_allocator<T>
     T *nallocate(const std::size_t count) override
     {
         constexpr std::size_t align = alignof(T);
-        constexpr std::size_t size = aligned_size(count * sizeof(T), align);
+        const std::size_t size = aligned_size(count * sizeof(T), align);
 
         T *ptr = (T *)platform_aware_aligned_alloc(size, align);
-        KIT_ASSERT_ERROR(ptr, "Failed to allocate {0} bytes", size);
         m_allocated.insert(ptr);
         return ptr;
     }
