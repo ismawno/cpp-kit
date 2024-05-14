@@ -1,8 +1,8 @@
 #pragma once
 
 #include "geo/algorithm/intersection2D.hpp"
-#include "kit/memory/scope.hpp"
-#include "kit/memory/block_allocator.hpp"
+#include "kit/memory/ptr/scope.hpp"
+#include "kit/memory/allocator/block_allocator.hpp"
 #include "kit/utility/type_constraints.hpp"
 #include "kit/debug/log.hpp"
 
@@ -13,7 +13,7 @@
 
 namespace kit
 {
-template <typename T> class quad_tree
+template <typename T, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:
     struct properties;
@@ -205,7 +205,7 @@ template <typename T> class quad_tree
         float min_quad_size;
 
       private:
-        block_allocator<node> m_allocator;
+        Allocator<node> m_allocator;
 
         properties(const properties &other) = default;
         properties(properties &&other) = default;
