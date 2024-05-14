@@ -35,10 +35,10 @@ template <typename T> class vanilla_allocator final : public continuous_allocato
 
     bool owns(const T *ptr) const override
     {
-        return m_allocated.contains(ptr);
+        return m_allocated.contains(const_cast<T *>(ptr));
     }
 
   private:
-    std::unordered_set<const T *> m_allocated;
+    std::unordered_set<T *> m_allocated;
 };
 } // namespace kit
