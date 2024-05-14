@@ -95,13 +95,13 @@ template <typename T> class continuous_allocator : public discrete_allocator<T>
     template <class... Args> T *ncreate(const std::size_t count, Args &&...args)
     {
         T *ptr = nallocate(count);
-        nconstruct(ptr, count, std::forward<Args>(args)...);
+        discrete_allocator<T>::nconstruct(ptr, count, std::forward<Args>(args)...);
         return ptr;
     }
     void ndestroy(T *ptr, const std::size_t count)
     {
-        ndeconstruct(ptr, count);
-        deallocate(ptr);
+        discrete_allocator<T>::ndeconstruct(ptr, count);
+        discrete_allocator<T>::deallocate(ptr);
     }
 };
 

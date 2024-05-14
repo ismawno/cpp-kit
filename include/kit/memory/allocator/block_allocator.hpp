@@ -25,7 +25,7 @@ template <typename T> class block_allocator final : public discrete_allocator<T>
         if (this == &other)
             return *this;
         for (T *block : m_blocks)
-            platform_aware_aligned_dealloc(block);
+            discrete_allocator<T>::platform_aware_aligned_dealloc(block);
         m_blocks = std::move(other.m_blocks);
         m_block_obj_count = other.m_block_obj_count;
         m_block_capacity = other.m_block_capacity;
@@ -39,7 +39,7 @@ template <typename T> class block_allocator final : public discrete_allocator<T>
     ~block_allocator()
     {
         for (T *block : m_blocks)
-            platform_aware_aligned_dealloc(block);
+            discrete_allocator<T>::platform_aware_aligned_dealloc(block);
     }
 
     T *allocate() override
@@ -84,7 +84,7 @@ template <typename T> class block_allocator final : public discrete_allocator<T>
     {
         constexpr std::size_t align = alignment();
         constexpr std::size_t size = object_size();
-        std::byte *data = (std::byte *)platform_aware_aligned_alloc(m_block_capacity, align);
+        std::byte *data = (std::byte *)discrete_allocator<T>::platform_aware_aligned_alloc(m_block_capacity, align);
 
         m_next_free_chunk = (chunk *)(data + size);
         for (std::size_t i = 0; i < m_block_obj_count - 1; i++)
@@ -118,7 +118,7 @@ template <typename T> class block_allocator final : public discrete_allocator<T>
     static inline constexpr std::size_t aligned_capacity(const std::size_t capacity)
     {
         constexpr std::size_t align = alignment();
-        return aligned_size(capacity, align);
+        return discrete_allocator<T>::aligned_size(capacity, align);
     }
 };
 } // namespace kit

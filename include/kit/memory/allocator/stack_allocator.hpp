@@ -99,8 +99,8 @@ template <typename T> class stack_allocator<T, SIZE_MAX> final : public continuo
     T *first_element_of_new_stack(const std::size_t count)
     {
         constexpr std::size_t align = alignof(T);
-        const std::size_t size = aligned_size(count * sizeof(T), align);
-        T *ptr = (T *)platform_aware_aligned_alloc(size, align);
+        const std::size_t size = continuous_allocator<T>::aligned_size(count * sizeof(T), align);
+        T *ptr = (T *)continuous_allocator<T>::platform_aware_aligned_alloc(size, align);
 
         m_current_stack = m_stacks.size();
         m_stacks.push_back(ptr);
