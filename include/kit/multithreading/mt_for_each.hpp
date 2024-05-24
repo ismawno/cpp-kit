@@ -8,7 +8,7 @@
 
 namespace kit::mt
 {
-template <RandomAccessContainer C, typename F> void for_each(const std::size_t thread_count, C &container, F fun)
+template <std::size_t ThreadCount, RandomAccessContainer C, typename F> void for_each(C &container, F fun)
 {
     using It = decltype(std::declval<C>().begin());
 
@@ -17,7 +17,7 @@ template <RandomAccessContainer C, typename F> void for_each(const std::size_t t
             fun(thread_idx, *it);
     };
 
-    static thread_pool<decltype(worker), It, It, F, std::size_t> pool{thread_count};
+    static thread_pool<decltype(worker), It, It, F, std::size_t> pool{ThreadCount};
 
     const std::size_t size = container.size();
     for (std::size_t i = 0; i < pool.size(); i++)
