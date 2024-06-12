@@ -8,7 +8,14 @@
 
 namespace kit::mt
 {
-template <std::size_t ThreadCount, RandomAccessContainer C, typename F> void for_each(C &container, F fun)
+template <typename T>
+concept ValidContainer = RandomAccessContainer<T> && requires(T a) {
+    {
+        a.size()
+    } -> std::convertible_to<std::size_t>;
+};
+
+template <std::size_t ThreadCount, ValidContainer C, typename F> void for_each(C &container, F fun)
 {
     using It = decltype(std::declval<C>().begin());
 

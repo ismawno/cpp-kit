@@ -6,7 +6,7 @@
 
 namespace kit
 {
-template <typename T, std::size_t Capacity = 0> class stack_allocator final : public continuous_allocator<T>
+template <typename T = void, std::size_t Capacity = 0> class stack_allocator final : public continuous_allocator<T>
 {
   public:
     T *nallocate(const std::size_t count) override
@@ -74,8 +74,8 @@ template <typename T> class stack_allocator<T, 0> final : public continuous_allo
                          m_stack_obj_count);
 
         if (m_stacks.empty() || count > m_stack_obj_count - m_current_stack_count)
-            return first_element_of_new_stack(count);
-        return next_free_element_of_current_stack(count);
+            return this->first_element_of_new_stack(count);
+        return this->next_free_element_of_current_stack(count);
     }
     void deallocate(T *ptr) override
     {
@@ -240,8 +240,8 @@ template <> class stack_allocator<void, 0> final : public allocator
                          m_stack_capacity);
 
         if (m_stacks.empty() || size > m_stack_capacity - m_current_stack_size)
-            return first_element_of_new_stack(count);
-        return next_free_element_of_current_stack(count);
+            return this->first_element_of_new_stack<T>(count);
+        return this->next_free_element_of_current_stack<T>(count);
     }
 
     template <typename T, class... Args> T *create(Args &&...args)

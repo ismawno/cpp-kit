@@ -101,7 +101,7 @@ template <typename T> class continuous_allocator : public discrete_allocator<T>
     void ndestroy(T *ptr, const std::size_t count)
     {
         discrete_allocator<T>::ndeconstruct(ptr, count);
-        discrete_allocator<T>::deallocate(ptr);
+        this->deallocate(ptr);
     }
 };
 
