@@ -113,6 +113,15 @@ template <typename T, std::size_t Capacity> class dynarray
         return Capacity;
     }
 
+    const_pointer data() const
+    {
+        return m_data.data();
+    }
+    pointer data()
+    {
+        return m_data.data();
+    }
+
     reference front()
     {
         KIT_ASSERT_ERROR(m_size > 0, "Data size must be greater than zero");

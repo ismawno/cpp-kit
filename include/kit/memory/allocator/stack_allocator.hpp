@@ -28,13 +28,14 @@ template <typename T = void, std::size_t Capacity = 0> class stack_allocator fin
         KIT_ASSERT_ERROR(ptr, "Cannot deallocate a null pointer");
         KIT_ASSERT_ERROR(owns(ptr), "The pointer {0} does not belong to this allocator", (void *)ptr);
         KIT_ASSERT_ERROR(can_deallocate(ptr), "A stack allocator can only deallocate the last allocated object");
-        m_memory.resize(m_memory.size() - m_entries.back());
+        m_memory.resize(m_memory.size() - m_entries.back().size);
         m_entries.pop_back();
     }
 
     bool owns(const T *ptr) const override
     {
-        return ptr >= m_memory.data() && ptr < m_memory.data() + m_memory.size();
+        const std::byte *byte_ptr = (const std::byte *)ptr;
+        return byte_ptr >= m_memory.data() && byte_ptr < m_memory.data() + m_memory.size();
     }
     bool can_deallocate(const T *ptr) const
     {
@@ -55,7 +56,7 @@ template <typename T = void, std::size_t Capacity = 0> class stack_allocator fin
         T *ptr;
         std::size_t size;
     };
-    dynarray<std::byte, Capacity> m_memory;
+    dynarray<std::byte, Capacity * sizeof(T)> m_memory;
     dynarray<entry, Capacity> m_entries;
 };
 
@@ -153,9 +154,9 @@ template <std::size_t Capacity> class stack_allocator<void, Capacity> final : pu
     {
         KIT_ASSERT_ERROR(count > 0, "Cannot allocate zero elements");
         const std::size_t size = count * sizeof(T);
-        KIT_ASSERT_ERROR(Capacity * sizeof(T) - m_memory.size() >= size,
+        KIT_ASSERT_ERROR(Capacity - m_memory.size() >= size,
                          "Out of memory! Requested {0} bytes, but only {1} bytes are available", size,
-                         Capacity * sizeof(T) - m_memory.size());
+                         Capacity - m_memory.size());
 
         std::byte *ptr = (std::byte *)(m_memory.data() + m_memory.size());
         m_memory.resize(m_memory.size() + size);
