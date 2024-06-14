@@ -1,5 +1,4 @@
 #pragma once
-#ifdef KIT_USE_YAML_CPP
 
 #include "kit/serialization/yaml/codec.hpp"
 #include "kit/debug/log.hpp"
@@ -64,4 +63,3 @@ class deserializable : public decodeable
 #endif
 };
 } // namespace kit::yaml
-#endif
