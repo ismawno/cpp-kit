@@ -64,7 +64,11 @@ const measurement::metrics &node::compute_metrics(const std::size_t index) const
 
     result.elapsed = ms.elapsed;
     if (!has_parent())
+    {
+        result.relative_percent = 1.f;
+        result.total_percent = 1.f;
         return result;
+    }
 
     const node par = parent();
     const measurement::metrics &par_metrics = par.compute_metrics(ms.parent_index);
@@ -87,6 +91,8 @@ measurement::metrics node::average_metrics() const
     }
 
     result.elapsed /= sz;
+    result.relative_percent /= sz;
+    result.total_percent /= sz;
     return result;
 }
 
