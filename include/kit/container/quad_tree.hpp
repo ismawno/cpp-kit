@@ -5,6 +5,7 @@
 #include "kit/memory/allocator/block_allocator.hpp"
 #include "kit/utility/type_constraints.hpp"
 #include "kit/debug/log.hpp"
+#include "kit/profiling/perf.hpp"
 
 #include <glm/vec2.hpp>
 #include <vector>
@@ -60,6 +61,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
 
     template <RetCallable<geo::aabb2D, T> BoundGetter> bool insert(const T &element, BoundGetter getter)
     {
+        KIT_PERF_FUNCTION()
         const geo::aabb2D &bounds = getter(element);
         if (!geo::intersects(m_root.aabb, bounds))
             return false;
@@ -68,6 +70,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
     }
     template <RetCallable<geo::aabb2D, T> BoundGetter> void insert_and_grow(const T &element, BoundGetter getter)
     {
+        KIT_PERF_FUNCTION()
         const geo::aabb2D &bounds = getter(element);
         m_root.aabb += bounds;
         m_root.insert(element, getter);
@@ -84,6 +87,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
 
     std::vector<const partition *> collect_partitions() const
     {
+        KIT_PERF_FUNCTION()
         std::vector<const partition *> partitions;
         partitions.reserve(32);
         m_root.collect_partitions(partitions);
