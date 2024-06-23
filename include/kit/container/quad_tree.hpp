@@ -12,14 +12,27 @@
 #include <array>
 #include <stack>
 
+#define KIT_QT_COLLECT_ELEMENTS_COPY
+
 namespace kit
 {
 template <typename T, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:
+    struct partition
+    {
+#ifdef KIT_QT_COLLECT_ELEMENTS_COPY
+        using to_compare_t = std::vector<T>;
+#else
+        using to_compare_t = std::vector<const std::vector<T> *>;
+#endif
+
+        const std::vector<T> *elements;
+        to_compare_t to_compare;
+    };
+
     struct properties;
     struct node;
-    using partition = std::vector<T>;
 
     quad_tree(const std::size_t elements_per_quad = 12, std::uint32_t max_depth = 12, const float min_quad_size = 10.f)
         : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
@@ -31,10 +44,14 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                                               other.m_props->min_quad_size)),
           m_root(m_props.get())
     {
-        const auto partitions = other.collect_partitions();
-        for (const partition *p : partitions)
-            for (const T &element : *p)
-                insert_and_grow(element);
+        const auto elements = other.collect_elements();
+        for (const auto &elem : elements)
+#ifdef KIT_QT_COLLECT_ELEMENTS_COPY
+            insert_and_grow(elem);
+#else
+            for (const auto &e : *elem)
+                insert_and_grow(e);
+#endif
     }
     quad_tree(quad_tree &&other) : m_props(std::move(other.m_props)), m_root(std::move(other.m_root))
     {
@@ -46,10 +63,14 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                                               other.m_props->min_quad_size);
 
         m_root = node(m_props.get());
-        const auto partitions = other.collect_partitions();
-        for (const partition *p : partitions)
-            for (const T &element : *p)
-                insert_and_grow(element);
+        const auto elements = other.collect_elements();
+        for (const auto &elem : elements)
+#ifdef KIT_QT_COLLECT_ELEMENTS_COPY
+            insert_and_grow(elem);
+#else
+            for (const auto &e : *elem)
+                insert_and_grow(e);
+#endif
         return *this;
     }
     quad_tree &operator=(quad_tree &&other)
@@ -85,13 +106,21 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         return m_root.elements.empty() && !m_root.partitioned;
     }
 
-    std::vector<const partition *> collect_partitions() const
+    std::vector<partition> collect_partitions() const
     {
         KIT_PERF_FUNCTION()
-        std::vector<const partition *> partitions;
+        std::vector<partition> partitions;
         partitions.reserve(32);
         m_root.collect_partitions(partitions);
         return partitions;
+    }
+    std::vector<T> collect_elements() const
+    {
+        KIT_PERF_FUNCTION()
+        std::vector<T> elements;
+        elements.reserve(32);
+        m_root.collect_elements(elements);
+        return elements;
     }
 
     const geo::aabb2D &bounds() const
@@ -125,7 +154,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         }
 
         properties *props;
-        partition elements;
+        std::vector<T> elements;
         std::array<node *, 4> children = {nullptr, nullptr, nullptr, nullptr};
         geo::aabb2D aabb;
 
@@ -135,11 +164,9 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         template <RetCallable<geo::aabb2D, T> BoundGetter> void insert(const T &element, BoundGetter getter)
         {
             KIT_ASSERT_ERROR(geo::intersects(aabb, getter(element)), "Element is not within the bounds of the quad")
-            if (elements.size() >= props->elements_per_quad && can_subdivide())
+            if (!partitioned && elements.size() >= props->elements_per_quad && can_subdivide())
                 subdivide(getter);
-            if (partitioned)
-                insert_into_children(element, getter);
-            else
+            if (!partitioned || !try_insert_into_children(element, getter))
                 elements.push_back(element);
         }
 
@@ -166,17 +193,32 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             children[1]->aabb = geo::aabb2D(mid_point, mx);
             children[2]->aabb = geo::aabb2D(mm, mid_point);
             children[3]->aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
-            for (T &element : elements)
-                insert_into_children(element, getter);
-            elements.clear();
+            for (auto it = elements.begin(); it != elements.end();)
+                if (try_insert_into_children(*it, getter))
+                    it = elements.erase(it);
+                else
+                    ++it;
         }
 
         template <RetCallable<geo::aabb2D, T> BoundGetter>
-        void insert_into_children(const T &element, BoundGetter getter)
+        bool try_insert_into_children(const T &element, BoundGetter getter)
         {
+            node *chosen = nullptr;
+            bool multiple = false;
             for (node *child : children)
                 if (geo::intersects(child->aabb, getter(element)))
-                    child->insert(element, getter);
+                {
+                    if (chosen)
+                    {
+                        multiple = true;
+                        break;
+                    }
+                    chosen = child;
+                }
+            if (multiple)
+                return false;
+            chosen->insert(element, getter);
+            return true;
         }
 
         bool can_subdivide() const
@@ -187,13 +229,37 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             return dim.x * dim.y >= props->min_quad_size * props->min_quad_size;
         }
 
-        void collect_partitions(std::vector<const partition *> &partitions) const
+        void collect_partitions(std::vector<partition> &partitions) const
         {
+            std::size_t current_partition;
+            if (!elements.empty())
+            {
+                current_partition = partitions.size();
+                partition &p = partitions.emplace_back();
+                p.elements = &elements;
+                p.to_compare.reserve(8);
+            }
+
             if (partitioned)
                 for (node *child : children)
+                {
+                    if (!elements.empty())
+                        child->collect_elements(partitions[current_partition].to_compare);
                     child->collect_partitions(partitions);
-            else if (!elements.empty())
-                partitions.push_back(&elements);
+                }
+        }
+
+        void collect_elements(partition::to_compare_t &to_insert) const
+        {
+#ifdef KIT_QT_COLLECT_ELEMENTS_COPY
+            to_insert.insert(to_insert.end(), elements.begin(), elements.end());
+#else
+            if (!elements.empty())
+                to_insert.push_back(&elements);
+#endif
+            if (partitioned)
+                for (node *child : children)
+                    child->collect_elements(to_insert);
         }
     };
 
