@@ -16,7 +16,14 @@
 
 namespace kit
 {
-template <typename T, template <typename> class Allocator = block_allocator> class quad_tree
+template <typename T>
+concept QuadTreeElement = requires(T t) {
+    {
+        t()
+    } -> std::convertible_to<geo::aabb2D>;
+};
+
+template <QuadTreeElement T, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:
     struct partition
@@ -80,21 +87,21 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         return *this;
     }
 
-    template <RetCallable<geo::aabb2D, T> BoundGetter> bool insert(const T &element, BoundGetter getter)
+    bool insert(const T &element)
     {
         KIT_PERF_FUNCTION()
-        const geo::aabb2D &bounds = getter(element);
+        const geo::aabb2D &bounds = element();
         if (!geo::intersects(m_root.aabb, bounds))
             return false;
-        m_root.insert(element, getter);
+        m_root.insert(element);
         return true;
     }
-    template <RetCallable<geo::aabb2D, T> BoundGetter> void insert_and_grow(const T &element, BoundGetter getter)
+    void insert_and_grow(const T &element)
     {
         KIT_PERF_FUNCTION()
-        const geo::aabb2D &bounds = getter(element);
+        const geo::aabb2D &bounds = element();
         m_root.aabb += bounds;
-        m_root.insert(element, getter);
+        m_root.insert(element);
     }
     void clear()
     {
@@ -161,16 +168,16 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         std::uint32_t depth = 0;
         bool partitioned = false;
 
-        template <RetCallable<geo::aabb2D, T> BoundGetter> void insert(const T &element, BoundGetter getter)
+        void insert(const T &element)
         {
-            KIT_ASSERT_ERROR(geo::intersects(aabb, getter(element)), "Element is not within the bounds of the quad")
+            KIT_ASSERT_ERROR(geo::intersects(aabb, element()), "Element is not within the bounds of the quad")
             if (!partitioned && elements.size() >= props->elements_per_quad && can_subdivide())
-                subdivide(getter);
-            if (!partitioned || !try_insert_into_children(element, getter))
+                subdivide();
+            if (!partitioned || !try_insert_into_children(element))
                 elements.push_back(element);
         }
 
-        template <RetCallable<geo::aabb2D, T> BoundGetter> void subdivide(BoundGetter getter)
+        void subdivide()
         {
             partitioned = true;
             if (!children[0])
@@ -194,19 +201,18 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             children[2]->aabb = geo::aabb2D(mm, mid_point);
             children[3]->aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
             for (auto it = elements.begin(); it != elements.end();)
-                if (try_insert_into_children(*it, getter))
+                if (try_insert_into_children(*it))
                     it = elements.erase(it);
                 else
                     ++it;
         }
 
-        template <RetCallable<geo::aabb2D, T> BoundGetter>
-        bool try_insert_into_children(const T &element, BoundGetter getter)
+        bool try_insert_into_children(const T &element)
         {
             node *chosen = nullptr;
             bool multiple = false;
             for (node *child : children)
-                if (geo::intersects(child->aabb, getter(element)))
+                if (geo::intersects(child->aabb, element()))
                 {
                     if (chosen)
                     {
@@ -217,7 +223,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 }
             if (multiple)
                 return false;
-            chosen->insert(element, getter);
+            chosen->insert(element);
             return true;
         }
 
