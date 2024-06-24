@@ -10,7 +10,7 @@ template <typename... Args> class callback : public identifiable<>
 {
   public:
     using fun = std::function<void(Args...)>;
-    callback(const fun &fn = nullptr) : m_fun(fn)
+    callback(const fun &fn = nullptr) : identifiable(kit::uuid::random()), m_fun(fn)
     {
     }
 
