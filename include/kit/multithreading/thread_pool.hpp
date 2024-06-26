@@ -2,122 +2,49 @@
 
 #include "kit/debug/log.hpp"
 #include "kit/utility/type_constraints.hpp"
-#include <array>
 #include <thread>
 #include <mutex>
 #include <functional>
 #include <queue>
 #include <condition_variable>
-#include <tuple>
-#include <unordered_map>
+#include <future>
+#include <type_traits>
 
 namespace kit::mt
 {
-template <typename F, class... Args>
-    requires Callable<F, Args...>
-class task
-{
-  public:
-    task(F fn, Args... args) : m_fun(fn), m_args(std::forward<Args>(args)...)
-    {
-    }
-
-    void operator()() const
-    {
-        KIT_ASSERT_ERROR(m_fun, "The task must not be null")
-        (*this)(std::make_integer_sequence<int, sizeof...(Args)>{});
-    }
-
-  private:
-    F m_fun;
-    std::tuple<Args...> m_args;
-
-    template <int... Seq> void operator()(std::integer_sequence<int, Seq...> seq) const
-    {
-        m_fun(std::get<Seq>(m_args)...);
-    }
-};
-template <typename F, class... Args>
-    requires Callable<F, Args...>
 class thread_pool
 {
   public:
-    thread_pool(const std::size_t pool_size)
+    thread_pool(std::size_t thread_count);
+    ~thread_pool();
+
+    template <typename F, class... Args>
+    auto submit(F fun, Args &&...args) -> std::future<std::invoke_result_t<F, Args...>>
     {
-        const auto worker = [this]() {
-            for (;;)
-            {
-                std::unique_lock<std::mutex> lock{m_mutex};
+        using return_t = std::invoke_result_t<F, Args...>;
+        std::packaged_task<return_t()> task{std::bind(fun, std::forward<Args>(args)...)};
+        std::future<return_t> future = task.get_future();
 
-                m_check_task.wait(lock, [this]() { return !m_tasks.empty() || m_termination_signal; });
-                if (m_tasks.empty())
-                    break;
-
-                const task<F, Args...> tsk = m_tasks.front();
-                m_tasks.pop();
-
-                lock.unlock();
-                tsk();
-                lock.lock();
-
-                if (--m_pending_tasks == 0)
-                    m_check_idle.notify_one();
-            }
-        };
-        for (std::size_t i = 0; i < pool_size; i++)
-            m_threads.emplace_back(worker);
-    }
-
-    ~thread_pool()
-    {
-        await_pending();
         {
             std::scoped_lock<std::mutex> lock{m_mutex};
-            m_termination_signal = true;
-            m_check_task.notify_all();
+            m_pending_tasks++;
+            m_tasks.emplace(std::move(task));
         }
-        for (std::thread &th : m_threads)
-        {
-            if (th.joinable())
-                th.join();
-        }
+        m_check_task.notify_one(); // move this into/out of the lock?
+        return future;
     }
 
-    void submit(F fn, Args... args)
-    {
-        std::scoped_lock<std::mutex> lock{m_mutex};
-        m_pending_tasks++;
-        m_tasks.emplace(fn, std::forward<Args>(args)...);
-        m_check_task.notify_one();
-    }
-
-    std::size_t size() const
-    {
-        return m_threads.size();
-    }
-    std::size_t unattended_tasks() const
-    {
-        return m_tasks.size();
-    }
-    std::size_t pending_tasks() const
-    {
-        return m_pending_tasks;
-    }
-    bool idle() const
-    {
-        return m_pending_tasks == 0;
-    }
-    void await_pending()
-    {
-        std::unique_lock<std::mutex> lock{m_mutex};
-        m_check_idle.wait(lock, [this]() { return m_pending_tasks == 0; });
-    }
+    std::size_t thread_count() const;
+    std::size_t unattended_tasks() const;
+    std::size_t pending_tasks() const;
+    bool idle() const;
+    void await_pending();
 
   private:
     std::vector<std::thread> m_threads;
     std::size_t m_pending_tasks = 0;
 
-    std::queue<task<F, Args...>> m_tasks;
+    std::queue<std::packaged_task<void()>> m_tasks;
     std::mutex m_mutex;
 
     std::condition_variable m_check_task;
@@ -128,5 +55,4 @@ class thread_pool
     thread_pool &operator=(const thread_pool &) = delete;
 };
 
-template <class... Args> using dyn_thread_pool = thread_pool<std::function<void(Args...)>, Args...>;
 } // namespace kit::mt

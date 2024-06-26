@@ -15,48 +15,43 @@ concept ValidContainer = RandomAccessContainer<T> && requires(T a) {
     } -> std::convertible_to<std::size_t>;
 };
 
-template <std::size_t ThreadCount, ValidContainer C, typename F> struct type_helper
+template <typename C, typename F, class... Args> struct type_helper
 {
     using iterator_t = decltype(std::declval<C>().begin());
-    static inline const auto worker = [](iterator_t it1, iterator_t it2, F fun, const std::size_t submission_index) {
+    static inline const auto worker = [](iterator_t it1, iterator_t it2, F fun, const std::size_t workload_index,
+                                         Args &&...args) {
         for (auto it = it1; it != it2; ++it)
-            fun(submission_index, *it);
+            fun(workload_index, *it, std::forward<Args>(args)...);
     };
-
-    using worker_t = decltype(worker);
-    static inline thread_pool<worker_t, iterator_t, iterator_t, F, std::size_t> pool{ThreadCount};
 };
 
-// consider having thread count as runtime parameter
-template <std::size_t ThreadCount, ValidContainer C, typename F>
-void for_each(C &container, F fun, const std::size_t submissions = ThreadCount)
+template <ValidContainer C, typename F, class... Args>
+void for_each(thread_pool &pool, C &container, F fun, const std::size_t workloads, Args &&...args)
 {
-    KIT_ASSERT_ERROR(submissions != 0, "Submission count must be greater than 0")
-    KIT_ASSERT_WARN(submissions > 1, "Parallel for each purpose is defeated with only a single submission")
+    KIT_ASSERT_ERROR(workloads != 0, "Workload count must be greater than 0")
+    KIT_ASSERT_WARN(workloads > 1, "Parallel for each purpose is defeated with only a single workload")
 
-    auto &pool = type_helper<ThreadCount, C, F>::pool;
     const std::size_t size = container.size();
-
-    for (std::size_t i = 0; i < submissions; i++)
+    for (std::size_t i = 0; i < workloads; i++)
     {
-        const std::size_t start = i * size / submissions;
-        const std::size_t end = (i + 1) * size / submissions;
+        const std::size_t start = i * size / workloads;
+        const std::size_t end = (i + 1) * size / workloads;
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
         if (end > start)
-            pool.submit(type_helper<ThreadCount, C, F>::worker, container.begin() + start, container.begin() + end, fun,
-                        i);
+            pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end, fun, i,
+                        std::forward<Args>(args)...);
     }
     pool.await_pending();
 }
 
-template <std::size_t ThreadCount, ValidContainer C, typename F>
-void for_each(C &container, F fun, const std::vector<std::size_t> &splits)
+template <ValidContainer C, typename F, class... Args>
+void for_each(thread_pool &pool, C &container, F fun, const std::vector<std::size_t> &splits, Args &&...args)
 {
-    KIT_ASSERT_ERROR(splits.size() > 0, "Splits size must be greater than 0")
-    auto &pool = type_helper<ThreadCount, C, F>::pool;
-    const std::size_t size = container.size();
+    KIT_ASSERT_ERROR(splits.size() != 0, "Workload count must be greater than 0")
+    KIT_ASSERT_WARN(splits.size() > 1, "Parallel for each purpose is defeated with only a single workload")
 
+    const std::size_t size = container.size();
     for (std::size_t i = 0; i < splits.size(); i++)
     {
         const std::size_t start = i == 0 ? 0 : splits[i - 1];
@@ -64,10 +59,58 @@ void for_each(C &container, F fun, const std::vector<std::size_t> &splits)
         KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                          size)
         if (end > start)
-            pool.submit(type_helper<ThreadCount, C, F>::worker, container.begin() + start, container.begin() + end, fun,
-                        i);
+            pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end, fun, i,
+                        std::forward<Args>(args)...);
     }
     pool.await_pending();
+}
+
+template <ValidContainer C, typename F, class... Args>
+void for_each_async(C &container, F fun, const std::size_t workloads, Args &&...args)
+{
+    KIT_ASSERT_ERROR(workloads != 0, "Workload count must be greater than 0")
+    KIT_ASSERT_WARN(workloads > 1, "Parallel for each purpose is defeated with only a single workload")
+
+    const std::size_t size = container.size();
+    std::vector<std::future<void>> futures;
+    for (std::size_t i = 0; i < workloads; i++)
+    {
+        const std::size_t start = i * size / workloads;
+        const std::size_t end = (i + 1) * size / workloads;
+        KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
+                         size)
+        if (end > start)
+            futures.emplace_back(std::async(std::launch::async, type_helper<C, F, Args...>::worker,
+                                            container.begin() + start, container.begin() + end, fun, i,
+                                            std::forward<Args>(args)...));
+    }
+
+    for (auto &future : futures)
+        future.get();
+}
+
+template <ValidContainer C, typename F, class... Args>
+void for_each_async(C &container, F fun, const std::vector<std::size_t> &splits, Args &&...args)
+{
+    KIT_ASSERT_ERROR(splits.size() != 0, "Workload count must be greater than 0")
+    KIT_ASSERT_WARN(splits.size() > 1, "Parallel for each purpose is defeated with only a single workload")
+
+    const std::size_t size = container.size();
+    std::vector<std::future<void>> futures;
+    for (std::size_t i = 0; i < splits.size(); i++)
+    {
+        const std::size_t start = i == 0 ? 0 : splits[i - 1];
+        const std::size_t end = i == (splits.size() - 1) ? size : splits[i];
+        KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
+                         size)
+        if (end > start)
+            futures.emplace_back(std::async(std::launch::async, type_helper<C, F, Args...>::worker,
+                                            container.begin() + start, container.begin() + end, fun, i,
+                                            std::forward<Args>(args)...));
+    }
+
+    for (auto &future : futures)
+        future.get();
 }
 
 } // namespace kit::mt
