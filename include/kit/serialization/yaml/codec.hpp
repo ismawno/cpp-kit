@@ -4,9 +4,7 @@
 
 namespace kit::yaml
 {
-template <typename T> struct codec
-{
-};
+template <typename T> struct codec;
 
 class encodeable
 {
