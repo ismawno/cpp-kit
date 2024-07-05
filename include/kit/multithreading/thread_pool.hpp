@@ -37,6 +37,8 @@ class thread_pool
     std::size_t thread_count() const;
     std::size_t unattended_tasks() const;
     std::size_t pending_tasks() const;
+    std::size_t thread_index() const;
+
     bool idle() const;
     void await_pending();
 

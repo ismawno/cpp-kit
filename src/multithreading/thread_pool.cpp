@@ -56,6 +56,16 @@ std::size_t thread_pool::pending_tasks() const
 {
     return m_pending_tasks;
 }
+std::size_t thread_pool::thread_index() const
+{
+    const auto id = std::this_thread::get_id();
+    for (std::size_t i = 0; i < m_threads.size(); i++)
+        if (m_threads[i].get_id() == id)
+            return i;
+    KIT_ERROR("The current thread is not part of the thread pool")
+    return SIZE_MAX;
+}
+
 bool thread_pool::idle() const
 {
     return m_pending_tasks == 0;
