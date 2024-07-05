@@ -10,21 +10,27 @@ template <Hashable T = uuid> class identifiable
   public:
     using id_type = T;
     identifiable() = default;
-    identifiable(const T &id) : id(id)
+    identifiable(const T &id) : m_id(id)
     {
     }
 
-    T id;
+    const T &id() const
+    {
+        return m_id;
+    }
+
+  protected:
+    T m_id;
 };
 
 template <typename T> bool operator==(const identifiable<T> &lhs, const identifiable<T> &rhs)
 {
-    return lhs.id == rhs.id;
+    return lhs.id() == rhs.id();
 }
 
 template <typename T> bool operator!=(const identifiable<T> &lhs, const identifiable<T> &rhs)
 {
-    return lhs.id != rhs.id;
+    return lhs.id() != rhs.id();
 }
 
 template <typename T>
@@ -41,6 +47,6 @@ template <kit::Identifiable T> struct std::hash<kit::identifiable<T>>
 {
     std::size_t operator()(const kit::identifiable<T> &id) const
     {
-        return std::hash<T>()(id.id);
+        return std::hash<T>()(id.id());
     }
 };

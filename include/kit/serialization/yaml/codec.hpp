@@ -26,10 +26,6 @@ class decodeable
 
 class codecable : public encodeable, public decodeable
 {
-#ifdef KIT_USE_YAML_CPP
-  public:
-    virtual ~codecable() = default;
-#endif
 };
 
 #ifdef KIT_USE_YAML_CPP
