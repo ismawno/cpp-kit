@@ -2,6 +2,13 @@
 
 #include "kit/utility/type_constraints.hpp"
 
+#define KIT_TOGGLEABLE_FINAL_DEFAULT_SETTER()                                                                          \
+    using kit::toggleable::enabled;                                                                                    \
+    void enabled(bool enabled) override final                                                                          \
+    {                                                                                                                  \
+        m_enabled = enabled;                                                                                           \
+    }
+
 namespace kit
 {
 class toggleable
