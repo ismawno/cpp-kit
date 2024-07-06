@@ -93,7 +93,6 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     void insert(const T &element)
     {
-        KIT_PERF_FUNCTION()
         KIT_ASSERT_ERROR(!m_element_bounds.contains(element), "Element already exists in the quad tree")
         const geo::aabb2D &bounds = element();
         m_element_bounds.emplace(element, bounds);
@@ -104,7 +103,6 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     bool erase(const T &element)
     {
-        KIT_PERF_FUNCTION()
         const auto it = m_element_bounds.find(element);
         if (it == m_element_bounds.end())
             return false;
@@ -116,7 +114,6 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     void clear()
     {
-        KIT_PERF_FUNCTION()
         m_element_bounds.clear();
         m_root.clear();
     }

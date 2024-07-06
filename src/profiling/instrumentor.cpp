@@ -30,10 +30,6 @@ void instrumentor::begin_measurement(const char *name)
 #endif
     const std::string name_hash =
         s_ongoing_measurements.empty() ? name : s_ongoing_measurements.top().name_hash + "$" + std::string(name);
-
-    if (s_ongoing_measurements.empty())
-        s_head_node_names[s_session_name] = name;
-
     s_ongoing_measurements.emplace(ongoing_measurement{name, name_hash, clock{}});
 }
 
@@ -52,6 +48,8 @@ void instrumentor::end_measurement()
     ms.end = end;
     ms.elapsed = elapsed;
     const std::string name_hash = ongoing.name_hash;
+    if (s_ongoing_measurements.size() == 1)
+        s_head_node_names[s_session_name] = ongoing.name;
 
     s_ongoing_measurements.pop();
     ms.parent_index = s_ongoing_measurements.empty()
