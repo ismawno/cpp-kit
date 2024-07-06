@@ -11,4 +11,7 @@ template <ValidNameType T> const T &nameable<T>::name() const
 {
     return m_name;
 }
+
+template class nameable<const char *>;
+template class nameable<std::string>;
 } // namespace kit

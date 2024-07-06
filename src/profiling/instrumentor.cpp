@@ -105,7 +105,7 @@ static void write_header(std::stringstream &stream)
 
 static void write_measurement(const measurement &ms, std::stringstream &stream)
 {
-    std::string name = ms.name;
+    std::string name = ms.name();
     std::replace(name.begin(), name.end(), '"', '\'');
 
     stream << "\t\t{";

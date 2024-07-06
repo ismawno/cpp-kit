@@ -6,7 +6,7 @@
 
 namespace kit::perf
 {
-class measurement : public nameable
+class measurement : public nameable<>
 {
   public:
     struct metrics
@@ -16,7 +16,7 @@ class measurement : public nameable
         float total_percent = 0.f;
     };
 
-    using nameable::nameable;
+    using nameable<>::nameable;
 
     std::size_t parent_index;
     long long start;

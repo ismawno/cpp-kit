@@ -105,7 +105,7 @@ time node::total_elapsed_time() const
 }
 const char *node::name() const
 {
-    return m_measurements->front().name;
+    return m_measurements->front().name();
 }
 const std::string &node::name_hash() const
 {
