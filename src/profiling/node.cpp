@@ -34,11 +34,11 @@ std::unordered_set<std::string> node::children() const
     std::unordered_set<std::string> result;
     result.reserve(8);
 
-    const std::size_t pcount = std::count(m_name_hash.begin(), m_name_hash.end(), '$');
+    const std::size_t child_count = std::count(m_name_hash.begin(), m_name_hash.end(), '$') + 1;
     for (const auto &[name_hash, _] : *m_global_measurements)
     {
         const std::size_t count = std::count(name_hash.begin(), name_hash.end(), '$');
-        if (pcount + 1 != count)
+        if (child_count != count)
             continue;
         const auto last_dollar = name_hash.find_last_of('$');
         if (name_hash.substr(0, last_dollar) == m_name_hash)

@@ -76,7 +76,9 @@ bool instrumentor::has_measurements(const char *session)
 }
 node instrumentor::head_node(const char *session)
 {
-    KIT_ASSERT_ERROR(has_measurements(session), "No measurements for session {0}", session)
+    KIT_ASSERT_ERROR(has_measurements(session),
+                     "No measurements for session {0}. All measurements of a session must end for them to be available",
+                     session)
     return node{s_head_node_names[session], &s_measurements[session], &s_metrics_cache[session]};
 }
 
