@@ -23,32 +23,26 @@ void instrumentor::end_measurement()
     const char *name = ongoing.name;
 
     const auto it = m_ongoing_registry.map.find(name);
-    measurement *ms = nullptr;
     std::scoped_lock lock(mutex);
     if (it != m_ongoing_registry.map.end())
     {
-        ms = &m_ongoing_registry.flat[it->second];
-        ms->average = (ms->average * ms->calls + elapsed) / (ms->calls + 1);
-        ms->cumulative += elapsed;
-        ms->calls++;
+        measurement &ms = m_ongoing_registry.flat[it->second];
+        ms.average = (ms.average * ms.calls + elapsed) / (ms.calls + 1);
+        ms.cumulative += elapsed;
+        ms.calls++;
     }
     else
     {
         m_ongoing_registry.map.emplace(name, m_ongoing_registry.flat.size());
-        ms = &m_ongoing_registry.flat.emplace_back();
-        ms->name = name;
-        ms->average = elapsed;
-        ms->cumulative = elapsed;
-        ms->calls = 1;
+        measurement &ms = m_ongoing_registry.flat.emplace_back();
+        ms.name = name;
+        ms.average = elapsed;
+        ms.cumulative = elapsed;
+        ms.calls = 1;
     }
     m_ongoing_measurements.pop();
     if (m_ongoing_measurements.empty())
     {
-        KIT_ASSERT_ERROR(ms->calls == 1,
-                         "The root measurement has been detected to be called more than once, probably due to a "
-                         "duplicated measurement name. Make sure all measurements have unique names")
-        for (measurement &child : m_ongoing_registry.flat)
-            child.percent = child.cumulative.as<time::seconds, float>() / ms->cumulative.as<time::seconds, float>();
         std::swap(m_ongoing_registry, m_registry);
         m_ongoing_registry.flat.clear();
         m_ongoing_registry.map.clear();
@@ -70,6 +64,11 @@ const measurement &instrumentor::operator[](std::size_t index) const
 const std::vector<measurement> &instrumentor::measurements() const
 {
     return m_registry.flat;
+}
+
+bool instrumentor::contains(const char *name) const
+{
+    return m_registry.map.contains(name);
 }
 
 std::size_t instrumentor::size() const

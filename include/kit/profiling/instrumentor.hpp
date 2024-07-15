@@ -1,12 +1,19 @@
 #pragma once
 
-#include "kit/profiling/measurement.hpp"
 #include "kit/profiling/clock.hpp"
 #include <stack>
 #include <sstream>
 
 namespace kit::perf
 {
+struct measurement
+{
+    const char *name;
+    time average;
+    time cumulative;
+    std::uint32_t calls;
+};
+
 class instrumentor
 {
   public:
@@ -23,8 +30,10 @@ class instrumentor
 
     const measurement &operator[](const char *name) const;
     const measurement &operator[](std::size_t index) const;
+
     const std::vector<measurement> &measurements() const;
 
+    bool contains(const char *name) const;
     std::size_t size() const;
     bool empty() const;
 
