@@ -41,7 +41,7 @@ void instrumentor::end_measurement()
         ms.calls = 1;
     }
     m_ongoing_measurements.pop();
-    if (m_ongoing_measurements.empty())
+    if (m_ongoing_measurements.empty()) [[unlikely]]
     {
         std::swap(m_ongoing_registry, m_registry);
         m_ongoing_registry.flat.clear();
