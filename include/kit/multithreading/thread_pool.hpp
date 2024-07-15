@@ -19,10 +19,10 @@ class thread_pool
     ~thread_pool();
 
     template <typename F, class... Args>
-    auto submit(F fun, Args &&...args) -> std::future<std::invoke_result_t<F, Args...>>
+    auto submit(F &&fun, Args &&...args) -> std::future<std::invoke_result_t<F, Args...>>
     {
         using return_t = std::invoke_result_t<F, Args...>;
-        std::packaged_task<return_t()> task{std::bind(fun, std::forward<Args>(args)...)};
+        std::packaged_task<return_t()> task{std::bind(std::forward<F>(fun), std::forward<Args>(args)...)};
         std::future<return_t> future = task.get_future();
 
         {
