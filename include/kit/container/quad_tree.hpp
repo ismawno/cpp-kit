@@ -93,6 +93,7 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     void insert(const T &element)
     {
+        KIT_PERF_SCOPE("quad_tree::insert")
         KIT_ASSERT_ERROR(!m_element_bounds.contains(element), "Element already exists in the quad tree")
         const geo::aabb2D &bounds = element();
         m_element_bounds.emplace(element, bounds);
@@ -103,6 +104,7 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     bool erase(const T &element)
     {
+        KIT_PERF_SCOPE("quad_tree::erase")
         const auto it = m_element_bounds.find(element);
         if (it == m_element_bounds.end())
             return false;
@@ -114,6 +116,7 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     void clear()
     {
+        KIT_PERF_SCOPE("quad_tree::clear")
         m_element_bounds.clear();
         m_root.clear();
     }
@@ -132,7 +135,7 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
 
     std::vector<partition> collect_partitions() const
     {
-        KIT_PERF_FUNCTION()
+        KIT_PERF_SCOPE("quad_tree::collect_partitions")
         std::vector<partition> partitions;
         partitions.reserve(8);
         m_root.collect_partitions(partitions);
@@ -140,7 +143,7 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
     }
     std::vector<T> collect_elements() const
     {
-        KIT_PERF_FUNCTION()
+        KIT_PERF_SCOPE("quad_tree::collect_elements")
         std::vector<T> elements;
         elements.reserve(32);
         m_root.collect_elements(elements);
