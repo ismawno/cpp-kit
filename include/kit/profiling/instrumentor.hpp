@@ -1,9 +1,7 @@
 #pragma once
 
-#include "kit/interface/nameable.hpp"
-#include "kit/profiling/time.hpp"
+#include "kit/profiling/measurement.hpp"
 #include "kit/profiling/clock.hpp"
-#include "kit/profiling/node.hpp"
 #include <stack>
 #include <sstream>
 
@@ -12,46 +10,48 @@ namespace kit::perf
 class instrumentor
 {
   public:
-    struct scoped_session
-    {
-        scoped_session(const char *name);
-        ~scoped_session();
-    };
     struct scoped_measurement
     {
         scoped_measurement(const char *name);
         ~scoped_measurement();
     };
 
-    static void begin_session(const char *name);
-    static void end_session();
+    static instrumentor &main();
 
-    static void begin_measurement(const char *name);
-    static void end_measurement();
+    void begin_measurement(const char *name);
+    void end_measurement();
 
-    static const char *current_session();
-    static bool has_measurements(const char *session);
-    static node head_node(const char *session);
+    const measurement &operator[](const char *name) const;
+    const measurement &operator[](std::size_t index) const;
+    const std::vector<measurement> &measurements() const;
 
-    static std::stringstream strstream(const char *session);
-    static std::string str(const char *session);
+    std::size_t size() const;
+    bool empty() const;
+
+    auto begin() const
+    {
+        return m_registry.flat.begin();
+    }
+    auto end() const
+    {
+        return m_registry.flat.end();
+    }
 
   private:
     struct ongoing_measurement
     {
         const char *name;
-        std::string name_hash;
         clock clk;
     };
-    instrumentor() = delete;
+    struct measurement_registry
+    {
+        std::vector<measurement> flat;
+        std::unordered_map<const char *, std::size_t> map;
+    };
 
-    static inline std::stack<ongoing_measurement> s_ongoing_measurements{};
-    static inline ms_container s_current_measurements{};
+    std::stack<ongoing_measurement> m_ongoing_measurements{};
 
-    static inline std::unordered_map<const char *, const char *> s_head_node_names{};
-    static inline std::unordered_map<const char *, ms_container> s_measurements{};
-    static inline std::unordered_map<const char *, metrics_cache> s_metrics_cache{};
-
-    static inline const char *s_session_name = nullptr;
+    measurement_registry m_ongoing_registry;
+    measurement_registry m_registry;
 };
 } // namespace kit::perf

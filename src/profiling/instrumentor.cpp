@@ -1,143 +1,98 @@
 #include "kit/internal/pch.hpp"
 #include "kit/profiling/instrumentor.hpp"
 #include "kit/utility/utils.hpp"
+#include <mutex>
 
 namespace kit::perf
 {
-void instrumentor::begin_session(const char *name)
-{
-    KIT_ASSERT_ERROR(name, "Session name must not be null")
-    KIT_ASSERT_ERROR(!s_session_name, "There is already a session running")
-    s_session_name = name;
-}
-
-void instrumentor::end_session()
-{
-    KIT_ASSERT_ERROR(s_session_name, "No session is currently running")
-    KIT_ASSERT_ERROR(s_ongoing_measurements.empty(), "Cannot end a session with ongoing measurements")
-    s_session_name = nullptr;
-}
+static std::mutex mutex;
 
 void instrumentor::begin_measurement(const char *name)
 {
-    KIT_ASSERT_ERROR(s_session_name, "A session must be active to begin a measurement")
     KIT_ASSERT_ERROR(name, "Measurement name must not be null")
-#ifdef DEBUG
-    for (const char *c = name; *c; ++c)
-    {
-        KIT_ASSERT_ERROR(*c != '$', "The character '$' is not allowed in measurement names")
-    }
-#endif
-    const std::string name_hash =
-        s_ongoing_measurements.empty() ? name : s_ongoing_measurements.top().name_hash + "$" + std::string(name);
-    s_ongoing_measurements.emplace(ongoing_measurement{name, name_hash, clock{}});
+    std::scoped_lock lock(mutex);
+    m_ongoing_measurements.push(ongoing_measurement{name, clock{}});
 }
 
 void instrumentor::end_measurement()
 {
-    KIT_ASSERT_ERROR(s_session_name, "A session must be active to end a measurement")
-    KIT_ASSERT_ERROR(!s_ongoing_measurements.empty(), "Cannot end a measurement without beginning one")
+    KIT_ASSERT_ERROR(!m_ongoing_measurements.empty(), "Cannot end a measurement without beginning one")
 
-    const ongoing_measurement &ongoing = s_ongoing_measurements.top();
-    const long long end = ongoing.clk.current_time();
-    const long long start = ongoing.clk.start_time();
+    const ongoing_measurement &ongoing = m_ongoing_measurements.top();
     const time elapsed = ongoing.clk.elapsed();
+    const char *name = ongoing.name;
 
-    measurement ms{ongoing.name};
-    ms.start = start;
-    ms.end = end;
-    ms.elapsed = elapsed;
-    const std::string name_hash = ongoing.name_hash;
-    if (s_ongoing_measurements.size() == 1)
-        s_head_node_names[s_session_name] = ongoing.name;
-
-    s_ongoing_measurements.pop();
-    ms.parent_index = s_ongoing_measurements.empty()
-                          ? SIZE_MAX
-                          : s_current_measurements[s_ongoing_measurements.top().name_hash].size();
-    s_current_measurements[name_hash].push_back(ms);
-    if (s_ongoing_measurements.empty())
+    const auto it = m_ongoing_registry.map.find(name);
+    measurement *ms = nullptr;
+    std::scoped_lock lock(mutex);
+    if (it != m_ongoing_registry.map.end())
     {
-        s_measurements[s_session_name] = s_current_measurements;
-        s_metrics_cache[s_session_name].clear();
-        s_current_measurements.clear();
+        ms = &m_ongoing_registry.flat[it->second];
+        ms->average = (ms->average * ms->calls + elapsed) / (ms->calls + 1);
+        ms->cumulative += elapsed;
+        ms->calls++;
+    }
+    else
+    {
+        m_ongoing_registry.map.emplace(name, m_ongoing_registry.flat.size());
+        ms = &m_ongoing_registry.flat.emplace_back();
+        ms->name = name;
+        ms->average = elapsed;
+        ms->cumulative = elapsed;
+        ms->calls = 1;
+    }
+    m_ongoing_measurements.pop();
+    if (m_ongoing_measurements.empty())
+    {
+        KIT_ASSERT_ERROR(ms->calls == 1,
+                         "The root measurement has been detected to be called more than once, probably due to a "
+                         "duplicated measurement name. Make sure all measurements have unique names")
+        for (measurement &child : m_ongoing_registry.flat)
+            child.percent = child.cumulative.as<time::seconds, float>() / ms->cumulative.as<time::seconds, float>();
+        std::swap(m_ongoing_registry, m_registry);
+        m_ongoing_registry.flat.clear();
+        m_ongoing_registry.map.clear();
     }
 }
 
-const char *instrumentor::current_session()
+const measurement &instrumentor::operator[](const char *name) const
 {
-    return s_session_name;
-}
-bool instrumentor::has_measurements(const char *session)
-{
-    return s_measurements.contains(session);
-}
-node instrumentor::head_node(const char *session)
-{
-    KIT_ASSERT_ERROR(has_measurements(session),
-                     "No measurements for session {0}. All measurements of a session must end for them to be available",
-                     session)
-    return node{s_head_node_names[session], &s_measurements[session], &s_metrics_cache[session]};
+    KIT_ASSERT_ERROR(m_registry.map.contains(name), "Measurement not found")
+    return m_registry.flat[m_registry.map.at(name)];
 }
 
-instrumentor::scoped_session::scoped_session(const char *name)
+const measurement &instrumentor::operator[](std::size_t index) const
 {
-    instrumentor::begin_session(name);
+    KIT_ASSERT_ERROR(index < m_registry.flat.size(), "Index out of bounds")
+    return m_registry.flat[index];
 }
-instrumentor::scoped_session::~scoped_session()
+
+const std::vector<measurement> &instrumentor::measurements() const
 {
-    instrumentor::end_session();
+    return m_registry.flat;
+}
+
+std::size_t instrumentor::size() const
+{
+    return m_registry.flat.size();
+}
+
+bool instrumentor::empty() const
+{
+    return m_registry.flat.empty();
+}
+instrumentor &instrumentor::main()
+{
+    static instrumentor instance;
+    return instance;
 }
 
 instrumentor::scoped_measurement::scoped_measurement(const char *name)
 {
-    instrumentor::begin_measurement(name);
+    instrumentor::main().begin_measurement(name);
 }
 instrumentor::scoped_measurement::~scoped_measurement()
 {
-    instrumentor::end_measurement();
-}
-
-static void write_header(std::stringstream &stream)
-{
-    stream << "{\n\t\"otherData\": {},\"traceEvents\":\n\t[\n";
-}
-
-static void write_measurement(const measurement &ms, std::stringstream &stream)
-{
-    std::string name = ms.name();
-    std::replace(name.begin(), name.end(), '"', '\'');
-
-    stream << "\t\t{";
-    stream << "\"cat\":\"function\",";
-    stream << "\"dur\":" << ms.end - ms.start << ",";
-    stream << "\"name\":\"" << name << "\",";
-    stream << "\"ph\":\"X\",";
-    stream << "\"pid\":0,";
-    stream << "\"tid\":0,";
-    stream << "\"ts\":" << ms.start;
-    stream << "}";
-}
-
-static void write_footer(std::stringstream &stream)
-{
-    stream << "\n\t]\n}\n";
-}
-
-std::stringstream instrumentor::strstream(const char *session)
-{
-    std::stringstream stream;
-    write_header(stream);
-    const auto &measurements = s_measurements[session];
-    for (const auto &[name_hash, ms] : measurements)
-        for (const auto &m : ms)
-            write_measurement(m, stream);
-    write_footer(stream);
-    return stream;
-}
-
-std::string instrumentor::str(const char *session)
-{
-    return strstream(session).str();
+    instrumentor::main().end_measurement();
 }
 } // namespace kit::perf
