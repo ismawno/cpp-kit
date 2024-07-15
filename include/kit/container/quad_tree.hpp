@@ -14,29 +14,9 @@
 
 namespace kit
 {
-template <typename T>
-concept QuadTreeElement = requires(T t) {
-    {
-        t()
-    } -> std::convertible_to<geo::aabb2D>;
-    {
-        t == t
-    } -> std::convertible_to<bool>;
-    {
-        std::hash<T>{}(t)
-    } -> std::convertible_to<std::size_t>;
-};
-
-template <QuadTreeElement T, template <typename> class Allocator = block_allocator> class quad_tree
+template <typename T, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:
-    struct partition
-    {
-        using to_compare_t = std::vector<T>;
-        const std::vector<T> *elements;
-        to_compare_t to_compare;
-    };
-
     struct properties
     {
         properties(const std::size_t elements_per_quad, const std::uint32_t max_depth, const float min_quad_size)
@@ -50,122 +30,225 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
         bool force_square_shape = true;
     };
 
-    struct node;
+    class node
+    {
+      public:
+        bool insert(const T &element, const geo::aabb2D &aabb)
+        {
+            if (!geo::intersects(m_aabb, aabb))
+                return false;
+            if (m_leaf && m_elements.size() >= m_props->elements_per_quad && can_subdivide())
+                subdivide();
+            if (m_leaf)
+                m_elements.push_back(element);
+            else
+                insert_into_children(element);
+            return true;
+        }
+        bool erase(const T &element, const geo::aabb2D &aabb)
+        {
+            if (m_leaf)
+            {
+                for (auto it = m_elements.begin(); it != m_elements.end(); ++it)
+                    if (*it == element)
+                    {
+                        m_elements.erase(it);
+                        return true;
+                    }
+                return false;
+            }
+
+            bool erased = false;
+            for (node *child : m_children)
+                if (geo::intersects(child->m_aabb, aabb))
+                    erased |= child->erase(element, aabb);
+            return erased;
+        }
+
+        template <kit::RetCallable<bool, const T> F> void traverse(F &&fun) const
+        {
+            if (m_leaf)
+            {
+                for (const T &element : m_elements)
+                    if (!fun(element))
+                        return;
+            }
+            else
+                for (node *child : m_children)
+                    child->traverse(fun);
+        }
+        template <kit::RetCallable<bool, T> F> void traverse(F &&fun)
+        {
+            if (m_leaf)
+            {
+                for (T &element : m_elements)
+                    if (!fun(element))
+                        return;
+            }
+            else
+                for (node *child : m_children)
+                    child->traverse(fun);
+        }
+
+        template <kit::RetCallable<bool, const T> F> void traverse(F &&fun, const geo::aabb2D &aabb) const
+        {
+            if (m_leaf)
+            {
+                for (const T &element : m_elements)
+                    if (!fun(element))
+                        return;
+            }
+            else
+                for (node *child : m_children)
+                    if (geo::intersects(child->m_aabb, aabb))
+                        child->traverse(fun);
+        }
+        template <kit::RetCallable<bool, T> F> void traverse(F &&fun, const geo::aabb2D &aabb)
+        {
+            if (m_leaf)
+            {
+                for (T &element : m_elements)
+                    if (!fun(element))
+                        return;
+            }
+            else
+                for (node *child : m_children)
+                    if (geo::intersects(child->m_aabb, aabb))
+                        child->traverse(fun);
+        }
+
+        const std::vector<T> &elements() const
+        {
+            KIT_ASSERT_ERROR(!m_leaf, "Can only access elements from a leaf node")
+            return m_elements;
+        }
+        const geo::aabb2D &aabb() const
+        {
+            return m_aabb;
+        }
+        bool leaf() const
+        {
+            return m_leaf;
+        }
+
+      private:
+        node(properties *props = nullptr) : m_props(props)
+        {
+            if (props)
+                m_elements.reserve(props->elements_per_quad);
+        }
+
+        void subdivide()
+        {
+            m_leaf = false;
+            if (!m_children[0])
+                for (std::size_t i = 0; i < 4; ++i)
+                    m_children[i] = s_allocator.create(m_props);
+
+            for (node *c : m_children)
+            {
+                c->m_depth = m_depth + 1;
+                c->m_elements.clear();
+            }
+
+            const glm::vec2 &mm = m_aabb.min;
+            const glm::vec2 &mx = m_aabb.max;
+
+            const glm::vec2 mid_point = 0.5f * (mm + mx);
+
+            m_children[0]->m_aabb = geo::aabb2D(glm::vec2(mm.x, mid_point.y), glm::vec2(mid_point.x, mx.y));
+            m_children[1]->m_aabb = geo::aabb2D(mid_point, mx);
+            m_children[2]->m_aabb = geo::aabb2D(mm, mid_point);
+            m_children[3]->m_aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
+            for (const T &element : m_elements)
+                insert_into_children(element);
+        }
+
+        void insert_into_children(const T &element, const geo::aabb2D &aabb)
+        {
+            for (node *child : m_children)
+                child->insert(element, aabb);
+        }
+
+        bool can_subdivide() const
+        {
+            if (m_depth >= m_props->max_depth)
+                return false;
+            const glm::vec2 dim = m_aabb.dimension();
+            return dim.x * dim.y >= m_props->min_quad_size * m_props->min_quad_size;
+        }
+
+        properties *m_props;
+        std::vector<T> m_elements;
+        std::array<node *, 4> m_children = {nullptr, nullptr, nullptr, nullptr};
+        geo::aabb2D m_aabb;
+
+        std::uint32_t m_depth = 0;
+        bool m_leaf = false;
+    };
 
     quad_tree(const std::size_t elements_per_quad = 8, std::uint32_t max_depth = 12, const float min_quad_size = 10.f)
         : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
     {
     }
 
-    quad_tree(const quad_tree &other)
-        : m_props(kit::make_scope<properties>(other.m_props->elements_per_squad, other.m_props->max_depth,
-                                              other.m_props->min_quad_size)),
-          m_root(m_props.get())
+    quad_tree &operator=(quad_tree &&) = default;
+    quad_tree(quad_tree &&) = default;
+
+    void insert(const T &element, const geo::aabb2D &aabb)
     {
-        const auto elements = other.collect_elements();
-        for (const auto &elem : elements)
-            insert(elem);
-    }
-    quad_tree(quad_tree &&other)
-        : m_props(std::move(other.m_props)), m_root(std::move(other.m_root)),
-          m_element_bounds(std::move(other.m_element_bounds))
-    {
+        KIT_ASSERT_ERROR(geo::contains(m_root.m_aabb, aabb),
+                         "Element aabb must be contained within the quad tree bounds")
+        m_root.insert(element, aabb);
     }
 
-    quad_tree &operator=(const quad_tree &other)
+    bool erase(const T &element, const geo::aabb2D &aabb)
     {
-        m_props = kit::make_scope<properties>(other.m_props->elements_per_squad, other.m_props->max_depth,
-                                              other.m_props->min_quad_size);
-
-        m_root = node(m_props.get());
-        const auto elements = other.collect_elements();
-        for (const auto &elem : elements)
-            insert(elem);
-        return *this;
-    }
-    quad_tree &operator=(quad_tree &&other)
-    {
-        m_props = std::move(other.m_props);
-        m_root = std::move(other.m_root);
-        m_element_bounds = std::move(other.m_element_bounds);
-        return *this;
-    }
-
-    void insert(const T &element)
-    {
-        KIT_ASSERT_ERROR(!m_element_bounds.contains(element), "Element already exists in the quad tree")
-        const geo::aabb2D &bounds = element();
-        m_element_bounds.emplace(element, bounds);
-
-        m_root.aabb += bounds;
-        m_root.insert(element);
-    }
-
-    bool erase(const T &element)
-    {
-        const auto it = m_element_bounds.find(element);
-        if (it == m_element_bounds.end())
-            return false;
-        const bool found = m_root.erase(element, it->second);
-        KIT_ASSERT_ERROR(found, "Present element was not found in the quad tree")
-        m_element_bounds.erase(it);
-        return found;
+        KIT_ASSERT_ERROR(geo::contains(m_root.m_aabb, aabb),
+                         "Element aabb must be contained within the quad tree bounds")
+        return m_root.erase(element, aabb);
     }
 
     void clear()
     {
-        m_element_bounds.clear();
-        m_root.clear();
-    }
-    std::size_t size() const
-    {
-        return m_root.size();
+        m_root.m_elements.clear();
+        m_root.m_leaf = true;
     }
     bool empty() const
     {
-        return m_root.empty();
-    }
-    bool checksum() const
-    {
-        return m_element_bounds.size() == m_root.size() && m_element_bounds.empty() == empty();
+        return m_root.m_elements.empty() && m_root.m_leaf;
     }
 
-    std::vector<partition> collect_partitions() const
+    template <kit::RetCallable<bool, const T> F> void traverse(F &&fun) const
     {
-        std::vector<partition> partitions;
-        partitions.reserve(8);
-        m_root.collect_partitions(partitions);
-        return partitions;
+        m_root.traverse(fun);
     }
-    std::vector<T> collect_elements() const
+    template <kit::RetCallable<bool, T> F> void traverse(F &&fun)
     {
-        std::vector<T> elements;
-        elements.reserve(32);
-        m_root.collect_elements(elements);
-        return elements;
+        m_root.traverse(fun);
     }
 
-    void rebuild()
+    template <kit::RetCallable<bool, const T> F> void traverse(F &&fun, const geo::aabb2D &aabb) const
     {
-        const auto elements = collect_elements();
-        clear();
-        for (const auto &elem : elements)
-            insert(elem);
+        KIT_ASSERT_ERROR(geo::contains(m_root.m_aabb, aabb),
+                         "Traversal aabb must be contained within the quad tree bounds")
+        m_root.traverse(fun, aabb);
+    }
+    template <kit::RetCallable<bool, T> F> void traverse(F &&fun, const geo::aabb2D &aabb)
+    {
+        KIT_ASSERT_ERROR(geo::contains(m_root.m_aabb, aabb),
+                         "Traversal aabb must be contained within the quad tree bounds")
+        m_root.traverse(fun, aabb);
     }
 
-    const geo::aabb2D &bounds() const
+    const geo::aabb2D &aabb() const
     {
-        return m_root.aabb;
+        return m_root.m_aabb;
     }
-    void bounds(const geo::aabb2D &bounds)
+    void aabb(const geo::aabb2D &aabb)
     {
-        KIT_ASSERT_ERROR(empty(), "Cannot change bounds of a non-empty quad tree")
-        m_root.aabb = bounds;
-    }
-    void rebound_and_rebuild(const geo::aabb2D &bounds)
-    {
-        m_root.aabb = bounds;
-        rebuild();
+        KIT_ASSERT_ERROR(empty(), "Cannot change aabb of a non-empty quad tree")
+        m_root.m_aabb = aabb;
     }
 
     const node &root() const
@@ -178,167 +261,16 @@ template <QuadTreeElement T, template <typename> class Allocator = block_allocat
     }
     void props(const properties &props)
     {
+        KIT_ASSERT_ERROR(empty(), "Cannot change properties of a non-empty quad tree")
         *m_props = props;
-        rebuild();
     }
-
-    struct node
-    {
-        node(properties *props = nullptr) : props(props)
-        {
-            if (props)
-                elements.reserve(props->elements_per_quad);
-        }
-
-        properties *props;
-        std::vector<T> elements;
-        std::array<node *, 4> children = {nullptr, nullptr, nullptr, nullptr};
-        geo::aabb2D aabb;
-
-        std::uint32_t depth = 0;
-        std::size_t children_size = 0;
-
-        bool empty() const
-        {
-            return elements.empty() && children_size == 0;
-        }
-        bool partitioned() const
-        {
-            return children_size != 0;
-        }
-        std::size_t size() const
-        {
-            return elements.size() + children_size;
-        }
-        void clear()
-        {
-            elements.clear();
-            children_size = 0;
-            if (partitioned())
-                for (node *child : children)
-                    child->clear();
-        }
-
-        void insert(const T &element)
-        {
-            KIT_ASSERT_ERROR(geo::intersects(aabb, element()), "Element is not within the bounds of the quad")
-            if (!partitioned() && elements.size() >= props->elements_per_quad && can_subdivide())
-                subdivide();
-            if (!partitioned() || !try_insert_into_children(element))
-                elements.push_back(element);
-        }
-
-        bool erase(const T &element, const geo::aabb2D &ebounds)
-        {
-            KIT_ASSERT_ERROR(geo::intersects(aabb, ebounds), "Element is not within the bounds of the quad")
-            for (auto it = elements.begin(); it != elements.end(); ++it)
-                if (*it == element)
-                {
-                    elements.erase(it);
-                    return true;
-                }
-            if (!partitioned())
-                return false;
-            for (node *child : children)
-                if (geo::intersects(child->aabb, ebounds) && child->erase(element, ebounds))
-                {
-                    children_size--;
-                    return true;
-                }
-            return false;
-        }
-
-        void subdivide()
-        {
-            if (!children[0])
-                for (std::size_t i = 0; i < 4; ++i)
-                    children[i] = s_allocator.create(props);
-
-            for (node *c : children)
-            {
-                c->depth = depth + 1;
-                c->elements.clear();
-                c->children_size = 0;
-            }
-
-            const glm::vec2 &mm = aabb.min;
-            const glm::vec2 &mx = aabb.max;
-
-            const glm::vec2 mid_point = 0.5f * (mm + mx);
-
-            children[0]->aabb = geo::aabb2D(glm::vec2(mm.x, mid_point.y), glm::vec2(mid_point.x, mx.y));
-            children[1]->aabb = geo::aabb2D(mid_point, mx);
-            children[2]->aabb = geo::aabb2D(mm, mid_point);
-            children[3]->aabb = geo::aabb2D(glm::vec2(mid_point.x, mm.y), glm::vec2(mx.x, mid_point.y));
-            for (auto it = elements.begin(); it != elements.end();)
-                if (try_insert_into_children(*it))
-                    it = elements.erase(it);
-                else
-                    ++it;
-        }
-
-        bool try_insert_into_children(const T &element)
-        {
-            node *chosen = nullptr;
-            bool multiple = false;
-            for (node *child : children)
-                if (geo::intersects(child->aabb, element()))
-                {
-                    if (chosen)
-                    {
-                        multiple = true;
-                        break;
-                    }
-                    chosen = child;
-                }
-            if (multiple)
-                return false;
-            chosen->insert(element);
-            children_size++;
-            return true;
-        }
-
-        bool can_subdivide() const
-        {
-            if (depth >= props->max_depth)
-                return false;
-            const glm::vec2 dim = aabb.dimension();
-            return dim.x * dim.y >= props->min_quad_size * props->min_quad_size;
-        }
-
-        void collect_partitions(std::vector<partition> &partitions) const
-        {
-            std::size_t current_partition;
-            if (!elements.empty())
-            {
-                current_partition = partitions.size();
-                partition &p = partitions.emplace_back();
-                p.elements = &elements;
-                p.to_compare.reserve(8);
-            }
-
-            if (partitioned())
-                for (node *child : children)
-                {
-                    if (!elements.empty())
-                        child->collect_elements(partitions[current_partition].to_compare);
-                    child->collect_partitions(partitions);
-                }
-        }
-
-        void collect_elements(partition::to_compare_t &to_insert) const
-        {
-            to_insert.insert(to_insert.end(), elements.begin(), elements.end());
-            if (partitioned())
-                for (node *child : children)
-                    child->collect_elements(to_insert);
-        }
-    };
 
   private:
     kit::scope<properties> m_props;
     node m_root;
-    std::unordered_map<T, geo::aabb2D> m_element_bounds;
+
+    quad_tree(const quad_tree &) = delete;
+    quad_tree &operator=(const quad_tree &) = delete;
 
     static inline Allocator<node> s_allocator{};
 };
