@@ -119,9 +119,15 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
 
         const std::vector<T> &elements() const
         {
-            KIT_ASSERT_ERROR(!m_leaf, "Can only access elements from a leaf node")
+            KIT_ASSERT_ERROR(m_leaf, "Can only access elements from a leaf node")
             return m_elements;
         }
+        const std::array<node *, 4> &children() const
+        {
+            KIT_ASSERT_ERROR(!m_leaf, "Can only access children from a non-leaf node")
+            return m_children;
+        }
+
         const geo::aabb2D &aabb() const
         {
             return m_aabb;
