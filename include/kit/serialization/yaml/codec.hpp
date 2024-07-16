@@ -72,10 +72,13 @@ template <typename T> struct YAML::convert
     }
     static bool decode(const YAML::Node &node, T &instance)
     {
+        bool success;
         if constexpr (std::is_base_of_v<kit::yaml::decodeable, T>)
-            return instance.decode(node);
+            success = instance.decode(node);
         else
-            return kit::yaml::codec<T>::decode(node, instance);
+            success = kit::yaml::codec<T>::decode(node, instance);
+        KIT_ASSERT_WARN(success, "Failed to decode YAML node into instance of type: {}", typeid(T).name());
+        return true;
     }
 };
 #endif
