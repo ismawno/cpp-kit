@@ -74,8 +74,8 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t worklo
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
-                pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end, fun,
-                            i, std::forward<Args>(args)...);
+                pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end,
+                            std::forward<F>(fun), i, std::forward<Args>(args)...);
         }
         pool.await_pending();
     }
@@ -117,8 +117,8 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::vector<std::s
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
-                pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end, fun,
-                            i, std::forward<Args>(args)...);
+                pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end,
+                            std::forward<F>(fun), i, std::forward<Args>(args)...);
         }
         pool.await_pending();
     }
