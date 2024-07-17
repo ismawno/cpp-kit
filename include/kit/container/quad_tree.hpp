@@ -5,7 +5,6 @@
 #include "kit/memory/allocator/block_allocator.hpp"
 #include "kit/utility/type_constraints.hpp"
 #include "kit/debug/log.hpp"
-#include "kit/multithreading/thread_pool.hpp"
 
 #include <glm/vec2.hpp>
 #include <vector>
@@ -80,41 +79,40 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             return erased;
         }
 
-        template <kit::RetCallable<bool, const T> F> void traverse(F &&fun, mt::thread_pool *pool) const
+        template <kit::RetCallable<bool, const T> F> void traverse(F &&fun) const
         {
             if (m_leaf)
-                traverse_as_leaf<const entry, F>(std::forward<F>(fun), pool);
+                traverse_as_leaf<const entry, F>(std::forward<F>(fun));
             else
                 for (node *child : m_children)
-                    child->traverse(fun, pool);
+                    child->traverse(fun);
         }
-        template <kit::RetCallable<bool, T> F> void traverse(F &&fun, mt::thread_pool *pool)
+        template <kit::RetCallable<bool, T> F> void traverse(F &&fun)
         {
             if (m_leaf)
-                traverse_as_leaf<entry, F>(std::forward<F>(fun), pool);
+                traverse_as_leaf<entry, F>(std::forward<F>(fun));
             else
                 for (node *child : m_children)
-                    child->traverse(fun, pool);
+                    child->traverse(fun);
         }
 
-        template <kit::RetCallable<bool, const T> F>
-        void traverse(F &&fun, const geo::aabb2D &aabb, mt::thread_pool *pool) const
+        template <kit::RetCallable<bool, const T> F> void traverse(F &&fun, const geo::aabb2D &aabb) const
         {
             if (m_leaf)
-                traverse_as_leaf<const entry, F>(std::forward<F>(fun), pool);
+                traverse_as_leaf<const entry, F>(std::forward<F>(fun));
             else
                 for (node *child : m_children)
                     if (geo::intersects(child->m_aabb, aabb))
-                        child->traverse(fun, aabb, pool);
+                        child->traverse(fun, aabb);
         }
-        template <kit::RetCallable<bool, T> F> void traverse(F &&fun, const geo::aabb2D &aabb, mt::thread_pool *pool)
+        template <kit::RetCallable<bool, T> F> void traverse(F &&fun, const geo::aabb2D &aabb)
         {
             if (m_leaf)
-                traverse_as_leaf<entry, F>(std::forward<F>(fun), pool);
+                traverse_as_leaf<entry, F>(std::forward<F>(fun));
             else
                 for (node *child : m_children)
                     if (geo::intersects(child->m_aabb, aabb))
-                        child->traverse(fun, aabb, pool);
+                        child->traverse(fun, aabb);
         }
 
         const std::vector<entry> &elements() const
@@ -138,17 +136,11 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         }
 
       private:
-        template <typename U, kit::RetCallable<bool, T> F> void traverse_as_leaf(F &&fun, mt::thread_pool *pool)
+        template <typename U, kit::RetCallable<bool, T> F> void traverse_as_leaf(F &&fun)
         {
-            const auto lookup = [this, &fun]() {
-                for (U &entry : m_elements)
-                    if (!std::forward<F>(fun)(entry.element))
-                        return;
-            };
-            if (!pool)
-                lookup();
-            else
-                pool->submit(lookup);
+            for (U &entry : m_elements)
+                if (!std::forward<F>(fun)(entry.element))
+                    return;
         }
 
         void subdivide()
@@ -268,23 +260,17 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         m_root.traverse(fun);
     }
 
-    template <kit::RetCallable<bool, const T> F>
-    void traverse(F &&fun, const geo::aabb2D &aabb, mt::thread_pool *pool = nullptr) const
+    template <kit::RetCallable<bool, const T> F> void traverse(F &&fun, const geo::aabb2D &aabb) const
     {
         KIT_ASSERT_ERROR(geo::intersects(m_root.m_aabb, aabb),
                          "Traversal aabb must intersect with the quad tree bounds")
-        m_root.traverse(fun, aabb, pool);
-        if (pool)
-            pool->await_pending();
+        m_root.traverse(fun, aabb);
     }
-    template <kit::RetCallable<bool, T> F>
-    void traverse(F &&fun, const geo::aabb2D &aabb, mt::thread_pool *pool = nullptr)
+    template <kit::RetCallable<bool, T> F> void traverse(F &&fun, const geo::aabb2D &aabb)
     {
         KIT_ASSERT_ERROR(geo::intersects(m_root.m_aabb, aabb),
                          "Traversal aabb must intersect with the quad tree bounds")
-        m_root.traverse(fun, aabb, pool);
-        if (pool)
-            pool->await_pending();
+        m_root.traverse(fun, aabb);
     }
 
     const geo::aabb2D &aabb() const
