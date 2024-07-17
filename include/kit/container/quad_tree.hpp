@@ -105,7 +105,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             else
                 for (node *child : m_children)
                     if (geo::intersects(child->m_aabb, aabb))
-                        child->traverse(fun, pool);
+                        child->traverse(fun, aabb, pool);
         }
         template <kit::RetCallable<bool, T> F> void traverse(F &&fun, const geo::aabb2D &aabb, mt::thread_pool *pool)
         {
@@ -114,7 +114,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             else
                 for (node *child : m_children)
                     if (geo::intersects(child->m_aabb, aabb))
-                        child->traverse(fun, pool);
+                        child->traverse(fun, aabb, pool);
         }
 
         const std::vector<entry> &elements() const
