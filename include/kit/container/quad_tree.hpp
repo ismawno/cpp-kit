@@ -183,11 +183,15 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         void try_merge()
         {
             std::size_t total_elements = 0;
-            for (node *child : m_children)
+            for (const node *child : m_children)
+            {
+                if (!child->m_leaf)
+                    return;
                 total_elements += child->m_elements.size();
+            }
             if (total_elements > m_props->elements_per_quad)
                 return;
-            for (node *child : m_children)
+            for (const node *child : m_children)
                 m_elements.insert(m_elements.end(), child->m_elements.begin(), child->m_elements.end());
             m_leaf = true;
         }
