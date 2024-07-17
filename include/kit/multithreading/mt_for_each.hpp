@@ -31,8 +31,6 @@ template <typename C, typename F, class... Args> struct type_helper
 {
     using iterator_t = decltype(std::declval<C>().begin());
     using fun_ret_t = std::invoke_result_t<F, typename C::value_type, Args...>;
-    using fun_iter_ret_t =
-        std::invoke_result_t<F, typename C::value_type::iterator, typename C::value_type::iterator, Args...>;
 
     // doing this bc shitty msvc wont discard the right fucking if constexpr branch
     static void worker_impl(iterator_t it1, iterator_t it2, F &&fun, std::true_type, Args &&...args)
@@ -99,18 +97,24 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t worklo
     }
 }
 
+template <typename C, typename F, class... Args> struct type_helper_iter
+{
+    using iterator_t = decltype(std::declval<C>().begin());
+    using fun_ret_t = std::invoke_result_t<F, iterator_t, iterator_t, Args...>;
+};
+
 template <ValidContainer C, typename F, class... Args>
 auto for_each_iter(thread_pool &pool, C &container, F &&fun, const std::size_t workloads, Args &&...args)
-    -> feach_return<typename type_helper<C, F, Args...>::fun_iter_ret_t>::feach_iter_t
+    -> feach_return<typename type_helper_iter<C, F, Args...>::fun_ret_t>::feach_iter_t
 {
     KIT_ASSERT_ERROR(workloads != 0, "Workload count must be greater than 0")
     KIT_ASSERT_WARN(workloads > 1, "Parallel for each purpose is defeated with only a single workload")
 
-    using fun_iter_ret_t = typename type_helper<C, F, Args...>::fun_iter_ret_t;
-    using feach_iter_ret_t = typename feach_return<fun_iter_ret_t>::feach_iter_t;
+    using fun_ret_t = typename type_helper_iter<C, F, Args...>::fun_ret_t;
+    using feach_iter_ret_t = typename feach_return<fun_ret_t>::feach_iter_t;
 
     const std::size_t size = container.size();
-    if constexpr (std::is_same_v<fun_iter_ret_t, void>)
+    if constexpr (std::is_same_v<fun_ret_t, void>)
     {
         for (std::size_t i = 0; i < workloads; i++)
         {
