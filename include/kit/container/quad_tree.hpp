@@ -66,6 +66,8 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                     if (it->element == element)
                     {
                         m_elements.erase(it);
+                        if (m_parent && m_elements.size() <= m_props->elements_per_quad / 4)
+                            m_parent->try_merge();
                         return true;
                     }
                 return false;
@@ -161,6 +163,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 c->m_depth = m_depth + 1;
                 c->m_leaf = true;
                 c->m_elements.clear();
+                c->m_parent = this;
             }
 
             const glm::vec2 &mm = m_aabb.min;
@@ -175,6 +178,18 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             for (const entry &e : m_elements)
                 insert_into_children(e.element, e.aabb);
             m_elements.clear();
+        }
+
+        void try_merge()
+        {
+            std::size_t total_elements = 0;
+            for (node *child : m_children)
+                total_elements += child->m_elements.size();
+            if (total_elements > m_props->elements_per_quad)
+                return;
+            for (node *child : m_children)
+                m_elements.insert(m_elements.end(), child->m_elements.begin(), child->m_elements.end());
+            m_leaf = true;
         }
 
         void insert_into_children(const T &element, const geo::aabb2D &aabb)
@@ -193,7 +208,10 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
 
         properties *m_props;
         std::vector<entry> m_elements;
+
+        node *m_parent = nullptr;
         std::array<node *, 4> m_children = {nullptr, nullptr, nullptr, nullptr};
+
         geo::aabb2D m_aabb;
 
         std::uint32_t m_depth = 0;
@@ -202,7 +220,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         friend class quad_tree;
     };
 
-    quad_tree(const std::size_t elements_per_quad = 8, std::uint32_t max_depth = 12, const float min_quad_size = 10.f)
+    quad_tree(const std::size_t elements_per_quad = 8, std::uint32_t max_depth = 12, const float min_quad_size = 25.f)
         : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
     {
     }
