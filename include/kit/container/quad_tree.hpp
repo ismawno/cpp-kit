@@ -216,7 +216,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         friend class quad_tree;
     };
 
-    quad_tree(const std::size_t elements_per_quad = 8, std::uint32_t max_depth = 4, const float min_quad_size = 25.f)
+    quad_tree(const std::size_t elements_per_quad = 8, std::uint32_t max_depth = 12, const float min_quad_size = 40.f)
         : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
     {
     }
