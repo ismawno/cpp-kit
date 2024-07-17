@@ -78,7 +78,7 @@ template <typename T> struct YAML::convert
         else
             success = kit::yaml::codec<T>::decode(node, instance);
         KIT_ASSERT_WARN(success, "Failed to decode YAML node into instance of type: {}", typeid(T).name());
-#ifdef DEBUG
+#ifdef DEBUG // this is not a good idea
         return true;
 #else
         return success;
