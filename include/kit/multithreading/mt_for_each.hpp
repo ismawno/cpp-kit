@@ -18,17 +18,21 @@ concept ValidContainer = RandomAccessContainer<T> && requires(T a) {
 
 template <typename Ret> struct feach_return
 {
-    using type = std::vector<std::future<std::vector<Ret>>>;
+    using feach_t = std::vector<std::future<std::vector<Ret>>>;
+    using feach_iter_t = std::vector<std::future<Ret>>;
 };
 template <> struct feach_return<void>
 {
-    using type = void;
+    using feach_t = void;
+    using feach_iter_t = void;
 };
 
 template <typename C, typename F, class... Args> struct type_helper
 {
     using iterator_t = decltype(std::declval<C>().begin());
     using fun_ret_t = std::invoke_result_t<F, typename C::value_type, Args...>;
+    using fun_iter_ret_t =
+        std::invoke_result_t<F, typename C::value_type::iterator, typename C::value_type::iterator, Args...>;
 
     // doing this bc shitty msvc wont discard the right fucking if constexpr branch
     static void worker_impl(iterator_t it1, iterator_t it2, F &&fun, std::true_type, Args &&...args)
@@ -53,13 +57,13 @@ template <typename C, typename F, class... Args> struct type_helper
 
 template <ValidContainer C, typename F, class... Args>
 auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t workloads, Args &&...args)
-    -> feach_return<typename type_helper<C, F, Args...>::fun_ret_t>::type
+    -> feach_return<typename type_helper<C, F, Args...>::fun_ret_t>::feach_t
 {
     KIT_ASSERT_ERROR(workloads != 0, "Workload count must be greater than 0")
     KIT_ASSERT_WARN(workloads > 1, "Parallel for each purpose is defeated with only a single workload")
 
     using fun_ret_t = typename type_helper<C, F, Args...>::fun_ret_t;
-    using feach_ret_t = typename feach_return<fun_ret_t>::type;
+    using feach_ret_t = typename feach_return<fun_ret_t>::feach_t;
 
     const std::size_t size = container.size();
     if constexpr (std::is_same_v<fun_ret_t, void>)
@@ -90,6 +94,48 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t worklo
                 futures.push_back(pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start,
                                               container.begin() + end, std::forward<F>(fun),
                                               std::forward<Args>(args)...));
+        }
+        return futures;
+    }
+}
+
+template <ValidContainer C, typename F, class... Args>
+auto for_each_iter(thread_pool &pool, C &container, F &&fun, const std::size_t workloads, Args &&...args)
+    -> feach_return<typename type_helper<C, F, Args...>::fun_iter_ret_t>::feach_iter_t
+{
+    KIT_ASSERT_ERROR(workloads != 0, "Workload count must be greater than 0")
+    KIT_ASSERT_WARN(workloads > 1, "Parallel for each purpose is defeated with only a single workload")
+
+    using fun_iter_ret_t = typename type_helper<C, F, Args...>::fun_iter_ret_t;
+    using feach_iter_ret_t = typename feach_return<fun_iter_ret_t>::feach_iter_t;
+
+    const std::size_t size = container.size();
+    if constexpr (std::is_same_v<fun_iter_ret_t, void>)
+    {
+        for (std::size_t i = 0; i < workloads; i++)
+        {
+            const std::size_t start = i * size / workloads;
+            const std::size_t end = (i + 1) * size / workloads;
+            KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
+                             size)
+            if (end > start)
+                pool.submit(fun, container.begin() + start, container.begin() + end, std::forward<Args>(args)...);
+        }
+        pool.await_pending();
+    }
+    else
+    {
+        feach_iter_ret_t futures;
+        futures.reserve(workloads);
+        for (std::size_t i = 0; i < workloads; i++)
+        {
+            const std::size_t start = i * size / workloads;
+            const std::size_t end = (i + 1) * size / workloads;
+            KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
+                             size)
+            if (end > start)
+                futures.push_back(
+                    pool.submit(fun, container.begin() + start, container.begin() + end, std::forward<Args>(args)...));
         }
         return futures;
     }
