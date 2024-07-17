@@ -64,17 +64,18 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t worklo
     using feach_ret_t = typename feach_return<fun_ret_t>::feach_t;
 
     const std::size_t size = container.size();
+    std::size_t start = 0;
     if constexpr (std::is_same_v<fun_ret_t, void>)
     {
         for (std::size_t i = 0; i < workloads; i++)
         {
-            const std::size_t start = i * size / workloads;
             const std::size_t end = (i + 1) * size / workloads;
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
                 pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start, container.begin() + end,
                             std::forward<F>(fun), std::forward<Args>(args)...);
+            start = end;
         }
         pool.await_pending();
     }
@@ -84,7 +85,6 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t worklo
         futures.reserve(workloads);
         for (std::size_t i = 0; i < workloads; i++)
         {
-            const std::size_t start = i * size / workloads;
             const std::size_t end = (i + 1) * size / workloads;
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
@@ -92,6 +92,7 @@ auto for_each(thread_pool &pool, C &container, F &&fun, const std::size_t worklo
                 futures.push_back(pool.submit(type_helper<C, F, Args...>::worker, container.begin() + start,
                                               container.begin() + end, std::forward<F>(fun),
                                               std::forward<Args>(args)...));
+            start = end;
         }
         return futures;
     }
@@ -114,16 +115,17 @@ auto for_each_iter(thread_pool &pool, C &container, F &&fun, const std::size_t w
     using feach_iter_ret_t = typename feach_return<fun_ret_t>::feach_iter_t;
 
     const std::size_t size = container.size();
+    std::size_t start = 0;
     if constexpr (std::is_same_v<fun_ret_t, void>)
     {
         for (std::size_t i = 0; i < workloads; i++)
         {
-            const std::size_t start = i * size / workloads;
             const std::size_t end = (i + 1) * size / workloads;
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
                 pool.submit(fun, container.begin() + start, container.begin() + end, std::forward<Args>(args)...);
+            start = end;
         }
         pool.await_pending();
     }
@@ -133,13 +135,13 @@ auto for_each_iter(thread_pool &pool, C &container, F &&fun, const std::size_t w
         futures.reserve(workloads);
         for (std::size_t i = 0; i < workloads; i++)
         {
-            const std::size_t start = i * size / workloads;
             const std::size_t end = (i + 1) * size / workloads;
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
                 futures.push_back(
                     pool.submit(fun, container.begin() + start, container.begin() + end, std::forward<Args>(args)...));
+            start = end;
         }
         return futures;
     }
