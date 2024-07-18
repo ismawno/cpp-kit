@@ -78,6 +78,26 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                     erased |= child->erase(element, aabb);
             return erased;
         }
+        bool erase(const T &element)
+        {
+            if (m_leaf)
+            {
+                for (auto it = m_elements.begin(); it != m_elements.end(); ++it)
+                    if (it->element == element)
+                    {
+                        m_elements.erase(it);
+                        if (m_parent && m_elements.size() <= m_props->elements_per_quad / 4)
+                            m_parent->try_merge();
+                        return true;
+                    }
+                return false;
+            }
+
+            bool erased = false;
+            for (node *child : m_children)
+                erased |= child->erase(element);
+            return erased;
+        }
 
         template <kit::RetCallable<bool, const T> F> void traverse(F &&fun) const
         {
@@ -233,12 +253,15 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                         "Element aabb does not intersect with the quad tree bounds")
         return m_root.insert(element, aabb);
     }
-
     bool erase(const T &element, const geo::aabb2D &aabb)
     {
         KIT_ASSERT_WARN(geo::intersects(m_root.m_aabb, aabb),
                         "Element aabb does not intersect with the quad tree bounds")
         return m_root.erase(element, aabb);
+    }
+    bool erase(const T &element)
+    {
+        return m_root.erase(element);
     }
 
     void clear()
