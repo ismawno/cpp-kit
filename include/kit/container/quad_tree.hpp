@@ -59,43 +59,26 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         }
         bool erase(const T &element, const geo::aabb2D &aabb)
         {
-            if (m_leaf)
-            {
-                for (auto it = m_elements.begin(); it != m_elements.end(); ++it)
-                    if (it->element == element)
-                    {
-                        m_elements.erase(it);
-                        if (m_parent && m_elements.size() <= m_props->elements_per_quad / 4)
-                            m_parent->try_merge();
-                        return true;
-                    }
-                return false;
-            }
-
             bool erased = false;
-            for (node *child : m_children)
-                if (geo::intersects(child->m_aabb, aabb))
+            if (!m_leaf)
+                for (node *child : m_children)
                     erased |= child->erase(element, aabb);
+            // A child could have triggered a parent merge
+            if (m_leaf)
+                erased |= erase_as_leaf(element);
+
             return erased;
         }
         bool erase(const T &element)
         {
-            if (m_leaf)
-            {
-                for (auto it = m_elements.begin(); it != m_elements.end(); ++it)
-                    if (it->element == element)
-                    {
-                        m_elements.erase(it);
-                        if (m_parent && m_elements.size() <= m_props->elements_per_quad / 4)
-                            m_parent->try_merge();
-                        return true;
-                    }
-                return false;
-            }
-
             bool erased = false;
-            for (node *child : m_children)
-                erased |= child->erase(element);
+            if (!m_leaf)
+                for (node *child : m_children)
+                    erased |= child->erase(element);
+            // A child could have triggered a parent merge
+            if (m_leaf)
+                erased |= erase_as_leaf(element);
+
             return erased;
         }
 
@@ -156,6 +139,19 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         }
 
       private:
+        bool erase_as_leaf(const T &element)
+        {
+            for (auto it = m_elements.begin(); it != m_elements.end(); ++it)
+                if (it->element == element)
+                {
+                    m_elements.erase(it);
+                    if (m_parent && m_elements.size() <= m_props->elements_per_quad / 4)
+                        m_parent->try_merge();
+                    return true;
+                }
+            return false;
+        }
+
         template <typename U, kit::RetCallable<bool, T> F> void traverse_as_leaf(F &&fun)
         {
             for (U &entry : m_elements)
@@ -203,8 +199,20 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             }
             if (total_elements > m_props->elements_per_quad)
                 return;
-            for (const node *child : m_children)
-                m_elements.insert(m_elements.end(), child->m_elements.begin(), child->m_elements.end());
+            for (const node *child : m_children) // painful
+                for (const entry &e1 : child->m_elements)
+                {
+                    bool found = false;
+                    for (const entry &e2 : m_elements)
+                        if (e1.element == e2.element)
+                        {
+                            found = true;
+                            break;
+                        }
+                    if (!found)
+                        m_elements.push_back(e1);
+                }
+
             m_leaf = true;
         }
 
