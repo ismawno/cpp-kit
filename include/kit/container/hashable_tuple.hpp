@@ -22,6 +22,8 @@ template <hash_property Property, Hashable... HT> struct hashable_tuple
     hashable_tuple(TupleArgs &&...args) : elms(std::forward<TupleArgs>(args)...)
     {
     }
+    hashable_tuple(const hashable_tuple &) = default;
+    hashable_tuple(hashable_tuple &&) = default;
 
     std::tuple<HT...> elms;
 

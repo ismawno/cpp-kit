@@ -57,29 +57,22 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 insert_into_children(element, aabb);
             return true;
         }
+        // erase returns whether a merge was triggered
         bool erase(const T &element, const geo::aabb2D &aabb)
         {
-            bool erased = false;
             if (!m_leaf)
                 for (node *child : m_children)
-                    erased |= child->erase(element, aabb);
-            // A child could have triggered a parent merge
-            if (m_leaf)
-                erased |= erase_as_leaf(element);
-
-            return erased;
+                    if (geo::intersects(child->m_aabb, aabb) && child->erase(element, aabb))
+                        break;
+            return m_leaf && erase_as_leaf(element);
         }
         bool erase(const T &element)
         {
-            bool erased = false;
             if (!m_leaf)
                 for (node *child : m_children)
-                    erased |= child->erase(element);
-            // A child could have triggered a parent merge
-            if (m_leaf)
-                erased |= erase_as_leaf(element);
-
-            return erased;
+                    if (child->erase(element))
+                        break;
+            return m_leaf && erase_as_leaf(element);
         }
 
         template <kit::RetCallable<bool, const T> F> void traverse(F &&fun) const
@@ -145,9 +138,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 if (it->element == element)
                 {
                     m_elements.erase(it);
-                    if (m_parent && m_elements.size() <= m_props->elements_per_quad / 4)
-                        m_parent->try_merge();
-                    return true;
+                    return m_parent && m_elements.size() <= m_props->elements_per_quad / 4 && m_parent->try_merge();
                 }
             return false;
         }
@@ -188,17 +179,17 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             m_elements.clear();
         }
 
-        void try_merge()
+        bool try_merge()
         {
             std::size_t total_elements = 0;
             for (const node *child : m_children)
             {
                 if (!child->m_leaf)
-                    return;
+                    return false;
                 total_elements += child->m_elements.size();
             }
             if (total_elements > m_props->elements_per_quad)
-                return;
+                return false;
             for (const node *child : m_children) // painful
                 for (const entry &e1 : child->m_elements)
                 {
@@ -214,6 +205,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 }
 
             m_leaf = true;
+            return true;
         }
 
         void insert_into_children(const T &element, const geo::aabb2D &aabb)
@@ -261,15 +253,15 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                         "Element aabb does not intersect with the quad tree bounds")
         return m_root.insert(element, aabb);
     }
-    bool erase(const T &element, const geo::aabb2D &aabb)
+    void erase(const T &element, const geo::aabb2D &aabb)
     {
         KIT_ASSERT_WARN(geo::intersects(m_root.m_aabb, aabb),
                         "Element aabb does not intersect with the quad tree bounds")
-        return m_root.erase(element, aabb);
+        m_root.erase(element, aabb);
     }
-    bool erase(const T &element)
+    void erase(const T &element)
     {
-        return m_root.erase(element);
+        m_root.erase(element);
     }
 
     void clear()
