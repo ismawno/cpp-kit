@@ -10,7 +10,7 @@ static std::mutex mutex;
 void instrumentor::begin_measurement(const char *name)
 {
     KIT_ASSERT_ERROR(name, "Measurement name must not be null")
-    std::scoped_lock lock(mutex);
+    const std::scoped_lock lock(mutex);
     m_ongoing_measurements.push(ongoing_measurement{name, clock{}});
 }
 
@@ -23,7 +23,7 @@ void instrumentor::end_measurement()
     const char *name = ongoing.name;
 
     const auto it = m_ongoing_registry.map.find(name);
-    std::scoped_lock lock(mutex);
+    const std::scoped_lock lock(mutex);
     if (it != m_ongoing_registry.map.end())
     {
         measurement &ms = m_ongoing_registry.flat[it->second];
