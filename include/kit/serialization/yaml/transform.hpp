@@ -19,7 +19,7 @@ template <std::floating_point Float> struct kit::yaml::codec<kit::transform2D<Fl
 
     static bool decode(const YAML::Node &node, kit::transform2D<Float> &transform)
     {
-        if (!node.IsMap() || node.size() != 4)
+        if (!node.IsMap() || node.size() < 4)
             return false;
         transform.position = node["Position"].as<glm::vec<2, Float>>();
         transform.scale = node["Scale"].as<glm::vec<2, Float>>();
@@ -45,7 +45,7 @@ template <std::floating_point Float> struct kit::yaml::codec<kit::transform3D<Fl
 
     static bool decode(const YAML::Node &node, kit::transform3D<Float> &transform)
     {
-        if (!node.IsMap() || node.size() != 6)
+        if (!node.IsMap() || node.size() < 6)
             return false;
         transform.position = node["Position"].as<glm::vec<3, Float>>();
         transform.scale = node["Scale"].as<glm::vec<3, Float>>();

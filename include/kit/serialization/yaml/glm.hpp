@@ -20,7 +20,7 @@ template <std::floating_point Float> struct kit::yaml::codec<glm::vec<2, Float>>
 
     static bool decode(const YAML::Node &node, glm::vec<2, Float> &v)
     {
-        if (!node.IsSequence() || node.size() != 2)
+        if (!node.IsSequence() || node.size() < 2)
             return false;
 
         v.x = node[0].as<Float>();
@@ -43,7 +43,7 @@ template <std::floating_point Float> struct kit::yaml::codec<glm::vec<3, Float>>
 
     static bool decode(const YAML::Node &node, glm::vec<3, Float> &v)
     {
-        if (!node.IsSequence() || node.size() != 3)
+        if (!node.IsSequence() || node.size() < 3)
             return false;
 
         v.x = node[0].as<Float>();
@@ -68,7 +68,7 @@ template <std::floating_point Float> struct kit::yaml::codec<glm::vec<4, Float>>
 
     static bool decode(const YAML::Node &node, glm::vec<4, Float> &v)
     {
-        if (!node.IsSequence() || node.size() != 4)
+        if (!node.IsSequence() || node.size() < 4)
             return false;
 
         v.x = node[0].as<Float>();
