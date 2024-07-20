@@ -16,14 +16,17 @@ enum class hash_property
 template <hash_property Property, Hashable... HT> struct hashable_tuple
 {
     hashable_tuple() = default;
-
-    template <class... TupleArgs>
-        requires NoCopyCtorOverride<hashable_tuple, TupleArgs...>
-    hashable_tuple(TupleArgs &&...args) : elms(std::forward<TupleArgs>(args)...)
+    hashable_tuple(const HT &...args) : elms(args...)
     {
     }
-    hashable_tuple(const hashable_tuple &) = default;
-    hashable_tuple(hashable_tuple &&) = default;
+    hashable_tuple(const std::tuple<HT...> &tuple) : elms(tuple)
+    {
+    }
+    hashable_tuple &operator=(const std::tuple<HT...> &tuple)
+    {
+        elms = tuple;
+        return *this;
+    }
 
     std::tuple<HT...> elms;
 
