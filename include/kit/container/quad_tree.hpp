@@ -6,7 +6,6 @@
 #include "kit/utility/type_constraints.hpp"
 #include "kit/debug/log.hpp"
 
-#include <glm/vec2.hpp>
 #include <vector>
 #include <array>
 #include <stack>
