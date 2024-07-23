@@ -1,6 +1,6 @@
 #pragma once
 
-#include "geo/algorithm/intersection2D.hpp"
+#include "geo/algorithm/intersection.hpp"
 #include "kit/memory/ptr/scope.hpp"
 #include "kit/memory/allocator/block_allocator.hpp"
 #include "kit/utility/type_constraints.hpp"
