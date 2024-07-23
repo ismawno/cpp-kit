@@ -112,6 +112,10 @@ template <typename T, std::size_t Capacity> class dynarray
     {
         return Capacity;
     }
+    bool full() const
+    {
+        return m_size == Capacity;
+    }
 
     const_pointer data() const
     {

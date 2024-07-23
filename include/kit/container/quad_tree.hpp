@@ -4,7 +4,7 @@
 #include "kit/memory/ptr/scope.hpp"
 #include "kit/memory/allocator/block_allocator.hpp"
 #include "kit/utility/type_constraints.hpp"
-#include "kit/debug/log.hpp"
+#include "kit/container/dynarray.hpp"
 
 #include <vector>
 #include <array>
@@ -13,22 +13,9 @@
 namespace kit
 {
 // this container does NOT own the elements. It is recommended to be used with pointers or small trivial types
-template <typename T, template <typename> class Allocator = block_allocator> class quad_tree
+template <typename T, std::size_t MaxElems = 8, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:
-    struct properties
-    {
-        properties() = default;
-        properties(const std::size_t elements_per_quad, const std::uint32_t max_depth, const float min_quad_size)
-            : elements_per_quad(elements_per_quad), max_depth(max_depth), min_quad_size(min_quad_size)
-        {
-        }
-
-        std::size_t elements_per_quad;
-        std::uint32_t max_depth;
-        float min_quad_size;
-        bool force_square_shape = true;
-    };
     struct entry
     {
         T element;
@@ -38,17 +25,12 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
     class node
     {
       public:
-        node(properties *props = nullptr) : m_props(props)
-        {
-            if (props)
-                m_elements.reserve(props->elements_per_quad);
-        }
-
+        node() = default;
         bool insert(const T &element, const geo::aabb2D &aabb)
         {
             if (!geo::intersects(m_aabb, aabb))
                 return false;
-            if (m_leaf && m_elements.size() >= m_props->elements_per_quad && can_subdivide())
+            if (m_leaf && m_elements.full())
                 subdivide();
 
             if (m_leaf)
@@ -111,7 +93,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                         child->traverse(fun, aabb);
         }
 
-        const std::vector<entry> &elements() const
+        const kit::dynarray<entry, MaxElems> &elements() const
         {
             KIT_ASSERT_ERROR(m_leaf, "Can only access elements from a leaf node")
             return m_elements;
@@ -138,7 +120,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 if (it->element == element)
                 {
                     m_elements.erase(it);
-                    return m_parent && m_elements.size() <= m_props->elements_per_quad / 4 && m_parent->try_merge();
+                    return m_parent && m_elements.size() <= MaxElems / 4 && m_parent->try_merge();
                 }
             return false;
         }
@@ -155,11 +137,10 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
             m_leaf = false;
             if (!m_children[0])
                 for (std::size_t i = 0; i < 4; ++i)
-                    m_children[i] = s_allocator.create(m_props);
+                    m_children[i] = s_allocator.create();
 
             for (node *c : m_children)
             {
-                c->m_depth = m_depth + 1;
                 c->m_leaf = true;
                 c->m_elements.clear();
                 c->m_parent = this;
@@ -188,7 +169,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                     return false;
                 total_elements += child->m_elements.size();
             }
-            if (total_elements > m_props->elements_per_quad)
+            if (total_elements > MaxElems)
                 return false;
             for (const node *child : m_children) // painful
                 for (const entry &e1 : child->m_elements)
@@ -214,16 +195,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
                 child->insert(element, aabb);
         }
 
-        bool can_subdivide() const
-        {
-            if (m_depth >= m_props->max_depth)
-                return false;
-            const glm::vec2 dim = m_aabb.dimension();
-            return dim.x * dim.y >= m_props->min_quad_size * m_props->min_quad_size;
-        }
-
-        properties *m_props;
-        std::vector<entry> m_elements;
+        dynarray<entry, MaxElems> m_elements;
 
         node *m_parent = nullptr;
         std::array<node *, 4> m_children = {nullptr, nullptr, nullptr, nullptr};
@@ -236,13 +208,7 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
         friend class quad_tree;
     };
 
-    quad_tree(const std::size_t elements_per_quad = 8, std::uint32_t max_depth = 12, const float min_quad_size = 40.f)
-        : m_props(kit::make_scope<properties>(elements_per_quad, max_depth, min_quad_size)), m_root(m_props.get())
-    {
-    }
-    quad_tree(const properties &props) : m_props(kit::make_scope<properties>(props)), m_root(m_props.get())
-    {
-    }
+    quad_tree() = default;
 
     quad_tree &operator=(quad_tree &&) = default;
     quad_tree(quad_tree &&) = default;
@@ -310,18 +276,8 @@ template <typename T, template <typename> class Allocator = block_allocator> cla
     {
         return m_root;
     }
-    const properties &props() const
-    {
-        return *m_props;
-    }
-    void props(const properties &props)
-    {
-        KIT_ASSERT_ERROR(empty(), "Cannot change properties of a non-empty quad tree")
-        *m_props = props;
-    }
 
   private:
-    kit::scope<properties> m_props;
     node m_root;
 
     quad_tree(const quad_tree &) = delete;
