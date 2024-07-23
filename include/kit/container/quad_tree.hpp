@@ -12,6 +12,7 @@
 
 namespace kit
 {
+// this container does NOT own the elements. It is recommended to be used with pointers or small trivial types
 template <typename T, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:
