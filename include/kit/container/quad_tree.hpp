@@ -12,7 +12,12 @@
 
 namespace kit
 {
-// this container does NOT own the elements. It is recommended to be used with pointers or small trivial types
+// this container does NOT own the elements. it is recommended to be used with pointers or small trivial types
+// i have decided (for now) to use a fixed capacity array for the elements to improve locality, at some costs:
+// 1. the quad tree has a hard limit on the number of elements it can store, so no "max depth" is possible.
+// this CAN in some rare cases lead to a stack overflow, but it is very unlikely
+// 2. limits the quad tree to a fixed size, which is not ideal for all cases
+// 3. nodes can become very large, even when not used
 template <typename T, std::size_t MaxElems = 8, template <typename> class Allocator = block_allocator> class quad_tree
 {
   public:

@@ -21,7 +21,13 @@
 #define KIT_TRACE(...) spdlog::trace(__VA_ARGS__);
 #define KIT_DEBUG(...) spdlog::debug(__VA_ARGS__);
 #define KIT_INFO(...) spdlog::info(__VA_ARGS__);
+#ifndef KIT_WARNINGS_AS_ERRORS
 #define KIT_WARN(...) spdlog::warn(__VA_ARGS__);
+#else
+#define KIT_WARN(...)                                                                                                  \
+    spdlog::error(__VA_ARGS__);                                                                                        \
+    KIT_BREAK()
+#endif
 #define KIT_ERROR(...)                                                                                                 \
     spdlog::error(__VA_ARGS__);                                                                                        \
     KIT_BREAK()
@@ -31,27 +37,33 @@
 
 #define KIT_ASSERT_TRACE(cond, ...)                                                                                    \
     if (!(cond))                                                                                                       \
-        spdlog::trace(__VA_ARGS__);
+    {                                                                                                                  \
+        KIT_TRACE(__VA_ARGS__)                                                                                         \
+    }
 #define KIT_ASSERT_DEBUG(cond, ...)                                                                                    \
     if (!(cond))                                                                                                       \
-        spdlog::debug(__VA_ARGS__);
+    {                                                                                                                  \
+        KIT_DEBUG(__VA_ARGS__)                                                                                         \
+    }
 #define KIT_ASSERT_INFO(cond, ...)                                                                                     \
     if (!(cond))                                                                                                       \
-        spdlog::info(__VA_ARGS__);
+    {                                                                                                                  \
+        KIT_INFO(__VA_ARGS__)                                                                                          \
+    }
 #define KIT_ASSERT_WARN(cond, ...)                                                                                     \
     if (!(cond))                                                                                                       \
-        spdlog::warn(__VA_ARGS__);
+    {                                                                                                                  \
+        KIT_WARN(__VA_ARGS__)                                                                                          \
+    }
 #define KIT_ASSERT_ERROR(cond, ...)                                                                                    \
     if (!(cond))                                                                                                       \
     {                                                                                                                  \
-        spdlog::error(__VA_ARGS__);                                                                                    \
-        KIT_BREAK()                                                                                                    \
+        KIT_ERROR(__VA_ARGS__)                                                                                         \
     }
 #define KIT_ASSERT_CRITICAL(cond, ...)                                                                                 \
     if (!(cond))                                                                                                       \
     {                                                                                                                  \
-        spdlog::critical(__VA_ARGS__);                                                                                 \
-        KIT_BREAK()                                                                                                    \
+        KIT_CRITICAL(__VA_ARGS__)                                                                                      \
     }
 
 #define KIT_CHECK_RETURN_VALUE(expression, expected, level, ...) KIT_ASSERT_##level(expression == expected, __VA_ARGS__)
