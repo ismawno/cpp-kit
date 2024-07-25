@@ -260,6 +260,15 @@ template <typename T, LinkAccessor<T> LA> class linked_list
         return erase(make_iter(ptr));
     }
 
+    iterator pop_back()
+    {
+        return erase(m_tail);
+    }
+    iterator pop_front()
+    {
+        return erase(m_head);
+    }
+
     iterator head() const
     {
         return m_head;
@@ -292,13 +301,19 @@ template <typename T, LinkAccessor<T> LA> class linked_list
     {
         return m_size;
     }
-
     bool empty() const
     {
         return m_size == 0;
     }
+    // to be called when the list has been inserted into another list
+    void cleanup()
+    {
+        m_head = s_null_iterator;
+        m_tail = s_null_iterator;
+        m_size = 0;
+    }
 
-    static iterator find(iterator it1, iterator it2, T *ptr)
+    static iterator find(iterator it1, iterator it2, const T *ptr)
     {
         for (iterator it = it1; it != it2; ++it)
             if (*it == ptr)
@@ -306,14 +321,14 @@ template <typename T, LinkAccessor<T> LA> class linked_list
         return s_null_iterator;
     }
 
-    iterator find(T *ptr) const
+    iterator find(const T *ptr) const
     {
         return find(begin(), end(), ptr);
     }
 
   private:
-    iterator m_head;
-    iterator m_tail;
+    iterator m_head = s_null_iterator;
+    iterator m_tail = s_null_iterator;
 
     std::size_t m_size = 0;
 
