@@ -113,7 +113,7 @@ auto for_each_iter(thread_pool &pool, It it1, It it2, F &&fun, const std::size_t
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
-                pool.submit(fun, it1 + start, it1 + end, std::forward<Args>(args)...);
+                pool.submit(std::forward<F>(fun), it1 + start, it1 + end, std::forward<Args>(args)...);
             start = end;
         }
         pool.await_pending();
@@ -128,7 +128,8 @@ auto for_each_iter(thread_pool &pool, It it1, It it2, F &&fun, const std::size_t
             KIT_ASSERT_ERROR(end <= size, "Partition exceeds vector size! start: {0}, end: {1}, size: {2}", start, end,
                              size)
             if (end > start)
-                futures.push_back(pool.submit(fun, it1 + start, it1 + end, std::forward<Args>(args)...));
+                futures.push_back(
+                    pool.submit(std::forward<F>(fun), it1 + start, it1 + end, std::forward<Args>(args)...));
             start = end;
         }
         return futures;
