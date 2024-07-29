@@ -1,6 +1,7 @@
 #pragma once
 
 #include "kit/debug/log.hpp"
+#include "kit/memory/ptr/ref.hpp"
 #include "kit/utility/type_constraints.hpp"
 #include <thread>
 #include <mutex>
@@ -22,13 +23,23 @@ class thread_pool
     auto submit(F &&fun, Args &&...args) -> std::future<std::invoke_result_t<F, Args...>>
     {
         using return_t = std::invoke_result_t<F, Args...>;
+
+#ifndef _MSC_VER
         std::packaged_task<return_t()> task{std::bind(std::forward<F>(fun), std::forward<Args>(args)...)};
         std::future<return_t> future = task.get_future();
+#else
+        auto task = kit::make_ref<std::packaged_task<return_t()>>(std::bind(std::forward<F>(fun), std::forward<Args>(args)...));
+        std::future<return_t> future = task->get_future();
+#endif
 
         {
             std::scoped_lock<std::mutex> lock{m_mutex};
             m_pending_tasks++;
+#ifndef _MSC_VER
             m_tasks.emplace(std::move(task));
+#else
+            m_tasks.push([task]{(*task)();});
+#endif
         }
         m_check_task.notify_one(); // move this into/out of the lock?
         return future;
@@ -46,7 +57,11 @@ class thread_pool
     std::vector<std::thread> m_threads;
     std::size_t m_pending_tasks = 0;
 
+#ifndef _MSC_VER
     std::queue<std::packaged_task<void()>> m_tasks;
+#else
+    std::queue<std::function<void()>> m_tasks;
+#endif
     std::mutex m_mutex;
 
     std::condition_variable m_check_task;
