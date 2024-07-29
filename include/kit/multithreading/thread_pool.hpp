@@ -28,7 +28,8 @@ class thread_pool
         std::packaged_task<return_t()> task{std::bind(std::forward<F>(fun), std::forward<Args>(args)...)};
         std::future<return_t> future = task.get_future();
 #else
-        auto task = kit::make_ref<std::packaged_task<return_t()>>(std::bind(std::forward<F>(fun), std::forward<Args>(args)...));
+        auto task =
+            kit::make_ref<std::packaged_task<return_t()>>(std::bind(std::forward<F>(fun), std::forward<Args>(args)...));
         std::future<return_t> future = task->get_future();
 #endif
 
@@ -38,7 +39,7 @@ class thread_pool
 #ifndef _MSC_VER
             m_tasks.emplace(std::move(task));
 #else
-            m_tasks.push([task]{(*task)();});
+            m_tasks.push([task] { (*task)(); });
 #endif
         }
         m_check_task.notify_one(); // move this into/out of the lock?
